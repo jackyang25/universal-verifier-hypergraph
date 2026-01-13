@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Axiom Pack Router</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Axiom Pack Router</h1>
+        <p class="subtitle">Hypergraph-based Medical Decision Support</p>
+    </header>
+
+    <main>
+        <aside id="controls">
+            <section>
+                <h2>Patient Conditions</h2>
+                <div id="condition-checkboxes"></div>
+                <button id="route-btn" class="primary">Route Patient</button>
+                <button id="clear-btn" class="secondary">Clear Selection</button>
+            </section>
+
+            <section id="results-section" class="hidden">
+                <h2>Activated Packs</h2>
+                <div id="results"></div>
+            </section>
+
+            <section>
+                <h2>Graph Info</h2>
+                <div id="graph-info">
+                    <p>Conditions: <span id="condition-count">0</span></p>
+                    <p>Axiom Packs: <span id="pack-count">0</span></p>
+                    <p>Version: <span id="config-version">-</span></p>
+                </div>
+            </section>
+        </aside>
+
+        <div id="visualization">
+            <svg id="graph"></svg>
+            <div id="tooltip" class="hidden"></div>
+        </div>
+    </main>
+
+    <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/graph-renderer.js"></script>
+    <script src="/static/js/ui-controls.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

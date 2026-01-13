@@ -1,0 +1,164 @@
+# Axiom Pack Configuration
+#
+# Each axiom pack defines a hyperedge in the condition graph.
+# A pack activates when ALL its conditions are present in the patient context.
+
+metadata:
+  config_version: "1.0.0"
+  last_updated: "2025-01-13"
+  description: "Medical axiom pack routing configuration"
+
+axiom_packs:
+  # Single-condition packs
+  - id: pregnancy_pack
+    version: "1.2.0"
+    name: Pregnancy Axiom Pack
+    description: Base axioms for pregnant patients
+    conditions:
+      - pregnant
+    last_reviewed: "2024-12-01"
+    reviewer: "SAHPRA Clinical Committee"
+    country: "ZA"
+    regulatory_body: "SAHPRA"
+    approval_status: "approved"
+
+  - id: hiv_pack
+    version: "1.1.0"
+    name: HIV Axiom Pack
+    description: Base axioms for HIV-positive patients
+    conditions:
+      - HIV_positive
+    last_reviewed: "2024-11-15"
+    reviewer: "National AIDS Council"
+    country: "ZA"
+    regulatory_body: "SANAC"
+    approval_status: "approved"
+
+  - id: diabetes_pack
+    version: "1.0.0"
+    name: Diabetes Axiom Pack
+    description: Base axioms for diabetic patients
+    conditions:
+      - diabetic
+    last_reviewed: "2024-10-20"
+    reviewer: "SEMDSA Guidelines Committee"
+    country: "ZA"
+    regulatory_body: "SEMDSA"
+    approval_status: "approved"
+
+  - id: hypertension_pack
+    version: "1.0.0"
+    name: Hypertension Axiom Pack
+    description: Base axioms for patients with hypertension
+    conditions:
+      - hypertensive
+    last_reviewed: "2024-10-20"
+    reviewer: "SA Heart Association"
+    country: "ZA"
+    regulatory_body: "SAHA"
+    approval_status: "approved"
+
+  - id: elderly_pack
+    version: "1.0.0"
+    name: Elderly Axiom Pack
+    description: Axioms for patients over 65
+    conditions:
+      - age_over_65
+    last_reviewed: "2024-09-15"
+    reviewer: "Geriatrics Society of SA"
+    country: "ZA"
+    regulatory_body: "NDoH"
+    approval_status: "approved"
+
+  - id: pediatric_pack
+    version: "1.0.0"
+    name: Pediatric Axiom Pack
+    description: Axioms for pediatric patients
+    conditions:
+      - pediatric
+    last_reviewed: "2024-09-15"
+    reviewer: "SA Paediatric Association"
+    country: "KE"
+    regulatory_body: "PPB Kenya"
+    approval_status: "approved"
+
+  # Multi-condition packs
+  - id: pregnancy_hiv_interaction
+    version: "1.0.0"
+    name: Pregnancy + HIV Axiom Pack
+    description: Special considerations for pregnant HIV-positive patients
+    conditions:
+      - pregnant
+      - HIV_positive
+    last_reviewed: "2024-12-01"
+    reviewer: "PMTCT Technical Working Group"
+    country: "ZA"
+    regulatory_body: "SAHPRA/SANAC"
+    approval_status: "approved"
+
+  - id: pregnancy_diabetes_interaction
+    version: "1.0.0"
+    name: Pregnancy + Diabetes Axiom Pack
+    description: Gestational diabetes and diabetic pregnancy management
+    conditions:
+      - pregnant
+      - diabetic
+    last_reviewed: "2024-11-01"
+    reviewer: "SASOG Guidelines Committee"
+    country: "ZA"
+    regulatory_body: "SASOG"
+    approval_status: "approved"
+
+  - id: pregnancy_hypertension_interaction
+    version: "1.0.0"
+    name: Pregnancy + Hypertension Axiom Pack
+    description: Preeclampsia risk and hypertensive pregnancy management
+    conditions:
+      - pregnant
+      - hypertensive
+    last_reviewed: "2024-11-01"
+    reviewer: "SASOG Guidelines Committee"
+    country: "ZA"
+    regulatory_body: "SASOG"
+    approval_status: "approved"
+
+  - id: diabetes_hypertension_interaction
+    version: "1.0.0"
+    name: Diabetes + Hypertension Axiom Pack
+    description: Combined cardiovascular risk management
+    conditions:
+      - diabetic
+      - hypertensive
+    last_reviewed: "2024-10-20"
+    reviewer: "SEMDSA/SAHA Joint Committee"
+    country: "KE"
+    regulatory_body: "Kenya MOH"
+    approval_status: "approved"
+
+  - id: elderly_diabetes_interaction
+    version: "1.0.0"
+    name: Elderly + Diabetes Axiom Pack
+    description: Age-adjusted diabetes management
+    conditions:
+      - age_over_65
+      - diabetic
+    last_reviewed: "2024-10-01"
+    reviewer: "East African Diabetes Study Group"
+    country: "UG"
+    regulatory_body: "NDA Uganda"
+    approval_status: "draft"
+
+  # Triple condition pack
+  - id: pregnancy_hiv_diabetes_interaction
+    version: "1.0.0"
+    name: Pregnancy + HIV + Diabetes Axiom Pack
+    description: Complex multi-morbidity management for pregnant HIV+ diabetic patients
+    conditions:
+      - pregnant
+      - HIV_positive
+      - diabetic
+    last_reviewed: "2024-12-01"
+    reviewer: "SADC Health Ministers Council"
+    country: "ZA"
+    regulatory_body: "SAHPRA"
+    approval_status: "approved"

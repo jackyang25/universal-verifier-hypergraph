@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config:/app/config
+      - ./axiom_router:/app/axiom_router
+      - ./api:/app/api
+      - ./frontend:/app/frontend
+    environment:
+      - ENV=development
+      - CONFIG_PATH=config/axiom_packs.yaml
+      - CORS_ORIGINS=*
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload

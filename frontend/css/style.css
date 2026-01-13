@@ -1,0 +1,433 @@
+/* Axiom Pack Router - Styles */
+
+:root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #58a6ff;
+    --accent-hover: #79c0ff;
+    --success: #3fb950;
+    --warning: #d29922;
+    --danger: #f85149;
+    --border: #30363d;
+    --shadow: rgba(0, 0, 0, 0.3);
+    
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+}
+
+header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+header .subtitle {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Main layout */
+main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar controls */
+#controls {
+    width: 320px;
+    min-width: 320px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+#controls section {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+#controls h2 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* Condition checkboxes */
+#condition-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
+
+.condition-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.condition-item:hover {
+    background: var(--bg-secondary);
+}
+
+.condition-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.condition-item label {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    cursor: pointer;
+    flex: 1;
+}
+
+.condition-item.active {
+    background: rgba(88, 166, 255, 0.1);
+}
+
+.condition-item.active label {
+    color: var(--accent);
+}
+
+/* Buttons */
+button {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+}
+
+button.primary {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+button.primary:hover {
+    background: var(--accent-hover);
+}
+
+button.secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+}
+
+button.secondary:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Results */
+#results-section.hidden {
+    display: none;
+}
+
+#results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.result-pack {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    border-left: 4px solid var(--success);
+    transition: border-color 0.2s;
+}
+
+.result-pack .pack-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.35rem;
+}
+
+.result-pack .pack-name {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--text-primary);
+}
+
+.result-pack .pack-version {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+}
+
+.result-pack .pack-conditions {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.result-pack .pack-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.result-pack .country-badge {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 600;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+}
+
+.result-pack .status-badge {
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.result-pack .status-badge.approved {
+    background: rgba(63, 185, 80, 0.15);
+    color: var(--success);
+}
+
+.result-pack .status-badge.draft {
+    background: rgba(210, 153, 34, 0.15);
+    color: var(--warning);
+}
+
+.result-pack .pack-regulatory {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    margin-top: 0.375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.result-pack.interaction {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Graph info */
+#graph-info p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+#graph-info span {
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+/* Visualization */
+#visualization {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#graph {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+}
+
+/* D3 Graph Elements */
+.node {
+    cursor: pointer;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node .ring {
+    fill: transparent;
+    stroke: transparent;
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+}
+
+.node .core {
+    fill: #8b949e;
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+}
+
+.node:hover .core {
+    stroke: rgba(255, 255, 255, 0.3);
+    filter: brightness(1.1);
+}
+
+.node.active .ring {
+    stroke: var(--accent);
+    stroke-opacity: 0.4;
+}
+
+.node.active .core {
+    fill: var(--accent);
+    stroke: rgba(255, 255, 255, 0.3);
+    filter: drop-shadow(0 0 10px rgba(88, 166, 255, 0.5));
+}
+
+.node-label {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    fill: var(--text-secondary);
+    font-weight: 500;
+    pointer-events: none;
+    transition: fill 0.3s ease;
+}
+
+.node.active .node-label {
+    fill: var(--text-primary);
+}
+
+/* Hull Groups */
+.hull-group {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.hull-group.visible {
+    opacity: 1;
+}
+
+.hull {
+    fill-opacity: 0.15;
+    stroke-width: 2px;
+    stroke-opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.hull.active {
+    fill-opacity: 0.2;
+    stroke-opacity: 0.7;
+}
+
+/* Tooltip */
+#tooltip {
+    position: absolute;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+    pointer-events: none;
+    box-shadow: 0 4px 12px var(--shadow);
+    z-index: 100;
+    max-width: 250px;
+}
+
+#tooltip.hidden {
+    display: none;
+}
+
+#tooltip .title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+#tooltip .info {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+    
+    #controls {
+        width: 100%;
+        min-width: unset;
+        max-height: 40vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    #visualization {
+        min-height: 60vh;
+    }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
