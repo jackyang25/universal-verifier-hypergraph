@@ -69,3 +69,22 @@ Edit `config/axiom_packs.yaml`, then restart:
 ```bash
 make stop && make start
 ```
+
+## Integrating into Agents / Other Systems
+
+This service can run as a lightweight “routing API” inside a larger system:
+
+- **Agents**: send extracted conditions → get back activated packs (with version + regulatory metadata) to drive next steps, prompts, or guardrails.
+- **Other services**: call the API to retrieve axiom pack metadata and write activations into a knowledge graph, audit log, or reporting pipeline.
+
+Minimal example:
+
+```bash
+curl -s -X POST http://localhost:8000/api/routing/match \
+  -H "Content-Type: application/json" \
+  -d '{"conditions":["pregnant","diabetic"]}'
+```
+
+## Playground Folder
+
+The browser testing UI lives in `playground/` (this folder is served by the backend).

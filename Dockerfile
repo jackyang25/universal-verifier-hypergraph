@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY axiom_router/ axiom_router/
 COPY api/ api/
 COPY config/ config/
-COPY frontend/ frontend/
+COPY playground/ playground/
 
 EXPOSE 8000
 

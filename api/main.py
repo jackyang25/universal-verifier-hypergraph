@@ -45,12 +45,12 @@ def health_check():
     return HealthResponse(status="healthy", version=router_version)
 
 
-# serve frontend static files (must be last)
-frontend_path = "frontend"
-if os.path.exists(frontend_path):
-    app.mount("/static", StaticFiles(directory=frontend_path), name="static")
+# serve playground static files (must be last)
+playground_path = "playground"
+if os.path.exists(playground_path):
+    app.mount("/static", StaticFiles(directory=playground_path), name="static")
     
     @app.get("/")
-    async def serve_frontend():
-        """Serve the frontend index.html."""
-        return FileResponse(f"{frontend_path}/index.html")
+    async def serve_playground():
+        """Serve the playground UI index.html."""
+        return FileResponse(f"{playground_path}/index.html")

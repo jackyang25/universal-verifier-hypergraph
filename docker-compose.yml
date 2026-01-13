@@ -7,7 +7,7 @@ services:
       - ./config:/app/config
       - ./axiom_router:/app/axiom_router
       - ./api:/app/api
-      - ./frontend:/app/frontend
+      - ./playground:/app/playground
     environment:
       - ENV=development
       - CONFIG_PATH=config/axiom_packs.yaml
