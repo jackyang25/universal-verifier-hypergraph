@@ -25,16 +25,23 @@ def execute_protocols(
     """
     activated = protocol_router.match(request.conditions)
 
-    results = [
-        ExecuteProtocolResult(
-            protocol_id=p.id,
-            protocol_name=p.name,
-            version=p.version,
-            status="not_implemented",
-            message=f"No verifier registered for protocol_id={p.id}",
+    results = []
+    for p in activated:
+        # check if protocol has a verifier field defined
+        if p.verifier:
+            message = f"Verifier '{p.verifier}' not yet implemented for protocol_id={p.id}"
+        else:
+            message = f"No verifier registered for protocol_id={p.id}"
+        
+        results.append(
+            ExecuteProtocolResult(
+                protocol_id=p.id,
+                protocol_name=p.name,
+                version=p.version,
+                status="not_implemented",
+                message=message,
+            )
         )
-        for p in activated
-    ]
 
     return ExecuteResponse(
         matched_conditions=sorted(request.conditions),
