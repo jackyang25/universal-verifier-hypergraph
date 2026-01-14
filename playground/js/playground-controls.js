@@ -254,11 +254,9 @@ class UIControls {
                 status: routeDone ? 'done' : (this.audit.lastRoute ? 'error' : 'pending'),
                 icon: '3',
                 detail: routeDone ? (
-                    `time=${fmtTime(this.audit.lastRouteAt) || '-'}\n` +
-                    `activated_protocols=${activated.length}\n` +
-                    `activated_protocol_ids=${activated.map(p => p.id).join(', ') || '-'}`
+                    `Completed at ${fmtTime(this.audit.lastRouteAt) || '-'}`
                 ) : (this.audit.lastRoute?.error
-                    ? `time=${fmtTime(this.audit.lastRouteAt) || '-'}\nerror=${this.audit.lastRoute.error}`
+                    ? `Failed at ${fmtTime(this.audit.lastRouteAt) || '-'}\n${this.audit.lastRoute.error}`
                     : 'click “Route Patient”'),
             },
             {
@@ -267,10 +265,9 @@ class UIControls {
                 status: verifyDone ? 'done' : (this.audit.lastVerify ? 'error' : 'pending'),
                 icon: '4',
                 detail: verifyDone ? (
-                    `time=${fmtTime(this.audit.lastVerifyAt) || '-'}\n` +
-                    `results_by_status=${JSON.stringify(summarizeStatuses(this.audit.lastVerify?.results || []))}`
+                    `Completed at ${fmtTime(this.audit.lastVerifyAt) || '-'}`
                 ) : (this.audit.lastVerify?.error
-                    ? `time=${fmtTime(this.audit.lastVerifyAt) || '-'}\nerror=${this.audit.lastVerify.error}`
+                    ? `Failed at ${fmtTime(this.audit.lastVerifyAt) || '-'}\n${this.audit.lastVerify.error}`
                     : 'click “Execute Verifiers” (enabled after routing)'),
             },
         ];
@@ -283,9 +280,20 @@ class UIControls {
         `).join('');
 
         const protocolsSummary = activated
-            .slice(0, 6)
-            .map(p => `${p.id}@${p.version}${p.guideline ? ` • ${p.guideline}` : ''}`)
+            .slice(0, 5)
+            .map(p => `• ${p.name} (v${p.version})${p.guideline ? ` — ${p.guideline}` : ''}`)
             .join('\n');
+        
+        const protocolsExtra = activated.length > 5 ? `\n• ... and ${activated.length - 5} more` : '';
+
+        // verifier results summary
+        const verifyResults = this.audit.lastVerify?.results || [];
+        const verifierResultsSummary = verifyResults
+            .slice(0, 5)
+            .map(r => `• ${r.protocol_name} (v${r.version}) — ${r.status}`)
+            .join('\n');
+        
+        const verifierResultsExtra = verifyResults.length > 5 ? `\n• ... and ${verifyResults.length - 5} more` : '';
 
         detailsEl.innerHTML = steps.map(s => `
             <div class="audit-detail">
@@ -293,7 +301,7 @@ class UIControls {
                     <span>${s.icon}. ${s.label}</span>
                     <span class="meta">${s.key}</span>
                 </div>
-                <div class="meta">${String(s.detail).replaceAll('\n', '<br/>')}${s.key === 'route' && protocolsSummary ? `<br/><br/>protocols (top):<br/>${protocolsSummary.replaceAll('\n', '<br/>')}` : ''}</div>
+                <div class="meta">${String(s.detail).replaceAll('\n', '<br/>')}${s.key === 'route' && protocolsSummary ? `<br/><br/><strong>Activated protocols:</strong><br/>${protocolsSummary.replaceAll('\n', '<br/>')}${protocolsExtra}` : ''}${s.key === 'verify' && verifierResultsSummary ? `<br/><br/><strong>Verifier results:</strong><br/>${verifierResultsSummary.replaceAll('\n', '<br/>')}${verifierResultsExtra}` : ''}</div>
             </div>
         `).join('');
     }
