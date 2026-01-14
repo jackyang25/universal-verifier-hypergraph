@@ -1,0 +1,38 @@
+# Guideline for Pediatric Clinical Protocol (Single-Condition)
+# This file defines the formal verification requirements for the protocol
+
+protocol_id: pediatric_protocol
+version: "1.0.0"
+name: "Pediatric Clinical Protocol"
+
+# ================================================================================
+# Verification Type 1: Protocol Activation Logic
+# Defines when this protocol should activate
+# ================================================================================
+activation:
+  requires_all:
+    - pediatric
+
+# ================================================================================
+# Verification Type 2: Mutual Exclusion
+# Defines conditions that cannot coexist with this protocol
+# ================================================================================
+exclusions:
+  - cannot_coexist_with:
+      - age_over_65
+    reason: "Patients cannot be both pediatric (under 18) and elderly (over 65)"
+
+  - cannot_coexist_with:
+      - pregnant
+    reason: "Pediatric patients cannot be pregnant (by definition pediatric excludes pregnant minors)"
+
+# ================================================================================
+# Additional Metadata (optional, for documentation)
+# ================================================================================
+metadata:
+  description: "Clinical protocol for pediatric patients"
+  country: "KE"
+  regulatory_body: "PPB Kenya"
+  reviewer: "SA Paediatric Association"
+  references:
+    - "KE Pediatric Care Guideline (Demo)"

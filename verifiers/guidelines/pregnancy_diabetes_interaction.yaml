@@ -1,0 +1,44 @@
+# Guideline for Pregnancy + Diabetes Interaction Protocol
+# This file defines the formal verification requirements for the protocol
+
+protocol_id: pregnancy_diabetes_interaction
+version: "1.0.0"
+name: "Pregnancy + Diabetes Clinical Protocol"
+
+# ================================================================================
+# Verification Type 1: Protocol Activation Logic
+# Defines when this protocol should activate
+# ================================================================================
+activation:
+  requires_all:
+    - pregnant
+    - diabetic
+
+# ================================================================================
+# Verification Type 2: Mutual Exclusion
+# Defines conditions that cannot coexist with this protocol
+# ================================================================================
+exclusions:
+  - cannot_coexist_with:
+      - pediatric
+    reason: "Pediatric patients cannot be pregnant"
+
+  - cannot_coexist_with:
+      - age_over_65
+    reason: "Elderly patients have different pregnancy risk profiles (edge case)"
+
+# ================================================================================
+# Additional Metadata (optional, for documentation)
+# ================================================================================
+metadata:
+  description: "Gestational diabetes and diabetic pregnancy management"
+  country: "ZA"
+  regulatory_body: "SASOG"
+  reviewer: "SASOG Guidelines Committee"
+  clinical_notes:
+    - "Increased risk of macrosomia and birth complications"
+    - "Strict glucose control required (target HbA1c < 6.5%)"
+    - "Monitor for preeclampsia development"
+  references:
+    - "ZA Gestational Diabetes Guideline (Demo)"
+    - "SASOG Pregnancy Guidelines 2024"

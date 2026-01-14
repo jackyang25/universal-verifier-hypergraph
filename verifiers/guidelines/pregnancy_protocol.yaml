@@ -1,0 +1,34 @@
+# Guideline for Pregnancy Protocol (Single-Condition)
+# This file defines the formal verification requirements for the protocol
+
+protocol_id: pregnancy_protocol
+version: "1.2.0"
+name: "Pregnancy Clinical Protocol"
+
+# ================================================================================
+# Verification Type 1: Protocol Activation Logic
+# Defines when this protocol should activate
+# ================================================================================
+activation:
+  requires_all:
+    - pregnant
+
+# ================================================================================
+# Verification Type 2: Mutual Exclusion
+# Defines conditions that cannot coexist with this protocol
+# ================================================================================
+exclusions:
+  - cannot_coexist_with:
+      - pediatric
+    reason: "Pediatric patients cannot be pregnant"
+
+# ================================================================================
+# Additional Metadata (optional, for documentation)
+# ================================================================================
+metadata:
+  description: "Clinical protocol for pregnant patients"
+  country: "ZA"
+  regulatory_body: "SAHPRA"
+  reviewer: "SAHPRA Clinical Committee"
+  references:
+    - "ZA Antenatal Care Guideline (Demo)"

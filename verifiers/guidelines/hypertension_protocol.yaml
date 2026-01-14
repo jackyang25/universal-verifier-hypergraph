@@ -1,0 +1,33 @@
+# Guideline for Hypertension Clinical Protocol (Single-Condition)
+# This file defines the formal verification requirements for the protocol
+
+protocol_id: hypertension_protocol
+version: "1.0.0"
+name: "Hypertension Clinical Protocol"
+
+# ================================================================================
+# Verification Type 1: Protocol Activation Logic
+# Defines when this protocol should activate
+# ================================================================================
+activation:
+  requires_all:
+    - hypertensive
+
+# ================================================================================
+# Verification Type 2: Mutual Exclusion
+# Defines conditions that cannot coexist with this protocol
+# ================================================================================
+exclusions: []
+  # No logical exclusions for hypertension protocol
+  # (Hypertension can occur in any age group, pregnancy status, etc.)
+
+# ================================================================================
+# Additional Metadata (optional, for documentation)
+# ================================================================================
+metadata:
+  description: "Clinical protocol for patients with hypertension"
+  country: "ZA"
+  regulatory_body: "SAHA"
+  reviewer: "SA Heart Association"
+  references:
+    - "ZA Hypertension Guideline (Demo)"
