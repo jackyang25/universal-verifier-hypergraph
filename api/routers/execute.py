@@ -1,4 +1,4 @@
-"""Protocol execution endpoints (placeholder until verifiers exist)."""
+"""Protocol verification endpoints (placeholder until verifiers exist)."""
 
 from datetime import datetime, timezone
 
@@ -6,20 +6,20 @@ from fastapi import APIRouter, Depends
 
 from protocol_router import ProtocolRouter
 from api.dependencies import get_protocol_router_dependency
-from api.models import ExecuteRequest, ExecuteResponse, ExecuteProtocolResult
+from api.models import VerifyRequest, VerifyResponse, VerifyProtocolResult
 
 router = APIRouter()
 
 
-@router.post("/run", response_model=ExecuteResponse)
-def execute_protocols(
-    request: ExecuteRequest,
+@router.post("/run", response_model=VerifyResponse)
+def verify_protocols(
+    request: VerifyRequest,
     protocol_router: ProtocolRouter = Depends(get_protocol_router_dependency),
 ):
     """
-    Execute activated protocols.
+    Execute verifiers for activated protocols.
 
-    This is a placeholder endpoint: it computes which protocols would be executed,
+    This is a placeholder endpoint: it computes which protocols would be verified,
     but returns a "not_implemented" status because verifier implementations
     will be added later (e.g., in a /verifiers folder).
     """
@@ -34,7 +34,7 @@ def execute_protocols(
             message = f"No verifier registered for protocol_id={p.id}"
         
         results.append(
-            ExecuteProtocolResult(
+            VerifyProtocolResult(
                 protocol_id=p.id,
                 protocol_name=p.name,
                 version=p.version,
@@ -43,7 +43,7 @@ def execute_protocols(
             )
         )
 
-    return ExecuteResponse(
+    return VerifyResponse(
         matched_conditions=sorted(request.conditions),
         results=results,
         timestamp=datetime.now(timezone.utc),

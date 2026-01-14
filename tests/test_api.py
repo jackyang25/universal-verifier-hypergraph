@@ -145,3 +145,62 @@ class TestRoutingEndpoints:
             json={}  # missing conditions
         )
         assert response.status_code == 422  # validation error
+
+
+class TestVerifyEndpoints:
+    """Protocol verification API tests."""
+
+    def test_verify_protocols_single_condition(self, client):
+        """Verify with single condition."""
+        response = client.post(
+            "/api/verify/run",
+            json={"conditions": ["hypertensive"]}
+        )
+        assert response.status_code == 200
+        
+        data = response.json()
+        assert "matched_conditions" in data
+        assert "results" in data
+        assert "timestamp" in data
+        
+        # should have results for activated protocols
+        if len(data["results"]) > 0:
+            result = data["results"][0]
+            assert "protocol_id" in result
+            assert "protocol_name" in result
+            assert "version" in result
+            assert "status" in result
+            assert result["status"] == "not_implemented"
+            assert "message" in result
+
+    def test_verify_protocols_multiple_conditions(self, client):
+        """Verify with multiple conditions."""
+        response = client.post(
+            "/api/verify/run",
+            json={"conditions": ["pregnant", "HIV_positive"]}
+        )
+        assert response.status_code == 200
+        
+        data = response.json()
+        # should have results for multiple activated protocols
+        assert len(data["results"]) > 0
+
+    def test_verify_protocols_no_match(self, client):
+        """Verify with conditions that don't match any protocol."""
+        response = client.post(
+            "/api/verify/run",
+            json={"conditions": ["unknown_condition_xyz"]}
+        )
+        assert response.status_code == 200
+        
+        data = response.json()
+        # should have no results if no protocols match
+        assert data["results"] == []
+
+    def test_verify_protocols_invalid_request(self, client):
+        """Verify with invalid request returns error."""
+        response = client.post(
+            "/api/verify/run",
+            json={}  # missing conditions
+        )
+        assert response.status_code == 422  # validation error

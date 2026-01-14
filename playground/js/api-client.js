@@ -85,8 +85,8 @@ class ProtocolRouterAPI {
     }
 
     // Execution (placeholder until verifiers are implemented)
-    async executeProtocols(conditions) {
-        return this._fetch('/execute/run', {
+    async verifyProtocols(conditions) {
+        return this._fetch('/verify/run', {
             method: 'POST',
             body: JSON.stringify({
                 conditions: Array.from(conditions),

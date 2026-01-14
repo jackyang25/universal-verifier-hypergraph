@@ -50,7 +50,7 @@ async def disable_cache_in_dev(request: Request, call_next):
 app.include_router(graph.router, prefix="/api/graph", tags=["graph"])
 app.include_router(protocols.router, prefix="/api/protocols", tags=["protocols"])
 app.include_router(routing.router, prefix="/api/routing", tags=["routing"])
-app.include_router(execute.router, prefix="/api/execute", tags=["execute"])
+app.include_router(execute.router, prefix="/api/verify", tags=["verify"])
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["health"])

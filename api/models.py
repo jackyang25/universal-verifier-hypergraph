@@ -115,14 +115,14 @@ class HealthResponse(BaseModel):
     version: str
 
 
-class ExecuteRequest(BaseModel):
-    """Request model for executing activated protocols (placeholder)."""
+class VerifyRequest(BaseModel):
+    """Request model for verifying activated protocols."""
     
     conditions: Set[str] = Field(..., description="Active patient conditions")
 
 
-class ExecuteProtocolResult(BaseModel):
-    """Execution result for a single protocol."""
+class VerifyProtocolResult(BaseModel):
+    """Verification result for a single protocol."""
     
     protocol_id: str
     protocol_name: str
@@ -131,9 +131,9 @@ class ExecuteProtocolResult(BaseModel):
     message: Optional[str] = None
 
 
-class ExecuteResponse(BaseModel):
-    """Response model for protocol execution (placeholder)."""
+class VerifyResponse(BaseModel):
+    """Response model for protocol verification."""
     
     matched_conditions: List[str]
-    results: List[ExecuteProtocolResult]
+    results: List[VerifyProtocolResult]
     timestamp: datetime

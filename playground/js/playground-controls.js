@@ -14,9 +14,9 @@ class UIControls {
         this.audit = {
             open: false,
             lastRouteAt: null,
-            lastExecuteAt: null,
+            lastVerifyAt: null,
             lastRoute: null,   // { matched_conditions: string[], activated_protocols: object[] }
-            lastExecute: null, // { matched_conditions: string[], results: object[] }
+            lastVerify: null, // { matched_conditions: string[], results: object[] }
         };
         
         this._bindEvents();
@@ -24,7 +24,7 @@ class UIControls {
 
     _bindEvents() {
         document.getElementById('route-btn').addEventListener('click', () => this.routePatient());
-        document.getElementById('execute-btn').addEventListener('click', () => this.executeProtocols());
+        document.getElementById('verify-btn').addEventListener('click', () => this.verifyProtocols());
         document.getElementById('clear-btn').addEventListener('click', () => this.clearSelection());
 
         const auditToggle = document.getElementById('audit-toggle');
@@ -47,7 +47,7 @@ class UIControls {
         
         this._renderConditionCheckboxes();
         this._updateGraphInfo(graphData.metadata);
-        this._setExecuteEnabled(false);
+        this._setVerifyEnabled(false);
         this._renderAudit();
     }
 
@@ -73,8 +73,8 @@ class UIControls {
                     item.classList.remove('active');
                 }
                 this.renderer.highlight(this.selectedConditions);
-                // require "Route Patient" first so the user sees what will execute
-                this._setExecuteEnabled(this.lastActivatedProtocols.length > 0);
+                // require "Route Patient" first so the user sees what will be verified
+                this._setVerifyEnabled(this.lastActivatedProtocols.length > 0);
                 this._renderAudit();
             });
 
@@ -96,15 +96,15 @@ class UIControls {
         try {
             const result = await api.routePatient(this.selectedConditions);
             this.lastActivatedProtocols = result.activated_protocols || [];
-            this._setExecuteEnabled(this.lastActivatedProtocols.length > 0);
+                this._setVerifyEnabled(this.lastActivatedProtocols.length > 0);
             this._displayResults(this.lastActivatedProtocols);
             this.audit.lastRouteAt = new Date();
             this.audit.lastRoute = {
                 matched_conditions: result.matched_conditions || Array.from(this.selectedConditions),
                 activated_protocols: this.lastActivatedProtocols,
             };
-            this.audit.lastExecuteAt = null;
-            this.audit.lastExecute = null;
+            this.audit.lastVerifyAt = null;
+            this.audit.lastVerify = null;
             this._renderAudit();
         } catch (error) {
             console.error('Routing failed:', error);
@@ -112,7 +112,7 @@ class UIControls {
         }
     }
 
-    async executeProtocols() {
+    async verifyProtocols() {
         if (this.selectedConditions.size === 0) {
             return;
         }
@@ -120,37 +120,37 @@ class UIControls {
             return;
         }
 
-        const executeBtn = document.getElementById('execute-btn');
-        const originalLabel = executeBtn.textContent;
-        executeBtn.disabled = true;
-        executeBtn.textContent = 'Executing...';
+        const verifyBtn = document.getElementById('verify-btn');
+        const originalLabel = verifyBtn.textContent;
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = 'Verifying...';
 
         try {
-            const result = await api.executeProtocols(this.selectedConditions);
+            const result = await api.verifyProtocols(this.selectedConditions);
             const resultsByProtocolId = new Map(
                 (result?.results || []).map(r => [r.protocol_id, r])
             );
             this._displayResults(this.lastActivatedProtocols, resultsByProtocolId);
-            this.audit.lastExecuteAt = new Date();
-            this.audit.lastExecute = {
+            this.audit.lastVerifyAt = new Date();
+            this.audit.lastVerify = {
                 matched_conditions: result?.matched_conditions || Array.from(this.selectedConditions),
                 results: result?.results || [],
             };
             this._renderAudit();
         } catch (error) {
-            console.error('Execution failed:', error);
+            console.error('Verification failed:', error);
             const resultsSection = document.getElementById('results-section');
             const resultsContainer = document.getElementById('results');
             resultsSection.classList.remove('hidden');
             resultsContainer.innerHTML = `
                 <p style="color: var(--danger); font-size: 0.875rem;">
-                    Execution failed: ${error?.message || 'unknown error'}
+                    Verification failed: ${error?.message || 'unknown error'}
                 </p>
             `;
-            this._auditError('execute', error);
+            this._auditError('verify', error);
         } finally {
-            executeBtn.textContent = originalLabel;
-            this._setExecuteEnabled(this.lastActivatedProtocols.length > 0);
+            verifyBtn.textContent = originalLabel;
+            this._setVerifyEnabled(this.lastActivatedProtocols.length > 0);
         }
     }
 
@@ -160,14 +160,14 @@ class UIControls {
             this.audit.lastRouteAt = new Date();
             this.audit.lastRoute = { error: `${error?.message || 'unknown error'}` };
         } else {
-            this.audit.lastExecuteAt = new Date();
-            this.audit.lastExecute = { error: `${error?.message || 'unknown error'}` };
+            this.audit.lastVerifyAt = new Date();
+            this.audit.lastVerify = { error: `${error?.message || 'unknown error'}` };
         }
         this._renderAudit();
     }
 
-    _setExecuteEnabled(enabled) {
-        const btn = document.getElementById('execute-btn');
+    _setVerifyEnabled(enabled) {
+        const btn = document.getElementById('verify-btn');
         if (!btn) return;
         btn.disabled = !enabled;
     }
@@ -195,7 +195,7 @@ class UIControls {
         const activated = this.lastActivatedProtocols || [];
 
         const routeDone = Boolean(this.audit.lastRoute && !this.audit.lastRoute.error);
-        const executeDone = Boolean(this.audit.lastExecute && !this.audit.lastExecute.error);
+        const verifyDone = Boolean(this.audit.lastVerify && !this.audit.lastVerify.error);
 
         // "selected hyperedges" = hyperedges whose AND-conditions are fully satisfied by selection
         const selectedHyperedges = Array.from(this.protocolToConditions.values()).filter(
@@ -262,16 +262,16 @@ class UIControls {
                     : 'click “Route Patient”'),
             },
             {
-                key: 'execute',
+                key: 'verify',
                 label: 'Execute verifiers (placeholder)',
-                status: executeDone ? 'done' : (this.audit.lastExecute ? 'error' : 'pending'),
+                status: verifyDone ? 'done' : (this.audit.lastVerify ? 'error' : 'pending'),
                 icon: '4',
-                detail: executeDone ? (
-                    `time=${fmtTime(this.audit.lastExecuteAt) || '-'}\n` +
-                    `results_by_status=${JSON.stringify(summarizeStatuses(this.audit.lastExecute?.results || []))}`
-                ) : (this.audit.lastExecute?.error
-                    ? `time=${fmtTime(this.audit.lastExecuteAt) || '-'}\nerror=${this.audit.lastExecute.error}`
-                    : 'click “Execute Protocols” (enabled after routing)'),
+                detail: verifyDone ? (
+                    `time=${fmtTime(this.audit.lastVerifyAt) || '-'}\n` +
+                    `results_by_status=${JSON.stringify(summarizeStatuses(this.audit.lastVerify?.results || []))}`
+                ) : (this.audit.lastVerify?.error
+                    ? `time=${fmtTime(this.audit.lastVerifyAt) || '-'}\nerror=${this.audit.lastVerify.error}`
+                    : 'click “Execute Verifiers” (enabled after routing)'),
             },
         ];
 
@@ -353,10 +353,10 @@ class UIControls {
         this.selectedConditions.clear();
         this.lastActivatedProtocols = [];
         this.audit.lastRouteAt = null;
-        this.audit.lastExecuteAt = null;
+        this.audit.lastVerifyAt = null;
         this.audit.lastRoute = null;
-        this.audit.lastExecute = null;
-        this._setExecuteEnabled(false);
+        this.audit.lastVerify = null;
+        this._setVerifyEnabled(false);
         
         document.querySelectorAll('#condition-checkboxes input').forEach(cb => {
             cb.checked = false;
