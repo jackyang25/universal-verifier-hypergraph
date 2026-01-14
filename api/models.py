@@ -6,13 +6,14 @@ from typing import List, Optional, Set
 from pydantic import BaseModel, Field
 
 
-class AxiomPackResponse(BaseModel):
-    """Response model for axiom pack."""
+class ProtocolResponse(BaseModel):
+    """Response model for protocol."""
     
     id: str
     version: str
     name: str
     conditions: List[str]
+    guideline: Optional[str] = None
     description: Optional[str] = None
     last_reviewed: Optional[str] = None
     reviewer: Optional[str] = None
@@ -21,23 +22,25 @@ class AxiomPackResponse(BaseModel):
     approval_status: Optional[str] = None
 
 
-class AxiomPackCreate(BaseModel):
-    """Request model for creating an axiom pack."""
+class ProtocolCreate(BaseModel):
+    """Request model for creating an protocol."""
     
-    id: str = Field(..., description="Unique pack identifier")
+    id: str = Field(..., description="Unique protocol identifier")
     version: str = Field(default="1.0.0")
     name: str = Field(..., description="Human-readable name")
     conditions: Set[str] = Field(..., min_length=1, description="Required conditions")
+    guideline: Optional[str] = None
     description: Optional[str] = None
     last_reviewed: Optional[str] = None
 
 
-class AxiomPackUpdate(BaseModel):
-    """Request model for updating an axiom pack."""
+class ProtocolUpdate(BaseModel):
+    """Request model for updating an protocol."""
     
     version: Optional[str] = None
     name: Optional[str] = None
     conditions: Optional[Set[str]] = None
+    guideline: Optional[str] = None
     description: Optional[str] = None
     last_reviewed: Optional[str] = None
 
@@ -51,7 +54,7 @@ class RoutingRequest(BaseModel):
 class RoutingResponse(BaseModel):
     """Response model for routing results."""
     
-    activated_packs: List[AxiomPackResponse]
+    activated_protocols: List[ProtocolResponse]
     matched_conditions: List[str]
     timestamp: datetime
 
@@ -62,12 +65,12 @@ class GraphNode(BaseModel):
     id: str
     type: str
     active: bool
-    pack_count: int
-    packs: List[str]
+    protocol_count: int
+    protocols: List[str]
 
 
 class GraphHull(BaseModel):
-    """Hull (axiom pack) in the graph visualization."""
+    """Hull (protocol) in the graph visualization."""
     
     id: str
     name: str
@@ -84,9 +87,9 @@ class GraphMetadata(BaseModel):
     
     config_version: str
     total_conditions: int
-    total_packs: int
+    total_protocols: int
     active_conditions: Optional[List[str]] = None
-    activated_pack_ids: Optional[List[str]] = None
+    activated_protocol_ids: Optional[List[str]] = None
 
 
 class GraphExport(BaseModel):
@@ -100,7 +103,7 @@ class GraphExport(BaseModel):
 class GraphStructure(BaseModel):
     """Basic graph statistics."""
     
-    total_packs: int
+    total_protocols: int
     total_conditions: int
     config_version: str
 
@@ -110,3 +113,27 @@ class HealthResponse(BaseModel):
     
     status: str
     version: str
+
+
+class ExecuteRequest(BaseModel):
+    """Request model for executing activated protocols (placeholder)."""
+    
+    conditions: Set[str] = Field(..., description="Active patient conditions")
+
+
+class ExecuteProtocolResult(BaseModel):
+    """Execution result for a single protocol."""
+    
+    protocol_id: str
+    protocol_name: str
+    version: str
+    status: str
+    message: Optional[str] = None
+
+
+class ExecuteResponse(BaseModel):
+    """Response model for protocol execution (placeholder)."""
+    
+    matched_conditions: List[str]
+    results: List[ExecuteProtocolResult]
+    timestamp: datetime

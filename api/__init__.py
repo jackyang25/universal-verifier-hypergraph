@@ -1,1 +1,1 @@
-"""FastAPI application layer for Axiom Router."""
+"""FastAPI application layer for Protocol Router."""

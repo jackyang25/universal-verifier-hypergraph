@@ -4,18 +4,18 @@ from typing import TYPE_CHECKING, Optional
 import colorsys
 
 if TYPE_CHECKING:
-    from axiom_router.hypergraph import AxiomRouter
+    from protocol_router.router import ProtocolRouter
 
 
 class D3Exporter:
     """Export hypergraph data for D3.js visualization."""
     
-    def __init__(self, router: "AxiomRouter") -> None:
+    def __init__(self, router: "ProtocolRouter") -> None:
         """
         Initialize exporter with router.
         
         Args:
-            router: AxiomRouter instance to export
+            router: ProtocolRouter instance to export
         """
         self.router = router
     
@@ -35,7 +35,7 @@ class D3Exporter:
             "metadata": {
                 "config_version": self.router.config_version,
                 "total_conditions": len(self.router.conditions),
-                "total_packs": self.router.pack_count,
+                "total_protocols": self.router.protocol_count,
             },
         }
     
@@ -51,7 +51,7 @@ class D3Exporter:
         """
         nodes = self._build_nodes(active_conditions)
         hulls = self._build_hulls(active_conditions)
-        activated_packs = self.router.match(active_conditions)
+        activated_protocols = self.router.match(active_conditions)
         
         return {
             "nodes": nodes,
@@ -59,9 +59,9 @@ class D3Exporter:
             "metadata": {
                 "config_version": self.router.config_version,
                 "total_conditions": len(self.router.conditions),
-                "total_packs": self.router.pack_count,
+                "total_protocols": self.router.protocol_count,
                 "active_conditions": sorted(active_conditions),
-                "activated_pack_ids": [p.id for p in activated_packs],
+                "activated_protocol_ids": [p.id for p in activated_protocols],
             },
         }
     
@@ -71,9 +71,9 @@ class D3Exporter:
         nodes = []
         
         for condition in sorted(self.router.conditions):
-            # find packs that include this condition
-            pack_ids = [
-                p.id for p in self.router.packs 
+            # find protocols that include this condition
+            protocol_ids = [
+                p.id for p in self.router.protocols
                 if condition in p.conditions
             ]
             
@@ -81,8 +81,8 @@ class D3Exporter:
                 "id": condition,
                 "type": "condition",
                 "active": condition in active,
-                "pack_count": len(pack_ids),
-                "packs": pack_ids,
+                "protocol_count": len(protocol_ids),
+                "protocols": protocol_ids,
             })
         
         return nodes
@@ -93,20 +93,20 @@ class D3Exporter:
         activated_ids = {p.id for p in self.router.match(active)} if active else set()
         
         hulls = []
-        colors = self._generate_colors(self.router.pack_count)
+        colors = self._generate_colors(self.router.protocol_count)
         
-        for i, pack in enumerate(sorted(self.router.packs, key=lambda p: p.id)):
-            is_active = pack.id in activated_ids
+        for i, protocol in enumerate(sorted(self.router.protocols, key=lambda p: p.id)):
+            is_active = protocol.id in activated_ids
             
             hulls.append({
-                "id": pack.id,
-                "name": pack.name,
-                "conditions": sorted(pack.conditions),
-                "condition_count": pack.condition_count,
-                "is_interaction": pack.is_interaction_pack,
+                "id": protocol.id,
+                "name": protocol.name,
+                "conditions": sorted(protocol.conditions),
+                "condition_count": protocol.condition_count,
+                "is_interaction": protocol.is_interaction_protocol,
                 "active": is_active,
                 "color": colors[i],
-                "version": pack.version,
+                "version": protocol.version,
             })
         
         return hulls

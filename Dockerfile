@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # copy application
-COPY axiom_router/ axiom_router/
+COPY protocol_router/ protocol_router/
 COPY api/ api/
 COPY config/ config/
 COPY playground/ playground/

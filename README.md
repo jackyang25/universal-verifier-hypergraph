@@ -1,6 +1,6 @@
-# Axiom Pack Router (Hypergraph Demo)
+# Clinical Protocol Router (Hypergraph Demo)
 
-Select patient conditions (e.g., `pregnant`, `diabetic`) and the system routes to the **relevant axiom packs**. The UI also shows **pack versioning + basic regulatory metadata** (country, authority, reviewer org, approval status) for demo purposes.
+Select patient conditions (e.g., `pregnant`, `diabetic`) and the system routes to the **relevant clinical protocols**. The UI also shows **protocol metadata** (version, guideline, basic regulatory fields) for demo purposes.
 
 ## Setup & Run
 
@@ -27,8 +27,8 @@ make logs
 
 - **Pick conditions** on the left.
 - Click **Route Patient**.
-- The sidebar shows **Activated Packs** (most specific packs first), including:
-  - version (e.g., `v1.2.0`)
+- The sidebar shows **Activated Protocols** (most specific first), including:
+  - version (e.g., `v1.2.0`) + guideline
   - country (e.g., `ZA`, `KE`, `UG`)
   - approval status (`approved` / `draft`)
   - regulatory authority + reviewer organization
@@ -36,24 +36,24 @@ make logs
 ## Key Concepts
 
 - **Conditions**: patient attributes like `pregnant`, `HIV_positive`, `diabetic`.
-- **Axiom Packs**: a named set of required conditions + metadata (version, review, country, etc.).
-- **Activation**: a pack activates when **all** its conditions are selected.
-- **Specificity**: packs with more conditions are considered more specific and appear first.
+- **Clinical Protocols**: a named set of required conditions + metadata (version, guideline, verifier, country, etc.).
+- **Activation**: a protocol activates when **all** its conditions are selected.
+- **Specificity**: protocols with more conditions are considered more specific and appear first.
 
-## Axiom Pack Config Format
+## Protocol Config Format
 
-Edit `config/axiom_packs.yaml`:
+Edit `config/clinical_protocols.yaml`:
 
 ```yaml
 metadata:
   config_version: "1.0.0"
   last_updated: "2025-01-13"
-  description: Demo axiom packs for routing
+  description: Demo clinical protocols for routing
 
-axiom_packs:
-  - id: diabetes_pack
+clinical_protocols:
+  - id: diabetes_protocol
     version: "1.0.0"
-    name: Diabetes Axiom Pack
+    name: Diabetes Clinical Protocol
     conditions: [diabetic]
     last_reviewed: "2024-10-20"
     reviewer: "SEMDSA Guidelines Committee"
@@ -62,9 +62,9 @@ axiom_packs:
     approval_status: "approved"
 ```
 
-## Editing the Demo Packs
+## Editing the Demo Protocols
 
-Edit `config/axiom_packs.yaml`, then restart:
+Edit `config/clinical_protocols.yaml`, then restart:
 
 ```bash
 make stop && make start
@@ -74,8 +74,8 @@ make stop && make start
 
 This service can run as a lightweight “routing API” inside a larger system:
 
-- **Agents**: send extracted conditions → get back activated packs (with version + regulatory metadata) to drive next steps, prompts, or guardrails.
-- **Other services**: call the API to retrieve axiom pack metadata and write activations into a knowledge graph, audit log, or reporting pipeline.
+- **Agents**: send extracted conditions → get back activated protocols (with version + guideline + regulatory metadata) to drive next steps, prompts, or guardrails.
+- **Other services**: call the API to retrieve protocol metadata and write activations into a knowledge graph, audit log, or reporting pipeline.
 
 Minimal example:
 

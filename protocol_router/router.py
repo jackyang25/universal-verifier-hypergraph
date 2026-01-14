@@ -1,31 +1,31 @@
 """
-Core hypergraph router for axiom pack matching.
+Core hypergraph router for clinical protocol activation.
 
 The hypergraph model:
 - Nodes: Patient conditions (e.g., 'pregnant', 'HIV_positive')
-- Hyperedges: Axiom pack activation rules (connecting multiple condition nodes)
+- Hyperedges: Clinical protocols (activation rules connecting one or more nodes)
 
-A hyperedge (axiom pack) activates when ALL its connected nodes (conditions)
+A hyperedge (protocol) activates when ALL its connected nodes (conditions)
 are present in the patient context.
 """
 
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Union
 
-from axiom_router.axiom_pack import AxiomPack
+from protocol_router.protocol import Protocol
 
 
-class AxiomRouter:
+class ProtocolRouter:
     """
-    Hypergraph-based router for matching patient conditions to axiom packs.
+    Hypergraph-based router for matching patient conditions to clinical protocols.
     
-    The router maintains a collection of axiom packs (hyperedges) and provides
+    The router maintains a collection of clinical protocols (hyperedges) and provides
     efficient matching against patient condition sets.
     
     Example:
-        >>> router = AxiomRouter()
-        >>> router.add_pack(AxiomPack(
-        ...     id="pregnancy_pack",
+        >>> router = ProtocolRouter()
+        >>> router.add_protocol(Protocol(
+        ...     id="pregnancy_protocol",
         ...     name="Pregnancy Guidelines",
         ...     conditions=frozenset({"pregnant"})
         ... ))
@@ -41,19 +41,19 @@ class AxiomRouter:
         config_last_updated: Optional[str] = None,
     ) -> None:
         """
-        Initialize an empty axiom router.
+        Initialize an empty clinical protocol router.
         
         Args:
             config_version: Version identifier for this router configuration
             config_description: Description of this configuration
             config_last_updated: Date when config was last updated (ISO format)
         """
-        self._packs: dict[str, AxiomPack] = {}
+        self._protocols: dict[str, Protocol] = {}
         self._config_version = config_version
         self._config_description = config_description
         self._config_last_updated = config_last_updated
         
-        # index: condition -> set of pack ids that include this condition
+        # index: condition -> set of protocol ids that include this condition
         self._condition_index: dict[str, set[str]] = {}
     
     @property
@@ -77,170 +77,170 @@ class AxiomRouter:
         return self._config_last_updated
     
     @property
-    def pack_count(self) -> int:
-        """Number of axiom packs registered."""
-        return len(self._packs)
+    def protocol_count(self) -> int:
+        """Number of clinical protocols registered."""
+        return len(self._protocols)
     
     @property
     def conditions(self) -> frozenset[str]:
-        """All unique conditions across all packs."""
+        """All unique conditions across all protocols."""
         return frozenset(self._condition_index.keys())
     
     @property
-    def packs(self) -> list[AxiomPack]:
-        """List of all registered axiom packs."""
-        return list(self._packs.values())
+    def protocols(self) -> list[Protocol]:
+        """List of all registered clinical protocols."""
+        return list(self._protocols.values())
     
     def get_all_conditions(self) -> set[str]:
-        """Get all unique conditions across all packs as a mutable set."""
+        """Get all unique conditions across all protocols as a mutable set."""
         return set(self._condition_index.keys())
     
-    def add_pack(self, pack: AxiomPack) -> None:
+    def add_protocol(self, protocol: Protocol) -> None:
         """
-        Register an axiom pack with the router.
+        Register a clinical protocol with the router.
         
         Args:
-            pack: AxiomPack to add
+            protocol: Protocol to add
             
         Raises:
-            ValueError: If a pack with the same id already exists
+            ValueError: If a protocol with the same id already exists
         """
-        if pack.id in self._packs:
-            raise ValueError(f"Pack with id '{pack.id}' already exists")
+        if protocol.id in self._protocols:
+            raise ValueError(f"Protocol with id '{protocol.id}' already exists")
         
-        self._packs[pack.id] = pack
+        self._protocols[protocol.id] = protocol
         
         # update condition index
-        for condition in pack.conditions:
+        for condition in protocol.conditions:
             if condition not in self._condition_index:
                 self._condition_index[condition] = set()
-            self._condition_index[condition].add(pack.id)
+            self._condition_index[condition].add(protocol.id)
     
-    def remove_pack(self, pack_id: str) -> Optional[AxiomPack]:
+    def remove_protocol(self, protocol_id: str) -> Optional[Protocol]:
         """
-        Remove an axiom pack from the router.
+        Remove a clinical protocol from the router.
         
         Args:
-            pack_id: ID of the pack to remove
+            protocol_id: ID of the protocol to remove
             
         Returns:
-            The removed pack, or None if not found
+            The removed protocol, or None if not found
         """
-        pack = self._packs.pop(pack_id, None)
-        if pack is None:
+        protocol = self._protocols.pop(protocol_id, None)
+        if protocol is None:
             return None
         
         # update condition index
-        for condition in pack.conditions:
-            self._condition_index[condition].discard(pack_id)
+        for condition in protocol.conditions:
+            self._condition_index[condition].discard(protocol_id)
             if not self._condition_index[condition]:
                 del self._condition_index[condition]
         
-        return pack
+        return protocol
     
-    def delete_pack(self, pack_id: str) -> bool:
+    def delete_protocol(self, protocol_id: str) -> bool:
         """
-        Delete an axiom pack from the router.
+        Delete a clinical protocol from the router.
         
         Args:
-            pack_id: ID of the pack to delete
+            protocol_id: ID of the protocol to delete
             
         Returns:
-            True if pack was deleted, False if not found
+            True if protocol was deleted, False if not found
         """
-        return self.remove_pack(pack_id) is not None
+        return self.remove_protocol(protocol_id) is not None
     
-    def update_pack(self, pack_id: str, updates: dict) -> Optional[AxiomPack]:
+    def update_protocol(self, protocol_id: str, updates: dict) -> Optional[Protocol]:
         """
-        Update an existing axiom pack.
+        Update an existing clinical protocol.
         
         Args:
-            pack_id: ID of the pack to update
+            protocol_id: ID of the protocol to update
             updates: Dictionary of fields to update
             
         Returns:
-            Updated AxiomPack if found, None otherwise
+            Updated Protocol if found, None otherwise
         """
-        existing = self._packs.get(pack_id)
+        existing = self._protocols.get(protocol_id)
         if existing is None:
             return None
         
-        # build updated pack data
-        pack_data = existing.to_dict()
-        pack_data.update({k: v for k, v in updates.items() if v is not None})
+        # build updated protocol data
+        protocol_data = existing.to_dict()
+        protocol_data.update({k: v for k, v in updates.items() if v is not None})
         
-        # remove old pack and add updated one
-        self.remove_pack(pack_id)
-        new_pack = AxiomPack.from_dict(pack_data)
-        self.add_pack(new_pack)
+        # remove old protocol and add updated one
+        self.remove_protocol(protocol_id)
+        new_protocol = Protocol.from_dict(protocol_data)
+        self.add_protocol(new_protocol)
         
-        return new_pack
+        return new_protocol
     
-    def add_pack_from_dict(self, data: dict) -> AxiomPack:
+    def add_protocol_from_dict(self, data: dict) -> Protocol:
         """
-        Create and add an axiom pack from a dictionary.
+        Create and add a clinical protocol from a dictionary.
         
         Args:
-            data: Dictionary with pack fields
+            data: Dictionary with protocol fields
             
         Returns:
-            The created AxiomPack
+            The created Protocol
         """
-        pack = AxiomPack.from_dict(data)
-        self.add_pack(pack)
-        return pack
+        protocol = Protocol.from_dict(data)
+        self.add_protocol(protocol)
+        return protocol
     
-    def get_pack(self, pack_id: str) -> Optional[AxiomPack]:
+    def get_protocol(self, protocol_id: str) -> Optional[Protocol]:
         """
-        Retrieve an axiom pack by ID.
+        Retrieve a clinical protocol by ID.
         
         Args:
-            pack_id: ID of the pack to retrieve
+            protocol_id: ID of the protocol to retrieve
             
         Returns:
-            The pack if found, None otherwise
+            The protocol if found, None otherwise
         """
-        return self._packs.get(pack_id)
+        return self._protocols.get(protocol_id)
     
-    def get_pack_version(self, pack_id: str) -> Optional[str]:
+    def get_protocol_version(self, protocol_id: str) -> Optional[str]:
         """
-        Get the version of a specific axiom pack.
+        Get the version of a specific clinical protocol.
         
         Args:
-            pack_id: ID of the pack to query
+            protocol_id: ID of the protocol to query
             
         Returns:
-            Version string if pack exists, None otherwise
+            Version string if protocol exists, None otherwise
         """
-        pack = self._packs.get(pack_id)
-        return pack.version if pack else None
+        protocol = self._protocols.get(protocol_id)
+        return protocol.version if protocol else None
     
-    def match(self, patient_conditions: set[str]) -> list[AxiomPack]:
+    def match(self, patient_conditions: set[str]) -> list[Protocol]:
         """
-        Find all axiom packs that activate for given patient conditions.
+        Find all clinical protocols that activate for given patient conditions.
         
-        A pack activates when ALL its conditions are present (exact matching).
+        A protocol activates when ALL its conditions are present (exact matching).
         
         Args:
             patient_conditions: Set of active patient conditions
             
         Returns:
-            List of activated axiom packs, ordered by condition count (most
+            List of activated protocols, ordered by condition count (most
             specific first), then by id for deterministic ordering
         """
-        activated: list[AxiomPack] = []
+        activated: list[Protocol] = []
         
-        # find candidate packs that share at least one condition
+        # find candidate protocols that share at least one condition
         candidate_ids: set[str] = set()
         for condition in patient_conditions:
             if condition in self._condition_index:
                 candidate_ids.update(self._condition_index[condition])
         
         # check each candidate for full match
-        for pack_id in candidate_ids:
-            pack = self._packs[pack_id]
-            if pack.matches(patient_conditions):
-                activated.append(pack)
+        for protocol_id in candidate_ids:
+            protocol = self._protocols[protocol_id]
+            if protocol.matches(patient_conditions):
+                activated.append(protocol)
         
         # sort: most specific (more conditions) first, then by id
         activated.sort(key=lambda p: (-p.condition_count, p.id))
@@ -249,21 +249,21 @@ class AxiomRouter:
     
     def match_ids(self, patient_conditions: set[str]) -> list[str]:
         """
-        Find IDs of all axiom packs that activate for given conditions.
+        Find IDs of all clinical protocols that activate for given conditions.
         
-        Convenience method returning just pack IDs.
+        Convenience method returning just protocol IDs.
         
         Args:
             patient_conditions: Set of active patient conditions
             
         Returns:
-            List of activated pack IDs
+            List of activated protocol IDs
         """
         return [p.id for p in self.match(patient_conditions)]
     
-    def iter_packs(self) -> Iterator[AxiomPack]:
-        """Iterate over all registered axiom packs."""
-        yield from self._packs.values()
+    def iter_protocols(self) -> Iterator[Protocol]:
+        """Iterate over all registered clinical protocols."""
+        yield from self._protocols.values()
     
     def to_dict(self) -> dict:
         """
@@ -276,7 +276,7 @@ class AxiomRouter:
             "metadata": {
                 "config_version": self._config_version,
             },
-            "axiom_packs": [pack.to_dict() for pack in self._packs.values()],
+            "clinical_protocols": [p.to_dict() for p in self._protocols.values()],
         }
         
         if self._config_description:
@@ -288,35 +288,35 @@ class AxiomRouter:
     
     def export_version_manifest(self) -> dict:
         """
-        Export version information for all packs for audit logging.
+        Export version information for all protocols for audit logging.
         
         Returns:
-            Dictionary with config version and all pack versions
+            Dictionary with config version and all protocol versions
         """
         return {
             "config_version": self._config_version,
             "last_updated": self._config_last_updated,
-            "packs": {
-                pack.id: {
-                    "version": pack.version,
-                    "last_reviewed": pack.last_reviewed,
+            "protocols": {
+                p.id: {
+                    "version": p.version,
+                    "last_reviewed": p.last_reviewed,
                 }
-                for pack in sorted(self._packs.values(), key=lambda p: p.id)
+                for p in sorted(self._protocols.values(), key=lambda p: p.id)
             },
         }
     
     @classmethod
-    def from_dict(cls, data: dict) -> "AxiomRouter":
+    def from_dict(cls, data: dict) -> "ProtocolRouter":
         """
-        Create an AxiomRouter from a dictionary.
+        Create a ProtocolRouter from a dictionary.
         
-        Supports both old format (version at root) and new format (metadata block).
+        Supports multiple config formats for backwards compatibility.
         
         Args:
             data: Dictionary with router configuration
             
         Returns:
-            New AxiomRouter instance
+            New ProtocolRouter instance
         """
         # support both old and new config formats
         metadata = data.get("metadata", {})
@@ -332,15 +332,19 @@ class AxiomRouter:
             config_last_updated=config_last_updated,
         )
         
-        packs_data = data.get("axiom_packs", [])
-        for pack_data in packs_data:
-            pack = AxiomPack.from_dict(pack_data)
-            router.add_pack(pack)
+        # support multiple config key names for backwards compatibility
+        protocols_data = (
+            data.get("clinical_protocols") or 
+            []
+        )
+        for protocol_data in protocols_data:
+            protocol = Protocol.from_dict(protocol_data)
+            router.add_protocol(protocol)
         
         return router
     
     @classmethod
-    def from_config(cls, path: str | Path) -> "AxiomRouter":
+    def from_config(cls, path: Union[str, Path]) -> "ProtocolRouter":
         """
         Load router from a YAML or JSON config file.
         
@@ -348,13 +352,13 @@ class AxiomRouter:
             path: Path to config file (.yaml, .yml, or .json)
             
         Returns:
-            New AxiomRouter instance
+            New ProtocolRouter instance
             
         Raises:
             ValueError: If file extension is not supported
             FileNotFoundError: If config file doesn't exist
         """
-        from axiom_router.loader import load_from_json, load_from_yaml
+        from protocol_router.loader import load_from_json, load_from_yaml
         
         path = Path(path)
         
@@ -365,14 +369,14 @@ class AxiomRouter:
         else:
             raise ValueError(f"Unsupported config file extension: {path.suffix}")
     
-    def save_config(self, path: str | Path) -> None:
+    def save_config(self, path: Union[str, Path]) -> None:
         """
         Save router configuration to a file.
         
         Args:
             path: Path to save config file (.yaml, .yml, or .json)
         """
-        from axiom_router.loader import save_to_json, save_to_yaml
+        from protocol_router.loader import save_to_json, save_to_yaml
         
         path = Path(path)
         
@@ -389,7 +393,7 @@ class AxiomRouter:
         
         Returns a representation showing:
         - All nodes (conditions) in the hypergraph
-        - All hyperedges (axiom packs) with their connected nodes
+        - All hyperedges (clinical protocols) with their connected nodes
         
         Returns:
             Dictionary with hypergraph structure
@@ -398,20 +402,20 @@ class AxiomRouter:
             "nodes": sorted(self.conditions),
             "hyperedges": [
                 {
-                    "id": pack.id,
-                    "name": pack.name,
-                    "nodes": sorted(pack.conditions),
+                    "id": p.id,
+                    "name": p.name,
+                    "nodes": sorted(p.conditions),
                 }
-                for pack in sorted(self._packs.values(), key=lambda p: p.id)
+                for p in sorted(self._protocols.values(), key=lambda p: p.id)
             ],
         }
     
     def __len__(self) -> int:
-        return len(self._packs)
+        return len(self._protocols)
     
-    def __contains__(self, pack_id: str) -> bool:
-        return pack_id in self._packs
+    def __contains__(self, protocol_id: str) -> bool:
+        return protocol_id in self._protocols
     
     def __repr__(self) -> str:
-        return f"AxiomRouter(config_version={self._config_version!r}, packs={self.pack_count})"
+        return f"ProtocolRouter(config_version={self._config_version!r}, protocols={self.protocol_count})"
 

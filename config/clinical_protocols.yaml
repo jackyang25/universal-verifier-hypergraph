@@ -1,19 +1,23 @@
-# Axiom Pack Configuration
+# Clinical Protocol Configuration
 #
-# Each axiom pack defines a hyperedge in the condition graph.
-# A pack activates when ALL its conditions are present in the patient context.
+# Each protocol defines a hyperedge in the condition graph.
+# A protocol activates when ALL its conditions are present in the patient context.
+# Each protocol includes: verifier, guideline, conditions, and regulatory metadata.
 
 metadata:
   config_version: "1.0.0"
   last_updated: "2025-01-13"
-  description: "Medical axiom pack routing configuration"
+  description: "Clinical protocol routing configuration"
 
-axiom_packs:
-  # Single-condition packs
-  - id: pregnancy_pack
+clinical_protocols:
+  # Single-condition protocols
+  - id: pregnancy_protocol
     version: "1.2.0"
-    name: Pregnancy Axiom Pack
-    description: Base axioms for pregnant patients
+    name: Pregnancy Clinical Protocol
+    description: Clinical protocol for pregnant patients
+    
+    verifier: "pregnancy_verifier.py"
+    guideline: "ZA Antenatal Care Guideline (Demo)"
     conditions:
       - pregnant
     last_reviewed: "2024-12-01"
@@ -22,10 +26,13 @@ axiom_packs:
     regulatory_body: "SAHPRA"
     approval_status: "approved"
 
-  - id: hiv_pack
+  - id: hiv_protocol
     version: "1.1.0"
-    name: HIV Axiom Pack
-    description: Base axioms for HIV-positive patients
+    name: HIV Clinical Protocol
+    description: Clinical protocol for HIV-positive patients
+    
+    verifier: "hiv_verifier.py"
+    guideline: "ZA HIV Treatment Guideline (Demo)"
     conditions:
       - HIV_positive
     last_reviewed: "2024-11-15"
@@ -34,10 +41,12 @@ axiom_packs:
     regulatory_body: "SANAC"
     approval_status: "approved"
 
-  - id: diabetes_pack
+  - id: diabetes_protocol
     version: "1.0.0"
-    name: Diabetes Axiom Pack
-    description: Base axioms for diabetic patients
+    name: Diabetes Clinical Protocol
+    description: Clinical protocol for diabetic patients
+    verifier: "diabetes_protocol.py"
+    guideline: "ZA Diabetes Management Guideline (Demo)"
     conditions:
       - diabetic
     last_reviewed: "2024-10-20"
@@ -46,10 +55,12 @@ axiom_packs:
     regulatory_body: "SEMDSA"
     approval_status: "approved"
 
-  - id: hypertension_pack
+  - id: hypertension_protocol
     version: "1.0.0"
-    name: Hypertension Axiom Pack
-    description: Base axioms for patients with hypertension
+    name: Hypertension Clinical Protocol
+    description: Clinical protocol for patients with hypertension
+    verifier: "hypertension_protocol.py"
+    guideline: "ZA Hypertension Guideline (Demo)"
     conditions:
       - hypertensive
     last_reviewed: "2024-10-20"
@@ -58,10 +69,12 @@ axiom_packs:
     regulatory_body: "SAHA"
     approval_status: "approved"
 
-  - id: elderly_pack
+  - id: elderly_protocol
     version: "1.0.0"
-    name: Elderly Axiom Pack
-    description: Axioms for patients over 65
+    name: Elderly Clinical Protocol
+    description: Clinical protocol for patients over 65
+    verifier: "elderly_protocol.py"
+    guideline: "ZA Older Persons Care Guideline (Demo)"
     conditions:
       - age_over_65
     last_reviewed: "2024-09-15"
@@ -70,10 +83,12 @@ axiom_packs:
     regulatory_body: "NDoH"
     approval_status: "approved"
 
-  - id: pediatric_pack
+  - id: pediatric_protocol
     version: "1.0.0"
-    name: Pediatric Axiom Pack
-    description: Axioms for pediatric patients
+    name: Pediatric Clinical Protocol
+    description: Clinical protocol for pediatric patients
+    verifier: "pediatric_protocol.py"
+    guideline: "KE Pediatric Care Guideline (Demo)"
     conditions:
       - pediatric
     last_reviewed: "2024-09-15"
@@ -82,11 +97,13 @@ axiom_packs:
     regulatory_body: "PPB Kenya"
     approval_status: "approved"
 
-  # Multi-condition packs
+  # Multi-condition protocols
   - id: pregnancy_hiv_interaction
     version: "1.0.0"
-    name: Pregnancy + HIV Axiom Pack
+    name: Pregnancy + HIV Clinical Protocol
     description: Special considerations for pregnant HIV-positive patients
+    verifier: "pregnancy_hiv_interaction.py"
+    guideline: "ZA PMTCT Guideline (Demo)"
     conditions:
       - pregnant
       - HIV_positive
@@ -98,8 +115,10 @@ axiom_packs:
 
   - id: pregnancy_diabetes_interaction
     version: "1.0.0"
-    name: Pregnancy + Diabetes Axiom Pack
+    name: Pregnancy + Diabetes Clinical Protocol
     description: Gestational diabetes and diabetic pregnancy management
+    verifier: "pregnancy_diabetes_interaction.py"
+    guideline: "ZA Gestational Diabetes Guideline (Demo)"
     conditions:
       - pregnant
       - diabetic
@@ -111,8 +130,10 @@ axiom_packs:
 
   - id: pregnancy_hypertension_interaction
     version: "1.0.0"
-    name: Pregnancy + Hypertension Axiom Pack
+    name: Pregnancy + Hypertension Clinical Protocol
     description: Preeclampsia risk and hypertensive pregnancy management
+    verifier: "pregnancy_hypertension_interaction.py"
+    guideline: "ZA Hypertensive Disorders in Pregnancy Guideline (Demo)"
     conditions:
       - pregnant
       - hypertensive
@@ -124,8 +145,10 @@ axiom_packs:
 
   - id: diabetes_hypertension_interaction
     version: "1.0.0"
-    name: Diabetes + Hypertension Axiom Pack
+    name: Diabetes + Hypertension Clinical Protocol
     description: Combined cardiovascular risk management
+    verifier: "diabetes_hypertension_interaction.py"
+    guideline: "KE Cardio-Metabolic Risk Guideline (Demo)"
     conditions:
       - diabetic
       - hypertensive
@@ -137,8 +160,10 @@ axiom_packs:
 
   - id: elderly_diabetes_interaction
     version: "1.0.0"
-    name: Elderly + Diabetes Axiom Pack
+    name: Elderly + Diabetes Clinical Protocol
     description: Age-adjusted diabetes management
+    verifier: "elderly_diabetes_interaction.py"
+    guideline: "UG Diabetes in Older Adults Guideline (Demo)"
     conditions:
       - age_over_65
       - diabetic
@@ -148,11 +173,13 @@ axiom_packs:
     regulatory_body: "NDA Uganda"
     approval_status: "draft"
 
-  # Triple condition pack
+  # Triple condition protocol
   - id: pregnancy_hiv_diabetes_interaction
     version: "1.0.0"
-    name: Pregnancy + HIV + Diabetes Axiom Pack
+    name: Pregnancy + HIV + Diabetes Clinical Protocol
     description: Complex multi-morbidity management for pregnant HIV+ diabetic patients
+    verifier: "pregnancy_hiv_diabetes_interaction.py"
+    guideline: "ZA Complex Antenatal Co-morbidity Guideline (Demo)"
     conditions:
       - pregnant
       - HIV_positive

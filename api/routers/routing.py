@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
-from axiom_router import AxiomRouter
-from api.dependencies import get_router_dependency
+from protocol_router import ProtocolRouter
+from api.dependencies import get_protocol_router_dependency
 from api.models import RoutingRequest, RoutingResponse
 
 router = APIRouter()
@@ -14,17 +14,17 @@ router = APIRouter()
 @router.post("/match", response_model=RoutingResponse)
 def route_patient(
     request: RoutingRequest,
-    axiom_router: AxiomRouter = Depends(get_router_dependency),
+    protocol_router: ProtocolRouter = Depends(get_protocol_router_dependency),
 ):
     """
-    Route patient conditions to appropriate axiom packs.
+    Route patient conditions to appropriate protocols.
     
-    Returns all activated packs ordered by specificity.
+    Returns all activated protocols ordered by specificity.
     """
-    activated = axiom_router.match(request.conditions)
+    activated = protocol_router.match(request.conditions)
     
     return RoutingResponse(
-        activated_packs=[pack.to_dict() for pack in activated],
+        activated_protocols=[protocol.to_dict() for protocol in activated],
         matched_conditions=sorted(request.conditions),
         timestamp=datetime.now(timezone.utc),
     )

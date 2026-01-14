@@ -1,7 +1,7 @@
 /**
- * API client for Axiom Router backend
+ * API client for Clinical Protocol Router backend
  */
-class AxiomRouterAPI {
+class ProtocolRouterAPI {
     constructor(baseURL = '/api') {
         this.baseURL = baseURL;
     }
@@ -39,37 +39,37 @@ class AxiomRouterAPI {
         return this._fetch('/graph/structure');
     }
 
-    // Pack endpoints
-    async getAllPacks() {
-        return this._fetch('/packs/');
+    // Protocol endpoints
+    async getAllProtocols() {
+        return this._fetch('/protocols/');
     }
 
-    async getPack(packId) {
-        return this._fetch(`/packs/${packId}`);
+    async getProtocol(protocolId) {
+        return this._fetch(`/protocols/${protocolId}`);
     }
 
-    async createPack(packData) {
-        return this._fetch('/packs/', {
+    async createProtocol(protocolData) {
+        return this._fetch('/protocols/', {
             method: 'POST',
-            body: JSON.stringify(packData),
+            body: JSON.stringify(protocolData),
         });
     }
 
-    async updatePack(packId, updates) {
-        return this._fetch(`/packs/${packId}`, {
+    async updateProtocol(protocolId, updates) {
+        return this._fetch(`/protocols/${protocolId}`, {
             method: 'PUT',
             body: JSON.stringify(updates),
         });
     }
 
-    async deletePack(packId) {
-        return this._fetch(`/packs/${packId}`, {
+    async deleteProtocol(protocolId) {
+        return this._fetch(`/protocols/${protocolId}`, {
             method: 'DELETE',
         });
     }
 
     async reloadConfig() {
-        return this._fetch('/packs/reload', {
+        return this._fetch('/protocols/reload', {
             method: 'POST',
         });
     }
@@ -84,6 +84,16 @@ class AxiomRouterAPI {
         });
     }
 
+    // Execution (placeholder until verifiers are implemented)
+    async executeProtocols(conditions) {
+        return this._fetch('/execute/run', {
+            method: 'POST',
+            body: JSON.stringify({
+                conditions: Array.from(conditions),
+            }),
+        });
+    }
+
     // Health
     async health() {
         return this._fetch('/health');
@@ -91,4 +101,4 @@ class AxiomRouterAPI {
 }
 
 // export singleton
-const api = new AxiomRouterAPI();
+const api = new ProtocolRouterAPI();

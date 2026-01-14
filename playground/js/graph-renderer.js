@@ -1,6 +1,6 @@
 /**
  * D3.js Hypergraph Renderer
- * Clean, consistent visualization of axiom pack relationships
+ * Clean, consistent visualization of clinical protocol relationships
  */
 class HypergraphRenderer {
     constructor(containerId) {
@@ -15,6 +15,22 @@ class HypergraphRenderer {
         
         this._setupSVG();
         this._setupResize();
+    }
+
+    _positionTooltipAboveElement(el) {
+        const viz = document.getElementById('visualization');
+        const tooltipNode = this.tooltip?.node?.();
+        if (!viz || !el || !tooltipNode) return;
+
+        const vizRect = viz.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const tipRect = tooltipNode.getBoundingClientRect();
+        const offset = 8;
+
+        const x = (elRect.left - vizRect.left) + (elRect.width / 2) - (tipRect.width / 2);
+        const y = (elRect.top - vizRect.top) - tipRect.height - offset;
+
+        this.tooltip.style('left', `${x}px`).style('top', `${y}px`);
     }
 
     _setupSVG() {
@@ -232,15 +248,14 @@ class HypergraphRenderer {
     _showTooltip(event, d) {
         this.tooltip
             .classed('hidden', false)
-            .style('left', `${event.pageX + 12}px`)
-            .style('top', `${event.pageY + 12}px`)
             .html(`
                 <div class="title">${d.id}</div>
                 <div class="info">
-                    In ${d.pack_count} axiom pack${d.pack_count !== 1 ? 's' : ''}<br>
+                        In ${d.protocol_count} protocol${d.protocol_count !== 1 ? 's' : ''}<br>
                     Status: ${d.active ? '<strong>Active</strong>' : 'Inactive'}
                 </div>
             `);
+        this._positionTooltipAboveElement(event.currentTarget);
     }
 
     _hideTooltip() {
@@ -306,7 +321,7 @@ class HypergraphRenderer {
     }
 
     _applyNodeStyles() {
-        // find the most specific active pack for each active node
+        // find the most specific active protocol for each active node
         const nodeColors = new Map();
         
         // get active hulls sorted by condition count (most specific first)
@@ -314,7 +329,7 @@ class HypergraphRenderer {
             .filter(h => h.active)
             .sort((a, b) => b.conditions.length - a.conditions.length);
         
-        // assign each active node the color of its most specific pack
+        // assign each active node the color of its most specific protocol
         activeHulls.forEach(hull => {
             hull.conditions.forEach(cond => {
                 if (!nodeColors.has(cond)) {

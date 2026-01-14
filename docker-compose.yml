@@ -5,11 +5,11 @@ services:
       - "8000:8000"
     volumes:
       - ./config:/app/config
-      - ./axiom_router:/app/axiom_router
+      - ./protocol_router:/app/protocol_router
       - ./api:/app/api
       - ./playground:/app/playground
     environment:
       - ENV=development
-      - CONFIG_PATH=config/axiom_packs.yaml
+      - CONFIG_PATH=config/clinical_protocols.yaml
       - CORS_ORIGINS=*
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload

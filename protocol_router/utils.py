@@ -1,10 +1,10 @@
-"""Utility functions for axiom router."""
+"""Utility functions for protocol router."""
 
 from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
-    from axiom_router.axiom_pack import AxiomPack
-    from axiom_router.hypergraph import AxiomRouter
+    from protocol_router.protocol import Protocol
+    from protocol_router.router import ProtocolRouter
 
 
 def normalize_conditions(conditions: Iterable[str]) -> frozenset[str]:
@@ -30,33 +30,33 @@ def normalize_conditions(conditions: Iterable[str]) -> frozenset[str]:
     return result
 
 
-def find_interaction_packs(router: "AxiomRouter") -> list["AxiomPack"]:
+def find_interaction_protocols(router: "ProtocolRouter") -> list["Protocol"]:
     """
-    Find all interaction packs (packs requiring multiple conditions).
+    Find all interaction protocols (protocols requiring multiple conditions).
     
     Args:
-        router: AxiomRouter to search
+        router: ProtocolRouter to search
         
     Returns:
-        List of axiom packs that are interaction packs
+        List of protocols that are interaction protocols
     """
-    return [pack for pack in router.iter_packs() if pack.is_interaction_pack]
+    return [protocol for protocol in router.iter_protocols() if protocol.is_interaction_protocol]
 
 
-def find_packs_for_condition(router: "AxiomRouter", condition: str) -> list["AxiomPack"]:
+def find_protocols_for_condition(router: "ProtocolRouter", condition: str) -> list["Protocol"]:
     """
-    Find all packs that include a specific condition.
+    Find all protocols that include a specific condition.
     
     Args:
-        router: AxiomRouter to search
+        router: ProtocolRouter to search
         condition: Condition to search for
         
     Returns:
-        List of axiom packs containing the condition
+        List of protocols containing the condition
     """
     return [
-        pack for pack in router.iter_packs() 
-        if condition in pack.conditions
+        protocol for protocol in router.iter_protocols() 
+        if condition in protocol.conditions
     ]
 
 
@@ -90,14 +90,14 @@ def validate_patient_conditions(conditions: set[str]) -> list[str]:
 
 
 def compute_coverage(
-    router: "AxiomRouter", 
+    router: "ProtocolRouter", 
     patient_conditions: set[str]
 ) -> dict:
     """
     Compute coverage statistics for a patient's conditions.
     
     Args:
-        router: AxiomRouter to analyze
+        router: ProtocolRouter to analyze
         patient_conditions: Set of patient conditions
         
     Returns:
@@ -105,22 +105,22 @@ def compute_coverage(
     """
     activated = router.match(patient_conditions)
     
-    # find conditions that don't match any pack
-    all_pack_conditions = router.conditions
-    unrecognized = patient_conditions - all_pack_conditions
-    recognized = patient_conditions & all_pack_conditions
+    # find conditions that don't match any protocol
+    all_protocol_conditions = router.conditions
+    unrecognized = patient_conditions - all_protocol_conditions
+    recognized = patient_conditions & all_protocol_conditions
     
     return {
         "total_patient_conditions": len(patient_conditions),
         "recognized_conditions": len(recognized),
         "unrecognized_conditions": sorted(unrecognized),
-        "activated_packs": len(activated),
-        "activated_pack_ids": [p.id for p in activated],
-        "interaction_packs_activated": sum(1 for p in activated if p.is_interaction_pack),
+        "activated_protocols": len(activated),
+        "activated_protocol_ids": [p.id for p in activated],
+        "interaction_protocols_activated": sum(1 for p in activated if p.is_interaction_protocol),
     }
 
 
-def diff_routers(router_a: "AxiomRouter", router_b: "AxiomRouter") -> dict:
+def diff_routers(router_a: "ProtocolRouter", router_b: "ProtocolRouter") -> dict:
     """
     Compare two router configurations.
     
@@ -131,20 +131,20 @@ def diff_routers(router_a: "AxiomRouter", router_b: "AxiomRouter") -> dict:
     Returns:
         Dictionary describing differences
     """
-    packs_a = {p.id: p for p in router_a.iter_packs()}
-    packs_b = {p.id: p for p in router_b.iter_packs()}
+    protocols_a = {p.id: p for p in router_a.iter_protocols()}
+    protocols_b = {p.id: p for p in router_b.iter_protocols()}
     
-    ids_a = set(packs_a.keys())
-    ids_b = set(packs_b.keys())
+    ids_a = set(protocols_a.keys())
+    ids_b = set(protocols_b.keys())
     
     added = ids_b - ids_a
     removed = ids_a - ids_b
     common = ids_a & ids_b
     
     modified = []
-    for pack_id in common:
-        if packs_a[pack_id].to_dict() != packs_b[pack_id].to_dict():
-            modified.append(pack_id)
+    for protocol_id in common:
+        if protocols_a[protocol_id].to_dict() != protocols_b[protocol_id].to_dict():
+            modified.append(protocol_id)
     
     return {
         "added": sorted(added),

@@ -15,7 +15,7 @@
         // initialize controls
         await controls.initialize(graphData);
         
-        console.log('Axiom Router initialized');
+        console.log('Clinical Protocol Router initialized');
     } catch (error) {
         console.error('Failed to initialize:', error);
         document.getElementById('visualization').innerHTML = `

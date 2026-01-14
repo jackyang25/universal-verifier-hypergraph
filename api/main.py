@@ -6,18 +6,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.requests import Request
+from starlette.responses import Response
 
-from api.routers import graph, packs, routing
+from api.routers import execute, graph, protocols, routing
 from api.models import HealthResponse
-from axiom_router import __version__ as router_version
+from protocol_router import __version__ as router_version
 
 # configuration
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 ENV = os.getenv("ENV", "development")
 
 app = FastAPI(
-    title="Axiom Pack Router API",
-    description="Hypergraph-based medical decision support routing",
+    title="Clinical Protocol Router API",
+    description="Hypergraph-based clinical protocol routing",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -33,10 +35,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def disable_cache_in_dev(request: Request, call_next):
+    """Disable browser caching in development (helps with Safari localhost caching)."""
+    response: Response = await call_next(request)
+    if ENV == "development" and (request.url.path == "/" or request.url.path.startswith("/static/")):
+        # be extra explicit for Safari
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # include API routers
 app.include_router(graph.router, prefix="/api/graph", tags=["graph"])
-app.include_router(packs.router, prefix="/api/packs", tags=["axiom-packs"])
+app.include_router(protocols.router, prefix="/api/protocols", tags=["protocols"])
 app.include_router(routing.router, prefix="/api/routing", tags=["routing"])
+app.include_router(execute.router, prefix="/api/execute", tags=["execute"])
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["health"])

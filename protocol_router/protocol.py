@@ -1,4 +1,4 @@
-"""Axiom pack data model."""
+"""Clinical protocol data model."""
 
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -6,25 +6,27 @@ from typing import FrozenSet, Optional
 
 
 @dataclass(frozen=True)
-class AxiomPack:
+class Protocol:
     """
-    Represents an axiom pack that activates based on patient conditions.
+    Represents a clinical protocol that activates based on patient conditions.
     
-    An axiom pack defines a set of guidelines or rules that become active
+    A clinical protocol defines verifiers, guidelines, and rules that activate
     when ALL required conditions are present in the patient context.
     
     Attributes:
-        id: Unique identifier for the axiom pack
+        id: Unique identifier for the protocol
         name: Human-readable name
         conditions: Set of conditions required for activation (hyperedge nodes)
-        version: Version string for tracking changes to this pack
+        version: Version string for tracking changes to this protocol
+        verifier: Verifier executable/module associated with this protocol
+        guideline: Guideline reference/name this protocol was derived from
         description: Optional detailed description
-        last_reviewed: Date when pack was last reviewed (ISO format: YYYY-MM-DD)
-        reviewer: Name/ID of person or entity who reviewed the pack
-        country: Jurisdiction/country where pack is applicable (ISO 3166-1)
-        regulatory_body: Regulatory authority that approved the pack
+        last_reviewed: Date when protocol was last reviewed (ISO format: YYYY-MM-DD)
+        reviewer: Name/ID of person or entity who reviewed the protocol
+        country: Jurisdiction/country where protocol is applicable (ISO 3166-1)
+        regulatory_body: Regulatory authority that approved the protocol
         approval_status: Current approval status (draft, approved, deprecated)
-        created_at: Timestamp when pack was defined
+        created_at: Timestamp when protocol was defined
         metadata: Additional key-value pairs for extensibility
     """
     
@@ -32,6 +34,8 @@ class AxiomPack:
     name: str
     conditions: FrozenSet[str]
     version: str = "1.0.0"
+    verifier: Optional[str] = None
+    guideline: Optional[str] = None
     description: str = ""
     last_reviewed: Optional[str] = None
     reviewer: Optional[str] = None
@@ -42,17 +46,17 @@ class AxiomPack:
     metadata: tuple = field(default_factory=tuple)  # tuple of (key, value) pairs for immutability
     
     def __post_init__(self) -> None:
-        """Validate axiom pack on creation."""
+        """Validate protocol on creation."""
         if not self.id:
-            raise ValueError("AxiomPack id cannot be empty")
+            raise ValueError("Protocol id cannot be empty")
         if not self.name:
-            raise ValueError("AxiomPack name cannot be empty")
+            raise ValueError("Protocol name cannot be empty")
         if not self.conditions:
-            raise ValueError("AxiomPack must have at least one condition")
+            raise ValueError("Protocol must have at least one condition")
     
     def matches(self, patient_conditions: set[str]) -> bool:
         """
-        Check if this axiom pack should activate for given patient conditions.
+        Check if this protocol should activate for given patient conditions.
         
         Exact matching: activates only if ALL conditions are present.
         
@@ -70,13 +74,13 @@ class AxiomPack:
         return len(self.conditions)
     
     @property
-    def is_interaction_pack(self) -> bool:
-        """True if this pack requires multiple conditions (interaction pack)."""
+    def is_interaction_protocol(self) -> bool:
+        """True if this protocol requires multiple conditions (interaction protocol)."""
         return self.condition_count > 1
     
     def to_dict(self) -> dict:
         """
-        Serialize axiom pack to dictionary for JSON/YAML export.
+        Serialize protocol to dictionary for JSON/YAML export.
         
         Returns:
             Dictionary representation suitable for serialization
@@ -91,6 +95,10 @@ class AxiomPack:
         # only include optional fields if they have values
         if self.description:
             result["description"] = self.description
+        if self.verifier:
+            result["verifier"] = self.verifier
+        if self.guideline:
+            result["guideline"] = self.guideline
         if self.last_reviewed:
             result["last_reviewed"] = self.last_reviewed
         if self.reviewer:
@@ -109,15 +117,15 @@ class AxiomPack:
         return result
     
     @classmethod
-    def from_dict(cls, data: dict) -> "AxiomPack":
+    def from_dict(cls, data: dict) -> "Protocol":
         """
-        Create an AxiomPack from a dictionary.
+        Create a Protocol from a dictionary.
         
         Args:
-            data: Dictionary with axiom pack fields
+            data: Dictionary with protocol fields
             
         Returns:
-            New AxiomPack instance
+            New Protocol instance
             
         Raises:
             ValueError: If required fields are missing or invalid
@@ -152,6 +160,8 @@ class AxiomPack:
             name=data["name"],
             conditions=conditions,
             version=data.get("version", "1.0.0"),
+            verifier=data.get("verifier"),
+            guideline=data.get("guideline"),
             description=data.get("description", ""),
             last_reviewed=data.get("last_reviewed"),
             reviewer=data.get("reviewer"),
@@ -164,4 +174,4 @@ class AxiomPack:
     
     def __repr__(self) -> str:
         conditions_str = ", ".join(sorted(self.conditions))
-        return f"AxiomPack(id={self.id!r}, name={self.name!r}, conditions={{{conditions_str}}})"
+        return f"Protocol(id={self.id!r}, name={self.name!r}, conditions={{{conditions_str}}})"

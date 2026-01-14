@@ -1,22 +1,22 @@
-"""Config file loading for axiom packs."""
+"""Config file loading for clinical protocols."""
 
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from axiom_router.hypergraph import AxiomRouter
+    from protocol_router.router import ProtocolRouter
 
 
-def load_from_yaml(path: str | Path) -> "AxiomRouter":
+def load_from_yaml(path: Union[str, Path]) -> "ProtocolRouter":
     """
-    Load axiom router configuration from a YAML file.
+    Load protocol router configuration from a YAML file.
     
     Args:
         path: Path to YAML config file
         
     Returns:
-        AxiomRouter populated with packs from config
+        ProtocolRouter populated with protocols from config
         
     Raises:
         FileNotFoundError: If config file doesn't exist
@@ -25,7 +25,7 @@ def load_from_yaml(path: str | Path) -> "AxiomRouter":
     """
     import yaml
     
-    from axiom_router.hypergraph import AxiomRouter
+    from protocol_router.router import ProtocolRouter
     
     path = Path(path)
     
@@ -35,25 +35,25 @@ def load_from_yaml(path: str | Path) -> "AxiomRouter":
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     
-    return AxiomRouter.from_dict(data)
+    return ProtocolRouter.from_dict(data)
 
 
-def load_from_json(path: str | Path) -> "AxiomRouter":
+def load_from_json(path: Union[str, Path]) -> "ProtocolRouter":
     """
-    Load axiom router configuration from a JSON file.
+    Load protocol router configuration from a JSON file.
     
     Args:
         path: Path to JSON config file
         
     Returns:
-        AxiomRouter populated with packs from config
+        ProtocolRouter populated with protocols from config
         
     Raises:
         FileNotFoundError: If config file doesn't exist
         json.JSONDecodeError: If JSON is malformed
         ValueError: If required fields are missing
     """
-    from axiom_router.hypergraph import AxiomRouter
+    from protocol_router.router import ProtocolRouter
     
     path = Path(path)
     
@@ -63,15 +63,15 @@ def load_from_json(path: str | Path) -> "AxiomRouter":
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     
-    return AxiomRouter.from_dict(data)
+    return ProtocolRouter.from_dict(data)
 
 
-def save_to_yaml(router: "AxiomRouter", path: str | Path) -> None:
+def save_to_yaml(router: "ProtocolRouter", path: Union[str, Path]) -> None:
     """
-    Export axiom router configuration to a YAML file.
+    Export protocol router configuration to a YAML file.
     
     Args:
-        router: AxiomRouter to export
+        router: ProtocolRouter to export
         path: Destination file path
     """
     import yaml
@@ -89,12 +89,12 @@ def save_to_yaml(router: "AxiomRouter", path: str | Path) -> None:
         )
 
 
-def save_to_json(router: "AxiomRouter", path: str | Path, indent: int = 2) -> None:
+def save_to_json(router: "ProtocolRouter", path: Union[str, Path], indent: int = 2) -> None:
     """
-    Export axiom router configuration to a JSON file.
+    Export protocol router configuration to a JSON file.
     
     Args:
-        router: AxiomRouter to export
+        router: ProtocolRouter to export
         path: Destination file path
         indent: JSON indentation level
     """

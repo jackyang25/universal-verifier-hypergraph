@@ -3,14 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axiom Pack Router</title>
+    <title>Clinical Protocol Router</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <header>
-        <h1>Axiom Pack Router</h1>
-        <p class="subtitle">Hypergraph-based Medical Decision Support</p>
+        <div class="header-left">
+            <h1>Clinical Protocol Router</h1>
+            <p class="subtitle">Hypergraph-based Medical Decision Support</p>
+        </div>
+
+        <!-- Audit trail (UI-only, derived from supported API calls) -->
+        <div class="audit" id="audit">
+            <button id="audit-toggle" class="audit-toggle" type="button" aria-expanded="false">
+                Audit Trail
+            </button>
+            <div id="audit-panel" class="audit-panel collapsed" aria-hidden="true">
+                <div id="audit-pills" class="audit-pills"></div>
+                <div id="audit-details" class="audit-details"></div>
+            </div>
+        </div>
     </header>
 
     <main>
@@ -19,11 +32,12 @@
                 <h2>Patient Conditions</h2>
                 <div id="condition-checkboxes"></div>
                 <button id="route-btn" class="primary">Route Patient</button>
+                <button id="execute-btn" class="secondary" disabled>Execute Protocols</button>
                 <button id="clear-btn" class="secondary">Clear Selection</button>
             </section>
 
             <section id="results-section" class="hidden">
-                <h2>Activated Packs</h2>
+                <h2>Activated Protocols</h2>
                 <div id="results"></div>
             </section>
 
@@ -31,7 +45,7 @@
                 <h2>Graph Info</h2>
                 <div id="graph-info">
                     <p>Conditions: <span id="condition-count">0</span></p>
-                    <p>Axiom Packs: <span id="pack-count">0</span></p>
+                    <p>Protocols: <span id="protocol-count">0</span></p>
                     <p>Version: <span id="config-version">-</span></p>
                 </div>
             </section>

@@ -1,4 +1,4 @@
-"""Tests for axiom router functionality."""
+"""Tests for protocol router functionality."""
 
 import json
 import tempfile
@@ -6,89 +6,89 @@ from pathlib import Path
 
 import pytest
 
-from axiom_router import AxiomPack, AxiomRouter, load_from_yaml, load_from_json
-from axiom_router.loader import save_to_yaml, save_to_json
-from axiom_router.utils import (
+from protocol_router import Protocol, ProtocolRouter, load_from_yaml, load_from_json
+from protocol_router.loader import save_to_yaml, save_to_json
+from protocol_router.utils import (
     compute_coverage,
     diff_routers,
-    find_interaction_packs,
-    find_packs_for_condition,
+    find_interaction_protocols,
+    find_protocols_for_condition,
     normalize_conditions,
     validate_patient_conditions,
 )
 
 
-class TestAxiomPack:
-    """Tests for AxiomPack dataclass."""
+class TestProtocol:
+    """Tests for Protocol dataclass."""
 
-    def test_create_pack(self):
-        """Test basic pack creation."""
-        pack = AxiomPack(
-            id="test_pack",
-            name="Test Pack",
+    def test_create_protocol(self):
+        """Test basic protocol creation."""
+        protocol = Protocol(
+            id="test_protocol",
+            name="Test Protocol",
             conditions=frozenset({"condition_a", "condition_b"}),
         )
-        assert pack.id == "test_pack"
-        assert pack.name == "Test Pack"
-        assert pack.conditions == frozenset({"condition_a", "condition_b"})
-        assert pack.condition_count == 2
-        assert pack.is_interaction_pack is True
+        assert protocol.id == "test_protocol"
+        assert protocol.name == "Test Protocol"
+        assert protocol.conditions == frozenset({"condition_a", "condition_b"})
+        assert protocol.condition_count == 2
+        assert protocol.is_interaction_protocol is True
 
     def test_single_condition_not_interaction(self):
-        """Single-condition pack is not an interaction pack."""
-        pack = AxiomPack(
+        """Single-condition protocol is not an interaction protocol."""
+        protocol = Protocol(
             id="single",
             name="Single",
             conditions=frozenset({"only_one"}),
         )
-        assert pack.is_interaction_pack is False
+        assert protocol.is_interaction_protocol is False
 
-    def test_pack_validation(self):
-        """Test that invalid packs raise errors."""
+    def test_protocol_validation(self):
+        """Test that invalid protocols raise errors."""
         with pytest.raises(ValueError, match="id cannot be empty"):
-            AxiomPack(id="", name="Test", conditions=frozenset({"a"}))
+            Protocol(id="", name="Test", conditions=frozenset({"a"}))
 
         with pytest.raises(ValueError, match="name cannot be empty"):
-            AxiomPack(id="test", name="", conditions=frozenset({"a"}))
+            Protocol(id="test", name="", conditions=frozenset({"a"}))
 
         with pytest.raises(ValueError, match="at least one condition"):
-            AxiomPack(id="test", name="Test", conditions=frozenset())
+            Protocol(id="test", name="Test", conditions=frozenset())
 
-    def test_pack_matches(self):
+    def test_protocol_matches(self):
         """Test condition matching logic."""
-        pack = AxiomPack(
+        protocol = Protocol(
             id="test",
             name="Test",
             conditions=frozenset({"a", "b"}),
         )
         
         # exact match
-        assert pack.matches({"a", "b"}) is True
+        assert protocol.matches({"a", "b"}) is True
         
         # superset matches
-        assert pack.matches({"a", "b", "c"}) is True
+        assert protocol.matches({"a", "b", "c"}) is True
         
         # partial match does not activate
-        assert pack.matches({"a"}) is False
-        assert pack.matches({"b"}) is False
+        assert protocol.matches({"a"}) is False
+        assert protocol.matches({"b"}) is False
         
         # no match
-        assert pack.matches({"c", "d"}) is False
-        assert pack.matches(set()) is False
+        assert protocol.matches({"c", "d"}) is False
+        assert protocol.matches(set()) is False
 
-    def test_pack_serialization(self):
+    def test_protocol_serialization(self):
         """Test to_dict and from_dict roundtrip."""
-        original = AxiomPack(
+        original = Protocol(
             id="test",
-            name="Test Pack",
+            name="Test Protocol",
             conditions=frozenset({"x", "y"}),
             version="2.0.0",
-            description="A test pack",
+            description="A test protocol",
             last_reviewed="2024-12-01",
         )
         
         data = original.to_dict()
-        restored = AxiomPack.from_dict(data)
+        restored = Protocol.from_dict(data)
         
         assert restored.id == original.id
         assert restored.name == original.name
@@ -97,64 +97,64 @@ class TestAxiomPack:
         assert restored.version == original.version
         assert restored.last_reviewed == original.last_reviewed
 
-    def test_pack_with_version_and_review(self):
-        """Test pack creation with version and last_reviewed fields."""
-        pack = AxiomPack(
+    def test_protocol_with_version_and_review(self):
+        """Test protocol creation with version and last_reviewed fields."""
+        protocol = Protocol(
             id="versioned",
-            name="Versioned Pack",
+            name="Versioned Protocol",
             conditions=frozenset({"a"}),
             version="1.2.3",
             last_reviewed="2024-11-15",
         )
         
-        assert pack.version == "1.2.3"
-        assert pack.last_reviewed == "2024-11-15"
+        assert protocol.version == "1.2.3"
+        assert protocol.last_reviewed == "2024-11-15"
 
 
-class TestAxiomRouter:
-    """Tests for AxiomRouter."""
+class TestProtocolRouter:
+    """Tests for ProtocolRouter."""
 
-    def test_add_pack(self):
-        """Test adding packs to router."""
-        router = AxiomRouter()
-        pack = AxiomPack(
+    def test_add_protocol(self):
+        """Test adding protocols to router."""
+        router = ProtocolRouter()
+        protocol = Protocol(
             id="test",
             name="Test",
             conditions=frozenset({"a"}),
         )
         
-        router.add_pack(pack)
+        router.add_protocol(protocol)
         
-        assert router.pack_count == 1
+        assert router.protocol_count == 1
         assert "test" in router
-        assert router.get_pack("test") == pack
+        assert router.get_protocol("test") == protocol
 
-    def test_add_duplicate_raises(self):
-        """Duplicate pack IDs raise an error."""
-        router = AxiomRouter()
-        pack = AxiomPack(id="test", name="Test", conditions=frozenset({"a"}))
+    def test_add_duplicate_protocol_raises(self):
+        """Duplicate protocol IDs raise an error."""
+        router = ProtocolRouter()
+        protocol = Protocol(id="test", name="Test", conditions=frozenset({"a"}))
         
-        router.add_pack(pack)
+        router.add_protocol(protocol)
         
         with pytest.raises(ValueError, match="already exists"):
-            router.add_pack(pack)
+            router.add_protocol(protocol)
 
-    def test_remove_pack(self):
-        """Test pack removal."""
-        router = AxiomRouter()
-        pack = AxiomPack(id="test", name="Test", conditions=frozenset({"a"}))
-        router.add_pack(pack)
+    def test_remove_protocol(self):
+        """Test protocol removal."""
+        router = ProtocolRouter()
+        protocol = Protocol(id="test", name="Test", conditions=frozenset({"a"}))
+        router.add_protocol(protocol)
         
-        removed = router.remove_pack("test")
+        removed = router.remove_protocol("test")
         
-        assert removed == pack
+        assert removed == protocol
         assert "test" not in router
-        assert router.remove_pack("nonexistent") is None
+        assert router.remove_protocol("nonexistent") is None
 
-    def test_match_single_condition_pack(self):
-        """Test matching single-condition packs."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(
+    def test_match_single_condition_protocol(self):
+        """Test matching single-condition protocols."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(
             id="pregnancy",
             name="Pregnancy",
             conditions=frozenset({"pregnant"}),
@@ -169,10 +169,10 @@ class TestAxiomRouter:
         result = router.match({"HIV_positive"})
         assert len(result) == 0
 
-    def test_match_interaction_pack(self):
-        """Test matching multi-condition (interaction) packs."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(
+    def test_match_interaction_protocol(self):
+        """Test matching multi-condition (interaction) protocols."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(
             id="preg_hiv",
             name="Pregnancy×HIV",
             conditions=frozenset({"pregnant", "HIV_positive"}),
@@ -186,20 +186,20 @@ class TestAxiomRouter:
         result = router.match({"pregnant"})
         assert len(result) == 0
 
-    def test_match_multiple_packs(self):
-        """Test matching activates multiple applicable packs."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(
+    def test_match_multiple_protocols(self):
+        """Test matching activates multiple applicable protocols."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(
             id="pregnancy",
             name="Pregnancy",
             conditions=frozenset({"pregnant"}),
         ))
-        router.add_pack(AxiomPack(
+        router.add_protocol(Protocol(
             id="hiv",
             name="HIV",
             conditions=frozenset({"HIV_positive"}),
         ))
-        router.add_pack(AxiomPack(
+        router.add_protocol(Protocol(
             id="preg_hiv",
             name="Pregnancy×HIV",
             conditions=frozenset({"pregnant", "HIV_positive"}),
@@ -207,7 +207,7 @@ class TestAxiomRouter:
         
         result = router.match({"pregnant", "HIV_positive", "fever"})
         
-        # all three packs should activate
+        # all three protocols should activate
         assert len(result) == 3
         
         # ordered by specificity (most conditions first)
@@ -216,11 +216,11 @@ class TestAxiomRouter:
         assert {result[1].id, result[2].id} == {"pregnancy", "hiv"}
 
     def test_match_ordering(self):
-        """Activated packs are ordered by specificity then ID."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(id="z", name="Z", conditions=frozenset({"a"})))
-        router.add_pack(AxiomPack(id="a", name="A", conditions=frozenset({"a"})))
-        router.add_pack(AxiomPack(id="ab", name="AB", conditions=frozenset({"a", "b"})))
+        """Activated protocols are ordered by specificity then ID."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(id="z", name="Z", conditions=frozenset({"a"})))
+        router.add_protocol(Protocol(id="a", name="A", conditions=frozenset({"a"})))
+        router.add_protocol(Protocol(id="ab", name="AB", conditions=frozenset({"a", "b"})))
         
         result = router.match({"a", "b"})
         
@@ -228,9 +228,9 @@ class TestAxiomRouter:
 
     def test_conditions_property(self):
         """Test that conditions property returns all unique conditions."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(id="p1", name="P1", conditions=frozenset({"a", "b"})))
-        router.add_pack(AxiomPack(id="p2", name="P2", conditions=frozenset({"b", "c"})))
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(id="p1", name="P1", conditions=frozenset({"a", "b"})))
+        router.add_protocol(Protocol(id="p2", name="P2", conditions=frozenset({"b", "c"})))
         
         assert router.conditions == frozenset({"a", "b", "c"})
 
@@ -240,8 +240,8 @@ class TestLoaderAndExport:
 
     def test_yaml_roundtrip(self):
         """Test YAML save and load."""
-        router = AxiomRouter(config_version="1.2.3")
-        router.add_pack(AxiomPack(
+        router = ProtocolRouter(config_version="1.2.3")
+        router.add_protocol(Protocol(
             id="test",
             name="Test",
             conditions=frozenset({"a", "b"}),
@@ -254,13 +254,13 @@ class TestLoaderAndExport:
             loaded = load_from_yaml(path)
         
         assert loaded.config_version == "1.2.3"
-        assert loaded.pack_count == 1
-        assert loaded.get_pack("test") is not None
+        assert loaded.protocol_count == 1
+        assert loaded.get_protocol("test") is not None
 
     def test_json_roundtrip(self):
         """Test JSON save and load."""
-        router = AxiomRouter(config_version="1.2.3")
-        router.add_pack(AxiomPack(
+        router = ProtocolRouter(config_version="1.2.3")
+        router.add_protocol(Protocol(
             id="test",
             name="Test",
             conditions=frozenset({"x"}),
@@ -273,48 +273,48 @@ class TestLoaderAndExport:
             loaded = load_from_json(path)
         
         assert loaded.config_version == "1.2.3"
-        assert loaded.pack_count == 1
+        assert loaded.protocol_count == 1
 
     def test_from_config_yaml(self):
-        """Test AxiomRouter.from_config with YAML."""
+        """Test ProtocolRouter.from_config with YAML."""
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.yaml"
             path.write_text("""
 version: "1.0.0"
-axiom_packs:
+clinical_protocols:
   - id: test
     name: Test
     conditions: [a, b]
 """)
-            router = AxiomRouter.from_config(path)
+            router = ProtocolRouter.from_config(path)
         
-        assert router.pack_count == 1
+        assert router.protocol_count == 1
 
     def test_from_config_json(self):
-        """Test AxiomRouter.from_config with JSON."""
+        """Test ProtocolRouter.from_config with JSON."""
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.json"
             path.write_text(json.dumps({
                 "version": "1.0.0",
-                "axiom_packs": [
+                "clinical_protocols": [
                     {"id": "test", "name": "Test", "conditions": ["a"]}
                 ]
             }))
-            router = AxiomRouter.from_config(path)
+            router = ProtocolRouter.from_config(path)
         
-        assert router.pack_count == 1
+        assert router.protocol_count == 1
 
     def test_export_hypergraph(self):
         """Test hypergraph export for auditability."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(
             id="p1",
-            name="Pack 1",
+            name="Protocol 1",
             conditions=frozenset({"a", "b"}),
         ))
-        router.add_pack(AxiomPack(
+        router.add_protocol(Protocol(
             id="p2",
-            name="Pack 2",
+            name="Protocol 2",
             conditions=frozenset({"b", "c"}),
         ))
         
@@ -343,51 +343,51 @@ class TestUtils:
         assert len(errors) == 1
         assert "empty" in errors[0].lower()
 
-    def test_find_interaction_packs(self):
-        """Test finding interaction packs."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(id="single", name="S", conditions=frozenset({"a"})))
-        router.add_pack(AxiomPack(id="multi", name="M", conditions=frozenset({"a", "b"})))
+    def test_find_interaction_protocols(self):
+        """Test finding interaction protocols."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(id="single", name="S", conditions=frozenset({"a"})))
+        router.add_protocol(Protocol(id="multi", name="M", conditions=frozenset({"a", "b"})))
         
-        interactions = find_interaction_packs(router)
+        interactions = find_interaction_protocols(router)
         
         assert len(interactions) == 1
         assert interactions[0].id == "multi"
 
-    def test_find_packs_for_condition(self):
-        """Test finding packs containing a specific condition."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(id="p1", name="P1", conditions=frozenset({"a"})))
-        router.add_pack(AxiomPack(id="p2", name="P2", conditions=frozenset({"a", "b"})))
-        router.add_pack(AxiomPack(id="p3", name="P3", conditions=frozenset({"c"})))
+    def test_find_protocols_for_condition(self):
+        """Test finding protocols containing a specific condition."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(id="p1", name="P1", conditions=frozenset({"a"})))
+        router.add_protocol(Protocol(id="p2", name="P2", conditions=frozenset({"a", "b"})))
+        router.add_protocol(Protocol(id="p3", name="P3", conditions=frozenset({"c"})))
         
-        packs = find_packs_for_condition(router, "a")
-        
-        assert len(packs) == 2
-        assert {p.id for p in packs} == {"p1", "p2"}
+        protocols = find_protocols_for_condition(router, "a")
+
+        assert len(protocols) == 2
+        assert {p.id for p in protocols} == {"p1", "p2"}
 
     def test_compute_coverage(self):
         """Test coverage computation."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(id="p1", name="P1", conditions=frozenset({"a"})))
-        router.add_pack(AxiomPack(id="p2", name="P2", conditions=frozenset({"a", "b"})))
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(id="p1", name="P1", conditions=frozenset({"a"})))
+        router.add_protocol(Protocol(id="p2", name="P2", conditions=frozenset({"a", "b"})))
         
         coverage = compute_coverage(router, {"a", "b", "unknown"})
         
         assert coverage["total_patient_conditions"] == 3
         assert coverage["recognized_conditions"] == 2
         assert coverage["unrecognized_conditions"] == ["unknown"]
-        assert coverage["activated_packs"] == 2
+        assert coverage["activated_protocols"] == 2
 
     def test_diff_routers(self):
         """Test router comparison."""
-        router_a = AxiomRouter()
-        router_a.add_pack(AxiomPack(id="p1", name="P1", conditions=frozenset({"a"})))
-        router_a.add_pack(AxiomPack(id="p2", name="P2", conditions=frozenset({"b"})))
+        router_a = ProtocolRouter()
+        router_a.add_protocol(Protocol(id="p1", name="P1", conditions=frozenset({"a"})))
+        router_a.add_protocol(Protocol(id="p2", name="P2", conditions=frozenset({"b"})))
         
-        router_b = AxiomRouter()
-        router_b.add_pack(AxiomPack(id="p1", name="P1 Modified", conditions=frozenset({"a"})))
-        router_b.add_pack(AxiomPack(id="p3", name="P3", conditions=frozenset({"c"})))
+        router_b = ProtocolRouter()
+        router_b.add_protocol(Protocol(id="p1", name="P1 Modified", conditions=frozenset({"a"})))
+        router_b.add_protocol(Protocol(id="p3", name="P3", conditions=frozenset({"c"})))
         
         diff = diff_routers(router_a, router_b)
         
@@ -401,7 +401,7 @@ class TestVersioning:
 
     def test_config_version(self):
         """Test config version property."""
-        router = AxiomRouter(
+        router = ProtocolRouter(
             config_version="2.0.0",
             config_description="Test config",
             config_last_updated="2025-01-13",
@@ -412,41 +412,41 @@ class TestVersioning:
         assert router.config_description == "Test config"
         assert router.config_last_updated == "2025-01-13"
 
-    def test_get_pack_version(self):
-        """Test getting individual pack versions."""
-        router = AxiomRouter()
-        router.add_pack(AxiomPack(
+    def test_get_protocol_version(self):
+        """Test getting individual protocol versions."""
+        router = ProtocolRouter()
+        router.add_protocol(Protocol(
             id="p1",
-            name="Pack 1",
+            name="Protocol 1",
             conditions=frozenset({"a"}),
             version="1.2.0",
         ))
-        router.add_pack(AxiomPack(
+        router.add_protocol(Protocol(
             id="p2",
-            name="Pack 2",
+            name="Protocol 2",
             conditions=frozenset({"b"}),
             version="1.1.0",
         ))
         
-        assert router.get_pack_version("p1") == "1.2.0"
-        assert router.get_pack_version("p2") == "1.1.0"
-        assert router.get_pack_version("nonexistent") is None
+        assert router.get_protocol_version("p1") == "1.2.0"
+        assert router.get_protocol_version("p2") == "1.1.0"
+        assert router.get_protocol_version("nonexistent") is None
 
     def test_export_version_manifest(self):
         """Test version manifest export for audit logging."""
-        router = AxiomRouter(
+        router = ProtocolRouter(
             config_version="1.0.0",
             config_last_updated="2025-01-13",
         )
-        router.add_pack(AxiomPack(
-            id="pregnancy_pack",
+        router.add_protocol(Protocol(
+            id="pregnancy_protocol",
             name="Pregnancy",
             conditions=frozenset({"pregnant"}),
             version="1.2.0",
             last_reviewed="2024-12-01",
         ))
-        router.add_pack(AxiomPack(
-            id="hiv_pack",
+        router.add_protocol(Protocol(
+            id="hiv_protocol",
             name="HIV",
             conditions=frozenset({"HIV_positive"}),
             version="1.1.0",
@@ -457,10 +457,10 @@ class TestVersioning:
         
         assert manifest["config_version"] == "1.0.0"
         assert manifest["last_updated"] == "2025-01-13"
-        assert "pregnancy_pack" in manifest["packs"]
-        assert manifest["packs"]["pregnancy_pack"]["version"] == "1.2.0"
-        assert manifest["packs"]["pregnancy_pack"]["last_reviewed"] == "2024-12-01"
-        assert manifest["packs"]["hiv_pack"]["version"] == "1.1.0"
+        assert "pregnancy_protocol" in manifest["protocols"]
+        assert manifest["protocols"]["pregnancy_protocol"]["version"] == "1.2.0"
+        assert manifest["protocols"]["pregnancy_protocol"]["last_reviewed"] == "2024-12-01"
+        assert manifest["protocols"]["hiv_protocol"]["version"] == "1.1.0"
 
     def test_metadata_config_format(self):
         """Test loading config with metadata block."""
@@ -472,20 +472,20 @@ metadata:
   description: "Test configuration"
   last_updated: "2025-01-13"
 
-axiom_packs:
+clinical_protocols:
   - id: test
     version: "1.5.0"
-    name: Test Pack
+    name: Test Protocol
     conditions: [a]
     last_reviewed: "2024-12-01"
 """)
-            router = AxiomRouter.from_config(path)
+            router = ProtocolRouter.from_config(path)
         
         assert router.config_version == "2.0.0"
         assert router.config_description == "Test configuration"
         assert router.config_last_updated == "2025-01-13"
-        assert router.get_pack_version("test") == "1.5.0"
-        assert router.get_pack("test").last_reviewed == "2024-12-01"
+        assert router.get_protocol_version("test") == "1.5.0"
+        assert router.get_protocol("test").last_reviewed == "2024-12-01"
 
     def test_backward_compat_old_format(self):
         """Test that old config format (version at root) still works."""
@@ -493,84 +493,84 @@ axiom_packs:
             path = Path(tmpdir) / "old.yaml"
             path.write_text("""
 version: "1.0.0"
-axiom_packs:
+clinical_protocols:
   - id: test
     name: Test
     conditions: [a]
 """)
-            router = AxiomRouter.from_config(path)
+            router = ProtocolRouter.from_config(path)
         
         assert router.config_version == "1.0.0"
-        assert router.get_pack("test") is not None
+        assert router.get_protocol("test") is not None
 
 
 class TestIntegration:
     """Integration tests using the example config."""
 
     def test_load_example_config(self):
-        """Load the example axiom_packs.yaml config."""
-        config_path = Path(__file__).parent.parent / "config" / "axiom_packs.yaml"
+        """Load the example clinical_protocols.yaml config."""
+        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
         
-        router = AxiomRouter.from_config(config_path)
+        router = ProtocolRouter.from_config(config_path)
         
-        assert router.pack_count > 0
+        assert router.protocol_count > 0
         assert router.config_version == "1.0.0"
         assert router.config_last_updated == "2025-01-13"
 
     def test_example_config_versions(self):
         """Test that example config has proper versioning."""
-        config_path = Path(__file__).parent.parent / "config" / "axiom_packs.yaml"
+        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
         
-        router = AxiomRouter.from_config(config_path)
+        router = ProtocolRouter.from_config(config_path)
         
-        # check individual pack versions
-        assert router.get_pack_version("pregnancy_pack") == "1.2.0"
-        assert router.get_pack_version("hiv_pack") == "1.1.0"
+        # check individual protocol versions
+        assert router.get_protocol_version("pregnancy_protocol") == "1.2.0"
+        assert router.get_protocol_version("hiv_protocol") == "1.1.0"
         
         # check last_reviewed dates exist
-        pregnancy = router.get_pack("pregnancy_pack")
+        pregnancy = router.get_protocol("pregnancy_protocol")
         assert pregnancy.last_reviewed == "2024-12-01"
 
     def test_realistic_patient_scenario(self):
         """Test a realistic patient matching scenario."""
-        config_path = Path(__file__).parent.parent / "config" / "axiom_packs.yaml"
+        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
         
-        router = AxiomRouter.from_config(config_path)
+        router = ProtocolRouter.from_config(config_path)
         
         # pregnant HIV+ patient with fever (unrelated symptom)
         patient = {"pregnant", "HIV_positive", "fever"}
         activated = router.match(patient)
         
-        # should activate: pregnancy_pack, hiv_pack, pregnancy_hiv_interaction
+        # should activate: pregnancy_protocol, hiv_protocol, pregnancy_hiv_interaction
         activated_ids = {p.id for p in activated}
         
-        assert "pregnancy_pack" in activated_ids
-        assert "hiv_pack" in activated_ids
+        assert "pregnancy_protocol" in activated_ids
+        assert "hiv_protocol" in activated_ids
         assert "pregnancy_hiv_interaction" in activated_ids
         
-        # interaction pack should be first (most specific)
+        # interaction protocol should be first (most specific)
         assert activated[0].id == "pregnancy_hiv_interaction"
 
     def test_version_manifest_from_example(self):
         """Test version manifest export from example config."""
-        config_path = Path(__file__).parent.parent / "config" / "axiom_packs.yaml"
+        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
         
-        router = AxiomRouter.from_config(config_path)
+        router = ProtocolRouter.from_config(config_path)
         manifest = router.export_version_manifest()
         
         assert manifest["config_version"] == "1.0.0"
-        assert "pregnancy_pack" in manifest["packs"]
-        assert "hiv_pack" in manifest["packs"]
-        assert "pregnancy_hiv_interaction" in manifest["packs"]
+        assert "pregnancy_protocol" in manifest["protocols"]
+        assert "hiv_protocol" in manifest["protocols"]
+        assert "pregnancy_hiv_interaction" in manifest["protocols"]

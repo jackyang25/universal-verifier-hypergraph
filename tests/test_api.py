@@ -4,13 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.dependencies import get_router, reload_router
+from api.dependencies import get_protocol_router, reload_protocol_router
 
 
 @pytest.fixture
 def client():
     """Create test client."""
-    reload_router()  # ensure fresh router
+    reload_protocol_router()  # ensure fresh router
     return TestClient(app)
 
 
@@ -47,7 +47,7 @@ class TestGraphEndpoints:
         
         data = response.json()
         assert "active_conditions" in data["metadata"]
-        assert "activated_pack_ids" in data["metadata"]
+        assert "activated_protocol_ids" in data["metadata"]
 
     def test_graph_structure(self, client):
         """Graph structure returns statistics."""
@@ -55,17 +55,17 @@ class TestGraphEndpoints:
         assert response.status_code == 200
         
         data = response.json()
-        assert "total_packs" in data
+        assert "total_protocols" in data
         assert "total_conditions" in data
         assert "config_version" in data
 
 
-class TestPacksEndpoints:
-    """Axiom packs API tests."""
+class TestProtocolsEndpoints:
+    """Protocols API tests."""
 
-    def test_list_packs(self, client):
-        """List all packs."""
-        response = client.get("/api/packs/")
+    def test_list_protocols(self, client):
+        """List all protocols."""
+        response = client.get("/api/protocols/")
         assert response.status_code == 200
         
         data = response.json()
@@ -75,21 +75,21 @@ class TestPacksEndpoints:
             assert "name" in data[0]
             assert "conditions" in data[0]
 
-    def test_get_pack(self, client):
-        """Get specific pack by ID."""
-        # first get a valid pack id
-        list_response = client.get("/api/packs/")
-        packs = list_response.json()
+    def test_get_protocol(self, client):
+        """Get specific protocol by ID."""
+        # first get a valid protocol id
+        list_response = client.get("/api/protocols/")
+        protocols = list_response.json()
         
-        if len(packs) > 0:
-            pack_id = packs[0]["id"]
-            response = client.get(f"/api/packs/{pack_id}")
+        if len(protocols) > 0:
+            protocol_id = protocols[0]["id"]
+            response = client.get(f"/api/protocols/{protocol_id}")
             assert response.status_code == 200
-            assert response.json()["id"] == pack_id
+            assert response.json()["id"] == protocol_id
 
-    def test_get_pack_not_found(self, client):
-        """Get nonexistent pack returns 404."""
-        response = client.get("/api/packs/nonexistent_pack_xyz")
+    def test_get_protocol_not_found(self, client):
+        """Get nonexistent protocol returns 404."""
+        response = client.get("/api/protocols/nonexistent_protocol_xyz")
         assert response.status_code == 404
 
 
@@ -97,7 +97,7 @@ class TestRoutingEndpoints:
     """Patient routing API tests."""
 
     def test_route_patient_empty(self, client):
-        """Route with conditions that don't match any pack."""
+        """Route with conditions that don't match any protocol."""
         response = client.post(
             "/api/routing/match",
             json={"conditions": ["unknown_condition"]}
@@ -105,7 +105,7 @@ class TestRoutingEndpoints:
         assert response.status_code == 200
         
         data = response.json()
-        assert "activated_packs" in data
+        assert "activated_protocols" in data
         assert "matched_conditions" in data
         assert "timestamp" in data
 
@@ -118,13 +118,13 @@ class TestRoutingEndpoints:
         assert response.status_code == 200
         
         data = response.json()
-        # should activate pregnancy pack if config has it
-        pack_ids = [p["id"] for p in data["activated_packs"]]
-        if "pregnancy_pack" in pack_ids:
+        # should activate pregnancy protocol if config has it
+        protocol_ids = [p["id"] for p in data["activated_protocols"]]
+        if "pregnancy_protocol" in protocol_ids:
             assert True
 
     def test_route_patient_multiple_conditions(self, client):
-        """Route with multiple conditions triggers interaction packs."""
+        """Route with multiple conditions triggers interaction protocols."""
         response = client.post(
             "/api/routing/match",
             json={"conditions": ["pregnant", "HIV_positive"]}
@@ -132,11 +132,11 @@ class TestRoutingEndpoints:
         assert response.status_code == 200
         
         data = response.json()
-        # interaction pack should be first (most specific)
-        if len(data["activated_packs"]) > 0:
-            # packs are ordered by condition count descending
-            first_pack = data["activated_packs"][0]
-            assert len(first_pack["conditions"]) >= 1
+        # interaction protocol should be first (most specific)
+        if len(data["activated_protocols"]) > 0:
+            # protocols are ordered by condition count descending
+            first_protocol = data["activated_protocols"][0]
+            assert len(first_protocol["conditions"]) >= 1
 
     def test_route_patient_invalid_request(self, client):
         """Route with invalid request returns error."""
