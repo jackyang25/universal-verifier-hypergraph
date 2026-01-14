@@ -8,6 +8,7 @@ services:
       - ./protocol_router:/app/protocol_router
       - ./api:/app/api
       - ./playground:/app/playground
+      - ./tests:/app/tests
     environment:
       - ENV=development
       - CONFIG_PATH=config/clinical_protocols.yaml
