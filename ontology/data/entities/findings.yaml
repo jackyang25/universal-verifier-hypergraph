@@ -1,0 +1,82 @@
+# Clinical finding entities for the clinical universe
+# These represent observable patient characteristics and test results
+
+entity_type: finding
+
+entities:
+  - id: hyperglycemia
+    name: Hyperglycemia
+    description: Elevated blood glucose level
+    codes:
+      - system: SNOMED-CT
+        code: "80394007"
+
+  - id: hypoglycemia
+    name: Hypoglycemia
+    description: Low blood glucose level
+    codes:
+      - system: SNOMED-CT
+        code: "302866003"
+
+  - id: elevated_hba1c
+    name: Elevated HbA1c
+    description: Glycated hemoglobin above target range
+    codes:
+      - system: SNOMED-CT
+        code: "165679005"
+
+  - id: proteinuria
+    name: Proteinuria
+    description: Protein detected in urine
+    codes:
+      - system: SNOMED-CT
+        code: "29738008"
+
+  - id: elevated_blood_pressure
+    name: Elevated Blood Pressure
+    description: Blood pressure above normal range
+    codes:
+      - system: SNOMED-CT
+        code: "24184005"
+
+  - id: reduced_egfr
+    name: Reduced eGFR
+    description: Estimated glomerular filtration rate below 60 mL/min/1.73m2
+    codes:
+      - system: SNOMED-CT
+        code: "431857002"
+
+  - id: positive_hiv_test
+    name: Positive HIV Test
+    description: Laboratory confirmation of HIV infection
+    codes:
+      - system: SNOMED-CT
+        code: "165816005"
+
+  - id: detectable_viral_load
+    name: Detectable Viral Load
+    description: HIV RNA detected in blood
+    codes:
+      - system: SNOMED-CT
+        code: "315124004"
+
+  - id: undetectable_viral_load
+    name: Undetectable Viral Load
+    description: HIV RNA below detection limit
+    codes:
+      - system: SNOMED-CT
+        code: "315123005"
+
+  - id: fetal_macrosomia
+    name: Fetal Macrosomia
+    description: Estimated fetal weight exceeds 4000g
+    codes:
+      - system: SNOMED-CT
+        code: "62531004"
+
+  - id: ketoacidosis
+    name: Ketoacidosis
+    description: Metabolic acidosis with ketone body accumulation
+    codes:
+      - system: SNOMED-CT
+        code: "420422005"

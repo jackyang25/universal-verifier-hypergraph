@@ -1,42 +1,31 @@
-"""Dependency injection for FastAPI."""
+"""FastAPI dependency injection."""
 
 import os
-from functools import lru_cache
-from pathlib import Path
+from typing import Optional
 
-from protocol_router import ProtocolRouter
+from protocols.dependencies import get_router, reload_router
+from protocols.router import ProtocolRouter
+from ontology.dependencies import get_bridge
+from ontology.bridge import OntologyBridge
 
-# default config path
-CONFIG_PATH = os.getenv("CONFIG_PATH", "config/clinical_protocols.yaml")
 ENV = os.getenv("ENV", "development")
-
-@lru_cache()
-def get_protocol_router() -> ProtocolRouter:
-    """
-    Get router instance.
-    
-    In development, reloads config each time.
-    In production, caches the instance.
-    """
-    config_path = Path(CONFIG_PATH)
-    if not config_path.exists():
-        return ProtocolRouter()
-    return ProtocolRouter.from_config(config_path)
 
 
 def get_protocol_router_dependency() -> ProtocolRouter:
-    """FastAPI dependency for router injection."""
-    # in development, always reload to reflect config/UI changes
-    if ENV == "development":
-        reload_protocol_router()
-    return get_protocol_router()
-
-
-def reload_protocol_router() -> ProtocolRouter:
     """
-    Force reload of router configuration.
+    FastAPI dependency for protocol router injection.
     
-    Clears the cache and loads fresh config.
+    In development mode, reloads config on each request.
     """
-    get_protocol_router.cache_clear()
-    return get_protocol_router()
+    if ENV == "development":
+        reload_router()
+    return get_router()
+
+
+def get_ontology_bridge_dependency() -> Optional[OntologyBridge]:
+    """
+    FastAPI dependency for ontology bridge injection.
+    
+    Returns None if ontology module is not available (graceful degradation).
+    """
+    return get_bridge()

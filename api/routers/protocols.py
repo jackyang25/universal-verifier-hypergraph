@@ -4,8 +4,9 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from protocol_router import ProtocolRouter
-from api.dependencies import get_protocol_router_dependency, reload_protocol_router, CONFIG_PATH
+from protocols import ProtocolRouter
+from protocols.dependencies import reload_router, CONFIG_PATH
+from api.dependencies import get_protocol_router_dependency
 from api.models import ProtocolCreate, ProtocolResponse, ProtocolUpdate
 
 router = APIRouter()
@@ -89,7 +90,7 @@ def delete_protocol(
 @router.post("/reload", response_model=dict)
 def reload_config():
     """Reload configuration from disk."""
-    router = reload_protocol_router()
+    router = reload_router()
     return {
         "status": "reloaded",
         "protocol_count": router.protocol_count,

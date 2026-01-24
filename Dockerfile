@@ -21,11 +21,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application
-COPY protocol_router/ protocol_router/
+COPY protocols/ protocols/
+COPY ontology/ ontology/
+COPY verification/ verification/
 COPY api/ api/
 COPY config/ config/
-COPY playground/ playground/
-COPY verifiers/ verifiers/
+COPY dashboard/ dashboard/
 
 EXPOSE 8000
 

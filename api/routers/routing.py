@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 
-from protocol_router import ProtocolRouter
+from protocols import ProtocolRouter
 from api.dependencies import get_protocol_router_dependency
 from api.models import RoutingRequest, RoutingResponse
 

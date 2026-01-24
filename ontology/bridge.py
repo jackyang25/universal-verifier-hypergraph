@@ -1,0 +1,287 @@
+"""Bridge between ontology module and protocol router."""
+
+from pathlib import Path
+from typing import List, Optional, Set, Tuple
+
+from ontology.types import Entity, EntityType
+from ontology.schema import OntologySchema, ValidationResult
+from ontology.axioms.core import CoreAxioms
+
+
+class OntologyBridge:
+    """
+    Bridge connecting the ontology module to the protocol router.
+    
+    Provides:
+    - Validation of protocol conditions against ontology entities
+    - Translation between string conditions and typed entities
+    - Consistency checking using domain axioms
+    """
+    
+    def __init__(self, schema: OntologySchema) -> None:
+        self.schema = schema
+        self.registry = schema.registry
+        self.axioms = CoreAxioms(self.registry)
+    
+    @classmethod
+    def from_directory(cls, path: Path) -> "OntologyBridge":
+        """Load ontology data from a data directory."""
+        schema = OntologySchema()
+        schema.load_directory(path)
+        return cls(schema)
+    
+    def validate_conditions(self, conditions: Set[str]) -> Tuple[bool, List[str]]:
+        """
+        Validate that all conditions reference valid universe entities.
+        
+        Args:
+            conditions: Set of condition strings
+            
+        Returns:
+            Tuple of (all_valid, list of invalid conditions)
+        """
+        invalid = self.registry.validate_entity_references(conditions)
+        return len(invalid) == 0, invalid
+    
+    def resolve_condition(self, condition: str) -> Optional[Entity]:
+        """
+        Resolve a string condition to a typed entity.
+        
+        Args:
+            condition: Condition string (entity id)
+            
+        Returns:
+            Entity if found, None otherwise
+        """
+        return self.registry.get_entity(condition)
+    
+    def resolve_conditions(self, conditions: Set[str]) -> List[Entity]:
+        """Resolve multiple conditions to entities (skips unresolved)."""
+        entities = []
+        for cond in conditions:
+            entity = self.registry.get_entity(cond)
+            if entity:
+                entities.append(entity)
+        return entities
+    
+    def check_consistency(self, conditions: Set[str]) -> List[str]:
+        """
+        Check if a set of conditions is consistent with domain axioms.
+        
+        Args:
+            conditions: Set of condition strings
+            
+        Returns:
+            List of axiom violations (empty if consistent)
+        """
+        return self.axioms.check_consistency(frozenset(conditions))
+    
+    def get_contraindicated_substances(self, conditions: Set[str]) -> List[Entity]:
+        """
+        Get substances contraindicated for given conditions.
+        
+        Args:
+            conditions: Patient conditions
+            
+        Returns:
+            List of contraindicated substance entities
+        """
+        from ontology.types import RelationType
+        
+        contraindicated = []
+        
+        for condition in conditions:
+            relations = self.registry.get_incoming_relations(condition)
+            for rel in relations:
+                if rel.relation_type == RelationType.CONTRAINDICATED_IN:
+                    substance = self.registry.get_entity(rel.source_id)
+                    if substance and substance not in contraindicated:
+                        contraindicated.append(substance)
+        
+        return contraindicated
+    
+    def get_recommended_treatments(self, conditions: Set[str]) -> List[Entity]:
+        """
+        Get substances that treat disorders in the condition set.
+        
+        Args:
+            conditions: Patient conditions
+            
+        Returns:
+            List of treatment substance entities
+        """
+        from ontology.types import RelationType
+        
+        treatments = []
+        
+        for condition in conditions:
+            entity = self.registry.get_entity(condition)
+            if not entity or entity.entity_type != EntityType.DISORDER:
+                continue
+            
+            relations = self.registry.get_incoming_relations(condition)
+            for rel in relations:
+                if rel.relation_type == RelationType.TREATS:
+                    substance = self.registry.get_entity(rel.source_id)
+                    if substance and substance not in treatments:
+                        treatments.append(substance)
+        
+        return treatments
+    
+    def get_safe_treatments(self, conditions: Set[str]) -> List[Entity]:
+        """
+        Get treatments that are not contraindicated for given conditions.
+        
+        Combines treatment recommendations with contraindication filtering.
+        
+        Args:
+            conditions: Patient conditions
+            
+        Returns:
+            List of safe treatment substance entities
+        """
+        all_treatments = self.get_recommended_treatments(conditions)
+        contraindicated = set(e.id for e in self.get_contraindicated_substances(conditions))
+        
+        return [t for t in all_treatments if t.id not in contraindicated]
+    
+    def generate_axioms_from_relations(self) -> int:
+        """
+        Generate domain axioms from universe relations.
+        
+        Returns:
+            Number of axioms generated
+        """
+        generated = self.axioms.generate_from_relations()
+        return len(generated)
+    
+    def validate_protocol_definition(
+        self,
+        protocol_id: str,
+        required_conditions: Set[str],
+        excluded_conditions: Optional[Set[str]] = None,
+    ) -> ValidationResult:
+        """
+        Validate a protocol definition against the universe.
+        
+        Checks:
+        - All conditions reference valid entities
+        - Required conditions are logically consistent
+        - Exclusions don't contradict requirements
+        
+        Args:
+            protocol_id: Protocol identifier
+            required_conditions: Conditions required for activation
+            excluded_conditions: Conditions that must not be present
+            
+        Returns:
+            ValidationResult with any errors/warnings
+        """
+        from ontology.schema import ValidationResult
+        
+        result = ValidationResult(valid=True)
+        
+        # check required conditions exist
+        valid, invalid = self.validate_conditions(required_conditions)
+        if not valid:
+            for cond in invalid:
+                result.add_error(
+                    "unknown_entity",
+                    f"Unknown entity '{cond}'",
+                    f"{protocol_id}.required_conditions",
+                )
+        
+        # check excluded conditions exist
+        if excluded_conditions:
+            valid, invalid = self.validate_conditions(excluded_conditions)
+            if not valid:
+                for cond in invalid:
+                    result.add_error(
+                        "unknown_entity",
+                        f"Unknown entity '{cond}'",
+                        f"{protocol_id}.excluded_conditions",
+                    )
+        
+        # check consistency of required conditions
+        violations = self.check_consistency(required_conditions)
+        for violation in violations:
+            result.add_error(
+                "axiom_violation",
+                violation,
+                f"{protocol_id}.required_conditions",
+            )
+        
+        # check for overlap between required and excluded
+        if excluded_conditions:
+            overlap = required_conditions & excluded_conditions
+            if overlap:
+                result.add_error(
+                    "logical_contradiction",
+                    f"Conditions cannot be both required and excluded: {sorted(overlap)}",
+                    protocol_id,
+                )
+        
+        return result
+    
+    def export_summary(self) -> dict:
+        """Export summary of the loaded ontology."""
+        return {
+            "schema": self.schema.export_summary(),
+            "axiom_count": self.axioms.axiom_registry.count,
+        }
+    
+    def get_contraindication_reason(self, substance_id: str, conditions: Set[str]) -> str:
+        """
+        Get human-readable contraindication reason for a substance.
+        
+        Args:
+            substance_id: Substance entity ID
+            conditions: Patient conditions
+            
+        Returns:
+            Human-readable reason string
+        """
+        from ontology.types import RelationType
+        
+        try:
+            relations = self.registry.get_outgoing_relations(substance_id)
+            for rel in relations:
+                if rel.relation_type == RelationType.CONTRAINDICATED_IN:
+                    if rel.target_id in conditions:
+                        target = self.registry.get_entity(rel.target_id)
+                        state_name = target.name if target else rel.target_id
+                        return f"Contraindicated in {state_name}"
+        except Exception:
+            pass
+        
+        return "Contraindicated"
+    
+    def get_treatment_indication(self, substance_id: str, conditions: Set[str]) -> str:
+        """
+        Get human-readable treatment indication for a substance.
+        
+        Args:
+            substance_id: Substance entity ID
+            conditions: Patient conditions
+            
+        Returns:
+            Human-readable indication string
+        """
+        from ontology.types import RelationType
+        
+        try:
+            relations = self.registry.get_outgoing_relations(substance_id)
+            treats = []
+            for rel in relations:
+                if rel.relation_type == RelationType.TREATS:
+                    if rel.target_id in conditions:
+                        target = self.registry.get_entity(rel.target_id)
+                        disorder_name = target.name if target else rel.target_id
+                        treats.append(disorder_name)
+            
+            if treats:
+                return f"Treats {', '.join(treats)}"
+        except Exception:
+            pass
+        
+        return "Recommended"

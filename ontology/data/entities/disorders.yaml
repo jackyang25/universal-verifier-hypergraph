@@ -1,0 +1,89 @@
+# Disorder entities for the clinical universe
+# These represent pathological conditions and diseases
+
+entity_type: disorder
+
+entities:
+  - id: diabetes_mellitus
+    name: Diabetes Mellitus
+    description: Metabolic disorder characterized by elevated blood glucose levels
+    codes:
+      - system: SNOMED-CT
+        code: "73211009"
+      - system: ICD-10
+        code: E11
+
+  - id: diabetes_mellitus_type_1
+    name: Diabetes Mellitus Type 1
+    description: Autoimmune destruction of pancreatic beta cells
+    parent_id: diabetes_mellitus
+    codes:
+      - system: SNOMED-CT
+        code: "46635009"
+      - system: ICD-10
+        code: E10
+
+  - id: diabetes_mellitus_type_2
+    name: Diabetes Mellitus Type 2
+    description: Insulin resistance with relative insulin deficiency
+    parent_id: diabetes_mellitus
+    codes:
+      - system: SNOMED-CT
+        code: "44054006"
+      - system: ICD-10
+        code: E11
+
+  - id: gestational_diabetes
+    name: Gestational Diabetes
+    description: Diabetes diagnosed during pregnancy
+    parent_id: diabetes_mellitus
+    codes:
+      - system: SNOMED-CT
+        code: "11687002"
+      - system: ICD-10
+        code: O24.4
+
+  - id: hypertension
+    name: Hypertension
+    description: Persistently elevated arterial blood pressure
+    codes:
+      - system: SNOMED-CT
+        code: "38341003"
+      - system: ICD-10
+        code: I10
+
+  - id: hiv_infection
+    name: HIV Infection
+    description: Infection with human immunodeficiency virus
+    codes:
+      - system: SNOMED-CT
+        code: "86406008"
+      - system: ICD-10
+        code: B20
+
+  - id: preeclampsia
+    name: Preeclampsia
+    description: Pregnancy-specific hypertensive disorder with proteinuria
+    codes:
+      - system: SNOMED-CT
+        code: "398254007"
+      - system: ICD-10
+        code: O14
+
+  - id: chronic_kidney_disease
+    name: Chronic Kidney Disease
+    description: Progressive loss of kidney function over time
+    codes:
+      - system: SNOMED-CT
+        code: "709044004"
+      - system: ICD-10
+        code: N18
+
+  - id: lactic_acidosis
+    name: Lactic Acidosis
+    description: Metabolic acidosis due to lactate accumulation
+    codes:
+      - system: SNOMED-CT
+        code: "91273001"
+      - system: ICD-10
+        code: E87.2

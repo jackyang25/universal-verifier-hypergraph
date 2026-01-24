@@ -96,8 +96,12 @@ class UIControls {
         try {
             const result = await api.routePatient(this.selectedConditions);
             this.lastActivatedProtocols = result.activated_protocols || [];
-                this._setVerifyEnabled(this.lastActivatedProtocols.length > 0);
+            this._setVerifyEnabled(this.lastActivatedProtocols.length > 0);
             this._displayResults(this.lastActivatedProtocols);
+            
+            // check clinical safety
+            this._checkSafety();
+            
             this.audit.lastRouteAt = new Date();
             this.audit.lastRoute = {
                 matched_conditions: result.matched_conditions || Array.from(this.selectedConditions),
@@ -374,7 +378,96 @@ class UIControls {
         });
 
         document.getElementById('results-section').classList.add('hidden');
+        document.getElementById('safety-section').classList.add('hidden');
         this.renderer.highlight(new Set());
         this._renderAudit();
+    }
+
+    async _checkSafety() {
+        if (this.selectedConditions.size === 0) {
+            document.getElementById('safety-section').classList.add('hidden');
+            return;
+        }
+
+        try {
+            const result = await api.checkSafety(this.selectedConditions);
+            
+            if (!result.available) {
+                // ontology module not available, silently skip
+                document.getElementById('safety-section').classList.add('hidden');
+                return;
+            }
+
+            this._displaySafety(result);
+        } catch (error) {
+            console.error('Safety check failed:', error);
+            // don't show error to user, just skip safety display
+            document.getElementById('safety-section').classList.add('hidden');
+        }
+    }
+
+    _displaySafety(safetyData) {
+        const section = document.getElementById('safety-section');
+        const violationsBox = document.getElementById('safety-violations');
+        const contraindicationsBox = document.getElementById('safety-contraindications');
+        const treatmentsBox = document.getElementById('safety-treatments');
+
+        // hide all boxes initially
+        violationsBox.classList.add('hidden');
+        contraindicationsBox.classList.add('hidden');
+        treatmentsBox.classList.add('hidden');
+
+        let hasContent = false;
+
+        // display consistency violations
+        if (safetyData.consistency_violations && safetyData.consistency_violations.length > 0) {
+            hasContent = true;
+            violationsBox.classList.remove('hidden');
+            violationsBox.innerHTML = `
+                <h3>Invalid Selection</h3>
+                ${safetyData.consistency_violations.map(v => `
+                    <div class="safety-item">
+                        <div class="safety-item-detail">${v}</div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // display contraindications
+        if (safetyData.contraindicated_substances && safetyData.contraindicated_substances.length > 0) {
+            hasContent = true;
+            contraindicationsBox.classList.remove('hidden');
+            contraindicationsBox.innerHTML = `
+                <h3>Contraindicated Medications</h3>
+                ${safetyData.contraindicated_substances.map(s => `
+                    <div class="safety-item">
+                        <div class="safety-item-name">${s.name}</div>
+                        <div class="safety-item-detail">${s.reason}</div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // display safe treatments
+        if (safetyData.safe_treatments && safetyData.safe_treatments.length > 0) {
+            hasContent = true;
+            treatmentsBox.classList.remove('hidden');
+            treatmentsBox.innerHTML = `
+                <h3>Safe Treatment Options</h3>
+                ${safetyData.safe_treatments.map(t => `
+                    <div class="safety-item">
+                        <div class="safety-item-name">${t.name}</div>
+                        <div class="safety-item-detail">${t.indication}</div>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        // show section if any content
+        if (hasContent) {
+            section.classList.remove('hidden');
+        } else {
+            section.classList.add('hidden');
+        }
     }
 }

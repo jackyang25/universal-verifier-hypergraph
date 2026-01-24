@@ -1,0 +1,134 @@
+# Substance entities for the clinical universe
+# These represent medications and therapeutic agents
+
+entity_type: substance
+
+entities:
+  # Diabetes medications
+  - id: metformin
+    name: Metformin
+    description: Biguanide oral antidiabetic agent
+    codes:
+      - system: SNOMED-CT
+        code: "109081006"
+      - system: RxNorm
+        code: "6809"
+
+  - id: metformin_high_dose
+    name: Metformin High Dose
+    description: Metformin at doses exceeding 2000mg daily
+    parent_id: metformin
+
+  - id: insulin
+    name: Insulin
+    description: Peptide hormone for glucose regulation
+    codes:
+      - system: SNOMED-CT
+        code: "67866001"
+      - system: RxNorm
+        code: "5856"
+
+  - id: insulin_glargine
+    name: Insulin Glargine
+    description: Long-acting insulin analog
+    parent_id: insulin
+    codes:
+      - system: RxNorm
+        code: "274783"
+
+  - id: glyburide
+    name: Glyburide
+    description: Sulfonylurea oral antidiabetic agent
+    codes:
+      - system: SNOMED-CT
+        code: "384978002"
+      - system: RxNorm
+        code: "4815"
+
+  - id: glipizide
+    name: Glipizide
+    description: Sulfonylurea oral antidiabetic agent
+    codes:
+      - system: RxNorm
+        code: "4821"
+
+  # Hypertension medications
+  - id: lisinopril
+    name: Lisinopril
+    description: ACE inhibitor antihypertensive
+    codes:
+      - system: SNOMED-CT
+        code: "386873009"
+      - system: RxNorm
+        code: "29046"
+
+  - id: enalapril
+    name: Enalapril
+    description: ACE inhibitor antihypertensive
+    codes:
+      - system: RxNorm
+        code: "3827"
+
+  - id: losartan
+    name: Losartan
+    description: Angiotensin II receptor blocker
+    codes:
+      - system: RxNorm
+        code: "52175"
+
+  - id: amlodipine
+    name: Amlodipine
+    description: Calcium channel blocker antihypertensive
+    codes:
+      - system: RxNorm
+        code: "17767"
+
+  - id: methyldopa
+    name: Methyldopa
+    description: Centrally acting antihypertensive (pregnancy-safe)
+    codes:
+      - system: RxNorm
+        code: "6876"
+
+  - id: labetalol
+    name: Labetalol
+    description: Combined alpha and beta blocker (pregnancy-safe)
+    codes:
+      - system: RxNorm
+        code: "5764"
+
+  - id: nifedipine
+    name: Nifedipine
+    description: Calcium channel blocker (pregnancy-safe)
+    codes:
+      - system: RxNorm
+        code: "7417"
+
+  # HIV medications
+  - id: tenofovir
+    name: Tenofovir
+    description: Nucleotide reverse transcriptase inhibitor
+    codes:
+      - system: RxNorm
+        code: "309113"
+
+  - id: emtricitabine
+    name: Emtricitabine
+    description: Nucleoside reverse transcriptase inhibitor
+    codes:
+      - system: RxNorm
+        code: "276237"
+
+  - id: dolutegravir
+    name: Dolutegravir
+    description: Integrase strand transfer inhibitor
+    codes:
+      - system: RxNorm
+        code: "1433868"
+
+  - id: efavirenz
+    name: Efavirenz
+    description: Non-nucleoside reverse transcriptase inhibitor
+    codes:
+      - system: RxNorm
+        code: "195085"

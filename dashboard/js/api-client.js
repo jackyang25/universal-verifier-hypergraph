@@ -94,6 +94,20 @@ class ProtocolRouterAPI {
         });
     }
 
+    // Ontology safety checks
+    async checkSafety(conditions) {
+        return this._fetch('/ontology/check', {
+            method: 'POST',
+            body: JSON.stringify({
+                conditions: Array.from(conditions),
+            }),
+        });
+    }
+
+    async getOntologyStatus() {
+        return this._fetch('/ontology/status');
+    }
+
     // Health
     async health() {
         return this._fetch('/health');

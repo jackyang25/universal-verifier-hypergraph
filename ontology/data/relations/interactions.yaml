@@ -1,0 +1,25 @@
+# Interaction relations
+# Express clinically significant interactions between substances
+
+relation_type: interacts_with
+
+relations:
+  - source_id: metformin
+    target_id: insulin
+    strength: moderate
+    evidence: "Combination increases hypoglycemia risk; requires dose adjustment"
+
+  - source_id: glyburide
+    target_id: insulin
+    strength: strong
+    evidence: "Additive hypoglycemia risk; typically not combined"
+
+  - source_id: lisinopril
+    target_id: losartan
+    strength: strong
+    evidence: "Dual RAAS blockade increases adverse events"
+
+  - source_id: tenofovir
+    target_id: metformin
+    strength: moderate
+    evidence: "Both cleared renally; monitor renal function closely"

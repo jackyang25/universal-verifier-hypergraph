@@ -1,0 +1,35 @@
+# Mutual exclusion relations
+# Express logical incompatibilities between entities
+
+relation_type: excludes
+
+relations:
+  # Physiologic state exclusions
+  - source_id: pregnant
+    target_id: pediatric
+    evidence: "Pediatric patients (under 18) cannot be pregnant in standard clinical definitions"
+
+  - source_id: pregnant
+    target_id: elderly
+    evidence: "Post-menopausal patients cannot be pregnant"
+
+  - source_id: first_trimester
+    target_id: second_trimester
+    evidence: "Pregnancy trimesters are mutually exclusive"
+
+  - source_id: first_trimester
+    target_id: third_trimester
+    evidence: "Pregnancy trimesters are mutually exclusive"
+
+  - source_id: second_trimester
+    target_id: third_trimester
+    evidence: "Pregnancy trimesters are mutually exclusive"
+
+  # Finding exclusions
+  - source_id: detectable_viral_load
+    target_id: undetectable_viral_load
+    evidence: "Viral load is either detectable or undetectable"
+
+  - source_id: hyperglycemia
+    target_id: hypoglycemia
+    evidence: "Blood glucose cannot be simultaneously high and low"

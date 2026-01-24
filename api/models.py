@@ -147,3 +147,26 @@ class VerifyResponse(BaseModel):
     matched_conditions: List[str]
     results: List[VerifyProtocolResult]
     timestamp: datetime
+
+
+class SafetyCheckRequest(BaseModel):
+    """Request model for safety checks."""
+    conditions: List[str]
+
+
+class SafetyCheckResponse(BaseModel):
+    """Response model for safety checks."""
+    available: bool
+    contraindicated_substances: List[dict]
+    safe_treatments: List[dict]
+    consistency_violations: List[str]
+    conditions_checked: List[str]
+
+
+class OntologyStatusResponse(BaseModel):
+    """Response model for ontology module status."""
+    available: bool
+    entity_count: Optional[int] = None
+    relation_count: Optional[int] = None
+    axiom_count: Optional[int] = None
+    error: Optional[str] = None

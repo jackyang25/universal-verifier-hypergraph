@@ -9,17 +9,17 @@ from fastapi.responses import FileResponse
 from starlette.requests import Request
 from starlette.responses import Response
 
-from api.routers import execute, graph, protocols, routing
+from api.routers import execute, graph, ontology, protocols, routing
 from api.models import HealthResponse
-from protocol_router import __version__ as router_version
+from protocols import __version__ as router_version
 
 # configuration
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 ENV = os.getenv("ENV", "development")
 
 app = FastAPI(
-    title="Clinical Protocol Router API",
-    description="Hypergraph-based clinical protocol routing",
+    title="Protocol Router API",
+    description="Hypergraph-based protocol routing",
     version="1.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -51,6 +51,7 @@ app.include_router(graph.router, prefix="/api/graph", tags=["graph"])
 app.include_router(protocols.router, prefix="/api/protocols", tags=["protocols"])
 app.include_router(routing.router, prefix="/api/routing", tags=["routing"])
 app.include_router(execute.router, prefix="/api/verify", tags=["verify"])
+app.include_router(ontology.router, prefix="/api/ontology", tags=["ontology"])
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["health"])
@@ -59,12 +60,12 @@ def health_check():
     return HealthResponse(status="healthy", version=router_version)
 
 
-# serve playground static files (must be last)
-playground_path = "playground"
-if os.path.exists(playground_path):
-    app.mount("/static", StaticFiles(directory=playground_path), name="static")
+# serve dashboard static files (must be last)
+dashboard_path = "dashboard"
+if os.path.exists(dashboard_path):
+    app.mount("/static", StaticFiles(directory=dashboard_path), name="static")
     
     @app.get("/")
-    async def serve_playground():
-        """Serve the playground UI index.html."""
-        return FileResponse(f"{playground_path}/index.html")
+    async def serve_dashboard():
+        """Serve the dashboard UI index.html."""
+        return FileResponse(f"{dashboard_path}/index.html")

@@ -1,0 +1,59 @@
+# Contraindication relations
+# Express when a substance should not be used in a given state
+
+relation_type: contraindicated_in
+
+relations:
+  # Pregnancy contraindications
+  - source_id: metformin_high_dose
+    target_id: pregnant
+    strength: strong
+    evidence: "High-dose metformin may increase risk of lactic acidosis in pregnancy"
+
+  - source_id: glyburide
+    target_id: first_trimester
+    strength: moderate
+    evidence: "Sulfonylureas may cross placenta in first trimester"
+
+  - source_id: lisinopril
+    target_id: pregnant
+    strength: absolute
+    evidence: "ACE inhibitors are teratogenic, particularly in 2nd/3rd trimester"
+
+  - source_id: enalapril
+    target_id: pregnant
+    strength: absolute
+    evidence: "ACE inhibitors are teratogenic"
+
+  - source_id: losartan
+    target_id: pregnant
+    strength: absolute
+    evidence: "ARBs are teratogenic, contraindicated throughout pregnancy"
+
+  - source_id: efavirenz
+    target_id: first_trimester
+    strength: strong
+    evidence: "Neural tube defect risk in first trimester exposure"
+
+  # Renal impairment contraindications
+  - source_id: metformin
+    target_id: renal_impairment
+    strength: strong
+    evidence: "Risk of lactic acidosis with reduced renal clearance"
+
+  - source_id: glyburide
+    target_id: renal_impairment
+    strength: moderate
+    evidence: "Increased hypoglycemia risk due to reduced clearance"
+
+  # Pediatric contraindications
+  - source_id: metformin
+    target_id: pediatric
+    strength: moderate
+    evidence: "Limited safety data in children under 10 years"
+
+  # Condition-based contraindications
+  - source_id: metformin
+    target_id: lactic_acidosis
+    strength: absolute
+    evidence: "Metformin can precipitate or worsen lactic acidosis"

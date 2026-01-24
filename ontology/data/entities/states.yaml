@@ -1,0 +1,67 @@
+# Physiologic state entities for the clinical universe
+# These represent patient conditions that are not pathological
+
+entity_type: physiologic_state
+
+entities:
+  - id: pregnant
+    name: Pregnant
+    description: State of carrying a developing embryo or fetus
+    codes:
+      - system: SNOMED-CT
+        code: "77386006"
+
+  - id: pediatric
+    name: Pediatric
+    description: Patient under 18 years of age
+    codes:
+      - system: SNOMED-CT
+        code: "410601007"
+
+  - id: elderly
+    name: Elderly
+    description: Patient 65 years of age or older
+    codes:
+      - system: SNOMED-CT
+        code: "105436006"
+
+  - id: age_over_65
+    name: Age Over 65
+    description: Patient age exceeds 65 years
+    parent_id: elderly
+
+  - id: breastfeeding
+    name: Breastfeeding
+    description: Currently lactating and nursing an infant
+    codes:
+      - system: SNOMED-CT
+        code: "169750002"
+
+  - id: renal_impairment
+    name: Renal Impairment
+    description: Reduced kidney function (eGFR < 60)
+    codes:
+      - system: SNOMED-CT
+        code: "723188008"
+
+  - id: hepatic_impairment
+    name: Hepatic Impairment
+    description: Reduced liver function
+    codes:
+      - system: SNOMED-CT
+        code: "235856003"
+
+  - id: first_trimester
+    name: First Trimester
+    description: Weeks 1-12 of pregnancy
+    parent_id: pregnant
+
+  - id: second_trimester
+    name: Second Trimester
+    description: Weeks 13-26 of pregnancy
+    parent_id: pregnant
+
+  - id: third_trimester
+    name: Third Trimester
+    description: Weeks 27-40 of pregnancy
+    parent_id: pregnant

@@ -5,12 +5,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends
 
-from protocol_router import ProtocolRouter
+from protocols import ProtocolRouter
 from api.dependencies import get_protocol_router_dependency
 from api.models import VerifyRequest, VerifyResponse, VerifyProtocolResult
-from verifiers.base_verifier import check_missing_interactions
-from verifiers.lean_translator import LeanTranslator
-from verifiers.lean_executor import LeanExecutor
+from verification.base_verifier import check_missing_interactions
+from verification.lean_translator import LeanTranslator
+from verification.lean_executor import LeanExecutor
 
 router = APIRouter()
 
@@ -19,9 +19,9 @@ lean_translator = LeanTranslator()
 lean_executor = LeanExecutor()
 
 # Paths
-VERIFIERS_DIR = Path(__file__).parent.parent.parent / "verifiers"
-GUIDELINES_DIR = VERIFIERS_DIR / "guidelines"
-PROTOCOLS_DIR = VERIFIERS_DIR / "protocols"
+VERIFICATION_DIR = Path(__file__).parent.parent.parent / "verification"
+GUIDELINES_DIR = VERIFICATION_DIR / "guidelines"
+PROTOCOLS_DIR = VERIFICATION_DIR / "protocols"
 
 
 @router.post("/run", response_model=VerifyResponse)

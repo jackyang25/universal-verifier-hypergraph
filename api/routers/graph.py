@@ -4,8 +4,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends
 
-from protocol_router import ProtocolRouter
-from protocol_router.exporter import D3Exporter
+from protocols import ProtocolRouter
+from protocols.exporter import D3Exporter
 from api.dependencies import get_protocol_router_dependency
 from api.models import GraphExport, GraphStructure
 

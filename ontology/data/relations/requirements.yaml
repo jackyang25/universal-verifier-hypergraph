@@ -1,0 +1,28 @@
+# Requirement relations
+# Express when one entity requires another
+
+relation_type: requires
+
+relations:
+  # Monitoring requirements
+  - source_id: metformin
+    target_id: reduced_egfr
+    strength: strong
+    evidence: "Renal function must be assessed before and during metformin therapy"
+    # note: this is a monitoring requirement, not a treatment relationship
+
+  # State requirements
+  - source_id: gestational_diabetes
+    target_id: pregnant
+    strength: absolute
+    evidence: "Gestational diabetes by definition requires pregnancy"
+
+  - source_id: preeclampsia
+    target_id: pregnant
+    strength: absolute
+    evidence: "Preeclampsia is a pregnancy-specific condition"
+
+  - source_id: fetal_macrosomia
+    target_id: pregnant
+    strength: absolute
+    evidence: "Fetal findings require pregnancy"
