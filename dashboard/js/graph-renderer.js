@@ -59,14 +59,18 @@ class HypergraphRenderer {
     }
 
     async render(graphData) {
-        this.nodes = graphData.nodes.map(n => ({...n, x: 0, y: 0}));
-        this.hulls = graphData.hulls.map(h => ({...h}));
+        this.nodes = graphData.nodes.map(n => ({...n, x: 0, y: 0, active: false}));
+        this.hulls = graphData.hulls.map(h => ({...h, active: false}));
         this.nodeMap = new Map(this.nodes.map(n => [n.id, n]));
 
         this._layoutNodes();
         this._drawHulls();
         this._drawNodes();
         this._updatePositions(false);
+        
+        // Apply initial styles to ensure nothing is highlighted
+        this._applyNodeStyles();
+        this._applyHullStyles();
     }
 
     _layoutNodes() {
@@ -165,20 +169,36 @@ class HypergraphRenderer {
     }
 
     _updateHullPaths() {
-        const padding = 32;
-
         this.hullGroup.selectAll('.hull-group').each((hull, i, groups) => {
             const group = d3.select(groups[i]);
-            const points = hull.conditions
+            
+            // only draw hull if ALL its conditions are active (hull is active)
+            if (!hull.active) {
+                group.select('path').attr('d', '');
+                return;
+            }
+            
+            // get points for all nodes in this active hull
+            // make sure to only use THIS hull's nodes, not influenced by any others
+            const hullNodes = hull.conditions
                 .map(id => this.nodeMap.get(id))
-                .filter(n => n)
-                .map(n => [n.x, n.y]);
+                .filter(n => n);
+            
+            const points = hullNodes.map(n => [n.x, n.y]);
 
-            if (points.length === 0) {
+            if (points.length === 0 || hullNodes.some(n => !n.active)) {
+                // if any node in this hull became inactive, hide it
                 group.select('path').attr('d', '');
                 return;
             }
 
+            // padding needs to account for node radius (24px ring) + extra space
+            // for 3+ nodes, needs to be much bigger to clearly show it encompasses other protocols
+            const nodeRadius = 24; // outer ring radius
+            const extraPadding = points.length >= 3 ? 65 : 20;
+            const padding = nodeRadius + extraPadding;
+            
+            // generate path using ONLY this hull's node positions
             const path = this._createHullPath(points, padding);
             group.select('path').attr('d', path);
         });
@@ -201,22 +221,75 @@ class HypergraphRenderer {
 
         // convex hull for 3+ nodes
         const hull = d3.polygonHull(points);
-        if (!hull || hull.length < 3) return '';
+        if (!hull || hull.length < 3) {
+            // fallback to pill shape if hull fails (collinear points)
+            if (points.length === 2) return this._pillPath(points[0], points[1], padding);
+            // fallback to enclosing circle for other cases
+            return this._enclosingCircle(points, padding);
+        }
 
-        // expand hull outward
-        const centroid = this._centroid(hull);
-        const expanded = hull.map(p => {
-            const dx = p[0] - centroid[0];
-            const dy = p[1] - centroid[1];
-            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const nodeVisualRadius = 24; // outer ring radius
+        const centroid = this._centroid(points);
+        
+        // expand hull vertices outward from centroid, maintaining consistent spacing
+        const expanded = hull.map(hullPoint => {
+            const dx = hullPoint[0] - centroid[0];
+            const dy = hullPoint[1] - centroid[1];
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 0.1) {
+                return [hullPoint[0] + nodeVisualRadius + padding, hullPoint[1]];
+            }
+            
+            // expand by node visual radius + padding
+            const expandDist = nodeVisualRadius + padding;
             return [
-                p[0] + (dx / dist) * padding,
-                p[1] + (dy / dist) * padding
+                hullPoint[0] + (dx / dist) * expandDist,
+                hullPoint[1] + (dy / dist) * expandDist
             ];
         });
 
-        // smooth curve through points
-        return d3.line().curve(d3.curveCardinalClosed.tension(0.75))(expanded);
+        // use smooth curve with very low tension for rounded, circular corners
+        // add more intermediate points for smoother curves
+        const smoothed = [];
+        for (let i = 0; i < expanded.length; i++) {
+            const curr = expanded[i];
+            const next = expanded[(i + 1) % expanded.length];
+            smoothed.push(curr);
+            // add 3 intermediate points for very smooth curves
+            smoothed.push([
+                curr[0] * 0.75 + next[0] * 0.25,
+                curr[1] * 0.75 + next[1] * 0.25
+            ]);
+            smoothed.push([
+                curr[0] * 0.5 + next[0] * 0.5,
+                curr[1] * 0.5 + next[1] * 0.5
+            ]);
+            smoothed.push([
+                curr[0] * 0.25 + next[0] * 0.75,
+                curr[1] * 0.25 + next[1] * 0.75
+            ]);
+        }
+        
+        // use basis curve for maximally smooth, circular corners
+        return d3.line().curve(d3.curveBasisClosed)(smoothed);
+    }
+    
+    _enclosingCircle(points, padding) {
+        // simple bounding circle for fallback
+        const xs = points.map(p => p[0]);
+        const ys = points.map(p => p[1]);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const r = Math.max(maxX - minX, maxY - minY) / 2 + padding;
+        
+        return `M ${cx - r} ${cy} 
+                a ${r} ${r} 0 1 0 ${r * 2} 0 
+                a ${r} ${r} 0 1 0 ${-r * 2} 0`;
     }
 
     _pillPath(p1, p2, padding) {
@@ -263,8 +336,10 @@ class HypergraphRenderer {
     }
 
     highlight(activeConditions) {
-        if (this.isAnimating) return;
-        this.isAnimating = true;
+        // Cancel any pending animation timer
+        if (this.animationTimer) {
+            clearTimeout(this.animationTimer);
+        }
 
         const hasActive = activeConditions.size > 0;
 
@@ -285,14 +360,14 @@ class HypergraphRenderer {
             this._layoutNodes();
         }
 
-        // apply visual updates
+        // apply visual updates immediately
         this._applyNodeStyles();
         this._applyHullStyles();
         this._updatePositions(true);
 
-        setTimeout(() => {
-            this.isAnimating = false;
-        }, 550);
+        this.animationTimer = setTimeout(() => {
+            this.animationTimer = null;
+        }, 500);
     }
 
     _layoutWithSelection(activeConditions) {
@@ -302,13 +377,33 @@ class HypergraphRenderer {
         const activeNodes = this.nodes.filter(n => n.active);
         const inactiveNodes = this.nodes.filter(n => !n.active);
 
-        // active nodes: spread in center area
-        const activeSpacing = Math.min(120, 300 / Math.max(activeNodes.length, 1));
-        activeNodes.forEach((node, i) => {
-            const angle = (2 * Math.PI * i) / activeNodes.length - Math.PI / 2;
-            const radius = activeNodes.length === 1 ? 0 : activeSpacing;
-            node.x = centerX + radius * Math.cos(angle);
-            node.y = centerY + radius * Math.sin(angle);
+        // find which active nodes belong to active hyperedges
+        const nodesInActiveHulls = new Set();
+        const activeHulls = this.hulls.filter(h => h.active);
+        activeHulls.forEach(hull => {
+            hull.conditions.forEach(cond => nodesInActiveHulls.add(cond));
+        });
+
+        // separate active nodes into those in hyperedges vs standalone
+        const hullNodes = activeNodes.filter(n => nodesInActiveHulls.has(n.id));
+        const standaloneNodes = activeNodes.filter(n => !nodesInActiveHulls.has(n.id));
+
+        // layout nodes that are in active hyperedges - maintain consistent radius
+        const baseRadius = Math.min(this.width, this.height) * 0.20;
+        const hullRadius = hullNodes.length === 1 ? 0 : baseRadius;
+        
+        hullNodes.forEach((node, i) => {
+            const angle = (2 * Math.PI * i) / hullNodes.length - Math.PI / 2;
+            node.x = centerX + hullRadius * Math.cos(angle);
+            node.y = centerY + hullRadius * Math.sin(angle);
+        });
+
+        // layout standalone active nodes (not in any active hyperedge) at a middle ring
+        const standaloneRadius = Math.min(this.width, this.height) * 0.27;
+        standaloneNodes.forEach((node, i) => {
+            const angle = (2 * Math.PI * i) / standaloneNodes.length - Math.PI / 2;
+            node.x = centerX + standaloneRadius * Math.cos(angle);
+            node.y = centerY + standaloneRadius * Math.sin(angle);
         });
 
         // inactive nodes: outer ring

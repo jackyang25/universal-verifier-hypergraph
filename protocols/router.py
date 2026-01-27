@@ -332,13 +332,52 @@ class ProtocolRouter:
             config_last_updated=config_last_updated,
         )
         
-        # support multiple config key names for backwards compatibility
-        protocols_data = (
-            data.get("clinical_protocols") or 
-            []
-        )
-        for protocol_data in protocols_data:
-            protocol = Protocol.from_dict(protocol_data)
+        # Support multiple config key names for backwards compatibility
+        # New schema: verified_contexts
+        # Old schema: clinical_protocols
+        contexts_data = data.get("verified_contexts") or data.get("clinical_protocols") or []
+        
+        for context_data in contexts_data:
+            # New schema: flatten hyperedge and protocol into Protocol
+            if "hyperedge" in context_data:
+                proof = context_data["hyperedge"]["proof"]
+                protocol_info = context_data.get("protocol", {})
+                
+                protocol_dict = {
+                    "id": context_data.get("context_id"),
+                    "alias": context_data.get("alias"),
+                    "conditions": context_data["hyperedge"]["conditions"],
+                    "proof_type": proof.get("type"),
+                    "proof_file": proof.get("lean_file"),
+                    "proof_status": proof.get("status"),
+                    "proof_encapsulates": proof.get("encapsulates"),
+                    "proof_conflicts_with": proof.get("resolves_conflicts_between"),
+                    "name": protocol_info.get("name"),
+                    "description": protocol_info.get("description"),
+                    "guideline": protocol_info.get("guideline_source"),
+                    "version": protocol_info.get("version", "1.0.0"),
+                }
+                
+                # Handle regulatory info
+                if "regulatory" in protocol_info:
+                    reg = protocol_info["regulatory"]
+                    protocol_dict["country"] = reg.get("country")
+                    protocol_dict["regulatory_body"] = reg.get("body")
+                    protocol_dict["reviewer"] = reg.get("reviewer")
+                    protocol_dict["approval_status"] = reg.get("approval_status")
+                
+                # Handle composition metadata
+                if "composition" in protocol_info:
+                    comp = protocol_info["composition"]
+                    protocol_dict["composition_draws_from"] = comp.get("draws_from")
+                    protocol_dict["composition_replaces"] = comp.get("replaces")
+                    protocol_dict["composition_coordination"] = comp.get("coordination")
+                    protocol_dict["composition_reason"] = comp.get("reason")
+            else:
+                # Old schema: use as-is
+                protocol_dict = context_data
+            
+            protocol = Protocol.from_dict(protocol_dict)
             router.add_protocol(protocol)
         
         return router

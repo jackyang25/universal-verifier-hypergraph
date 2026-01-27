@@ -19,9 +19,13 @@ def get_bridge() -> Optional[OntologyBridge]:
         bridge = create_bridge()
         bridge.generate_axioms_from_relations()
         return bridge
-    except ImportError:
+    except ImportError as e:
+        print(f"Ontology ImportError: {e}")
         return None
-    except Exception:
+    except Exception as e:
+        print(f"Ontology initialization error: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

@@ -108,6 +108,10 @@ class ProtocolRouterAPI {
         return this._fetch('/ontology/status');
     }
 
+    async getAllEntities() {
+        return this._fetch('/ontology/entities');
+    }
+
     // Health
     async health() {
         return this._fetch('/health');

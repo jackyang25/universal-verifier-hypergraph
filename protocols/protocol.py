@@ -13,8 +13,11 @@ class Protocol:
     A clinical protocol defines verifiers, guidelines, and rules that activate
     when ALL required conditions are present in the patient context.
     
+    Each protocol represents a HYPEREDGE in the clinical knowledge graph, with
+    formal proof verification ensuring safety and consistency.
+    
     Attributes:
-        id: Unique identifier for the protocol
+        id: Unique identifier for the protocol/context
         name: Human-readable name
         conditions: Set of conditions required for activation (hyperedge nodes)
         version: Version string for tracking changes to this protocol
@@ -27,12 +30,18 @@ class Protocol:
         regulatory_body: Regulatory authority that approved the protocol
         approval_status: Current approval status (draft, approved, deprecated)
         created_at: Timestamp when protocol was defined
+        proof_type: Type of proof (independent, compositional, interaction)
+        proof_file: Path to Lean proof file
+        proof_status: Verification status (verified, pending, failed)
+        proof_encapsulates: List of protocol IDs this proof encapsulates (compositional)
+        proof_conflicts_with: List of protocol IDs this proof resolves (interaction)
         metadata: Additional key-value pairs for extensibility
     """
     
     id: str
     name: str
     conditions: FrozenSet[str]
+    alias: Optional[str] = None  # Machine-friendly alias for the context
     version: str = "1.0.0"
     verifier: Optional[str] = None
     guideline: Optional[str] = None
@@ -43,6 +52,15 @@ class Protocol:
     regulatory_body: Optional[str] = None
     approval_status: Optional[str] = None
     created_at: Optional[datetime] = None
+    proof_type: Optional[str] = None  # independent, compositional, interaction
+    proof_file: Optional[str] = None
+    proof_status: Optional[str] = None
+    proof_encapsulates: Optional[tuple] = None  # tuple for immutability
+    proof_conflicts_with: Optional[tuple] = None  # tuple for immutability
+    composition_draws_from: Optional[tuple] = None  # Protocol IDs this draws from (compositional)
+    composition_replaces: Optional[tuple] = None  # Protocol IDs this replaces (interaction)
+    composition_coordination: Optional[tuple] = None  # Coordination points (compositional)
+    composition_reason: Optional[str] = None  # Why replacement needed (interaction)
     metadata: tuple = field(default_factory=tuple)  # tuple of (key, value) pairs for immutability
     
     def __post_init__(self) -> None:
@@ -93,6 +111,8 @@ class Protocol:
         }
         
         # only include optional fields if they have values
+        if self.alias:
+            result["alias"] = self.alias
         if self.description:
             result["description"] = self.description
         if self.verifier:
@@ -111,6 +131,24 @@ class Protocol:
             result["approval_status"] = self.approval_status
         if self.created_at:
             result["created_at"] = self.created_at.isoformat()
+        if self.proof_type:
+            result["proof_type"] = self.proof_type
+        if self.proof_file:
+            result["proof_file"] = self.proof_file
+        if self.proof_status:
+            result["proof_status"] = self.proof_status
+        if self.proof_encapsulates:
+            result["proof_encapsulates"] = list(self.proof_encapsulates)
+        if self.proof_conflicts_with:
+            result["proof_conflicts_with"] = list(self.proof_conflicts_with)
+        if self.composition_draws_from:
+            result["composition_draws_from"] = list(self.composition_draws_from)
+        if self.composition_replaces:
+            result["composition_replaces"] = list(self.composition_replaces)
+        if self.composition_coordination:
+            result["composition_coordination"] = list(self.composition_coordination)
+        if self.composition_reason:
+            result["composition_reason"] = self.composition_reason
         if self.metadata:
             result["metadata"] = dict(self.metadata)
         
@@ -155,10 +193,33 @@ class Protocol:
         elif metadata is None:
             metadata = tuple()
         
+        # Handle proof encapsulation and conflicts
+        proof_encapsulates = data.get("proof_encapsulates")
+        if isinstance(proof_encapsulates, list):
+            proof_encapsulates = tuple(proof_encapsulates)
+        
+        proof_conflicts_with = data.get("proof_conflicts_with")
+        if isinstance(proof_conflicts_with, list):
+            proof_conflicts_with = tuple(proof_conflicts_with)
+        
+        # Handle composition metadata
+        composition_draws_from = data.get("composition_draws_from")
+        if isinstance(composition_draws_from, list):
+            composition_draws_from = tuple(composition_draws_from)
+        
+        composition_replaces = data.get("composition_replaces")
+        if isinstance(composition_replaces, list):
+            composition_replaces = tuple(composition_replaces)
+        
+        composition_coordination = data.get("composition_coordination")
+        if isinstance(composition_coordination, list):
+            composition_coordination = tuple(composition_coordination)
+        
         return cls(
             id=data["id"],
             name=data["name"],
             conditions=conditions,
+            alias=data.get("alias"),
             version=data.get("version", "1.0.0"),
             verifier=data.get("verifier"),
             guideline=data.get("guideline"),
@@ -169,6 +230,15 @@ class Protocol:
             regulatory_body=data.get("regulatory_body"),
             approval_status=data.get("approval_status"),
             created_at=created_at,
+            proof_type=data.get("proof_type"),
+            proof_file=data.get("proof_file"),
+            proof_status=data.get("proof_status"),
+            proof_encapsulates=proof_encapsulates,
+            proof_conflicts_with=proof_conflicts_with,
+            composition_draws_from=composition_draws_from,
+            composition_replaces=composition_replaces,
+            composition_coordination=composition_coordination,
+            composition_reason=data.get("composition_reason"),
             metadata=metadata,
         )
     

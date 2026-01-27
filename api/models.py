@@ -13,6 +13,7 @@ class ProtocolResponse(BaseModel):
     version: str
     name: str
     conditions: List[str]
+    alias: Optional[str] = None
     guideline: Optional[str] = None
     description: Optional[str] = None
     last_reviewed: Optional[str] = None
@@ -20,6 +21,20 @@ class ProtocolResponse(BaseModel):
     country: Optional[str] = None
     regulatory_body: Optional[str] = None
     approval_status: Optional[str] = None
+    
+    # Proof metadata
+    proof_type: Optional[str] = None
+    proof_file: Optional[str] = None
+    proof_status: Optional[str] = None
+    proof_verified_at: Optional[str] = None
+    proof_encapsulates: Optional[List[str]] = None
+    proof_conflicts_with: Optional[List[str]] = None
+    
+    # Composition metadata
+    composition_draws_from: Optional[List[str]] = None
+    composition_coordination: Optional[List[str]] = None
+    composition_replaces: Optional[List[str]] = None
+    composition_reason: Optional[str] = None
 
 
 class ProtocolCreate(BaseModel):
@@ -170,3 +185,27 @@ class OntologyStatusResponse(BaseModel):
     relation_count: Optional[int] = None
     axiom_count: Optional[int] = None
     error: Optional[str] = None
+
+
+class EntityResponse(BaseModel):
+    """Response model for an ontology entity."""
+    id: str
+    name: str
+    entity_type: str
+    description: Optional[str] = None
+    has_protocols: bool = False
+
+
+class EntityCategory(BaseModel):
+    """A category of entities."""
+    category: str
+    display_name: str
+    entities: List[EntityResponse]
+
+
+class AllEntitiesResponse(BaseModel):
+    """Response model for all ontology entities grouped by category."""
+    available: bool
+    categories: List[EntityCategory]
+    total_entities: int
+    conditions_with_protocols: List[str]

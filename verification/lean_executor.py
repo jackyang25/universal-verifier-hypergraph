@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from verifiers.base_verifier import VerificationResult
+from verification.base_verifier import VerificationResult
 
 
 class LeanExecutor:

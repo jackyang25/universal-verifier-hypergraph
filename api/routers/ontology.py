@@ -3,8 +3,16 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
-from api.dependencies import get_ontology_bridge_dependency
-from api.models import SafetyCheckRequest, SafetyCheckResponse, OntologyStatusResponse
+from api.dependencies import get_ontology_bridge_dependency, get_protocol_router_dependency
+from api.models import (
+    SafetyCheckRequest, 
+    SafetyCheckResponse, 
+    OntologyStatusResponse,
+    AllEntitiesResponse,
+    EntityCategory,
+    EntityResponse,
+)
+from protocols import ProtocolRouter
 
 router = APIRouter()
 
@@ -92,4 +100,92 @@ def get_ontology_status(
         entity_count=summary["schema"]["total_entities"],
         relation_count=summary["schema"]["total_relations"],
         axiom_count=summary["axiom_count"],
+    )
+
+
+@router.get("/entities", response_model=AllEntitiesResponse)
+def get_all_entities(
+    ontology_bridge: Optional["OntologyBridge"] = Depends(get_ontology_bridge_dependency),
+    protocol_router: ProtocolRouter = Depends(get_protocol_router_dependency),
+):
+    """
+    Get all ontology entities grouped by category.
+    
+    Returns all conditions a clinician can select, organized by type:
+    - Disorders (diseases, conditions)
+    - Physiologic States (pregnancy, age groups)
+    - Findings (lab results, symptoms)
+    
+    Also indicates which conditions have associated protocols.
+    """
+    if not ontology_bridge:
+        return AllEntitiesResponse(
+            available=False,
+            categories=[],
+            total_entities=0,
+            conditions_with_protocols=[],
+        )
+    
+    # get conditions that have protocols
+    conditions_with_protocols = set(protocol_router.conditions)
+    
+    # category display names
+    category_names = {
+        "disorder": "Disorders & Diseases",
+        "physiologic_state": "Physiologic States",
+        "finding": "Clinical Findings",
+        "substance": "Substances & Medications",
+    }
+    
+    # group entities by type (exclude substances for condition selection)
+    categories_data = {}
+    for entity in ontology_bridge.registry.iter_entities():
+        entity_type = entity.entity_type.value
+        
+        # skip substances - they're medications, not patient conditions
+        if entity_type == "substance":
+            continue
+            
+        if entity_type not in categories_data:
+            categories_data[entity_type] = []
+        
+        categories_data[entity_type].append(EntityResponse(
+            id=entity.id,
+            name=entity.name,
+            entity_type=entity_type,
+            description=entity.description or None,
+            has_protocols=entity.id in conditions_with_protocols,
+        ))
+    
+    # sort entities within each category
+    for entities in categories_data.values():
+        entities.sort(key=lambda e: e.name)
+    
+    # build response categories in preferred order
+    category_order = ["disorder", "physiologic_state", "finding"]
+    categories = []
+    for cat_type in category_order:
+        if cat_type in categories_data:
+            categories.append(EntityCategory(
+                category=cat_type,
+                display_name=category_names.get(cat_type, cat_type.replace("_", " ").title()),
+                entities=categories_data[cat_type],
+            ))
+    
+    # add any remaining categories
+    for cat_type, entities in categories_data.items():
+        if cat_type not in category_order:
+            categories.append(EntityCategory(
+                category=cat_type,
+                display_name=category_names.get(cat_type, cat_type.replace("_", " ").title()),
+                entities=entities,
+            ))
+    
+    total = sum(len(cat.entities) for cat in categories)
+    
+    return AllEntitiesResponse(
+        available=True,
+        categories=categories,
+        total_entities=total,
+        conditions_with_protocols=sorted(conditions_with_protocols),
     )

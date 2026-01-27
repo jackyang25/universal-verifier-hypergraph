@@ -43,7 +43,7 @@ class CoreAxioms:
         Returns:
             List of generated axioms
         """
-        from universe.types import RelationType
+        from ontology.types import RelationType
         
         generated = []
         

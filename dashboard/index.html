@@ -3,66 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Protocol Router</title>
+    <title>Clinical Contraindication System</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <header>
         <div class="header-left">
-            <h1>Clinical Protocol Router</h1>
-            <p class="subtitle">Hypergraph-based Medical Decision Support</p>
-        </div>
-
-        <!-- Audit trail (UI-only, derived from supported API calls) -->
-        <div class="audit" id="audit">
-            <button id="audit-toggle" class="audit-toggle" type="button" aria-expanded="false">
-                Audit Trail
-            </button>
-            <div id="audit-panel" class="audit-panel collapsed" aria-hidden="true">
-                <div id="audit-pills" class="audit-pills"></div>
-                <div id="audit-details" class="audit-details"></div>
-            </div>
+            <h1>Clinical Contraindication System</h1>
+            <p class="subtitle">Proof-Based Protocol Verification & Drug Interaction Safety</p>
         </div>
     </header>
 
-    <main>
-        <aside id="controls">
-            <section>
-                <h2>Patient Conditions</h2>
-                <div id="condition-checkboxes"></div>
-                <button id="route-btn" class="primary">Route Patient</button>
-                <button id="verify-btn" class="secondary" disabled>Execute Verifiers</button>
-                <button id="clear-btn" class="secondary">Clear Selection</button>
-            </section>
+    <!-- Main EMR-style form -->
+    <main class="emr-main">
+        <div class="emr-container">
+            <!-- Two Column Layout -->
+            <div class="two-column-layout">
+                <!-- Left Column: Conditions Selection -->
+                <div class="left-column">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2>Patient Conditions</h2>
+                                <span class="card-subtitle">Select clinical context</span>
+                            </div>
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div class="tabs">
+                                <button class="tab-btn active" data-tab="disorders">
+                                    <span class="tab-label">Medical Diagnoses</span>
+                                </button>
+                                <button class="tab-btn" data-tab="states">
+                                    <span class="tab-label">Patient Status</span>
+                                </button>
+                                <button class="tab-btn" data-tab="findings">
+                                    <span class="tab-label">Labs & Vitals</span>
+                                </button>
+                            </div>
+                            <div class="tab-content">
+                                <div id="tab-disorders" class="tab-pane active">
+                                    <div id="conditions-disorders" class="conditions-list"></div>
+                                </div>
+                                <div id="tab-states" class="tab-pane">
+                                    <div id="conditions-states" class="conditions-list"></div>
+                                </div>
+                                <div id="tab-findings" class="tab-pane">
+                                    <div id="conditions-findings" class="conditions-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-            <section id="results-section" class="hidden">
-                <h2>Activated Protocols</h2>
-                <div id="results"></div>
-            </section>
-
-            <section id="safety-section" class="hidden">
-                <h2>Safety Checks</h2>
-                <div id="safety-violations" class="safety-box violations hidden"></div>
-                <div id="safety-contraindications" class="safety-box contraindications hidden"></div>
-                <div id="safety-treatments" class="safety-box treatments hidden"></div>
-            </section>
-
-            <section>
-                <h2>Graph Info</h2>
-                <div id="graph-info">
-                    <p>Conditions: <span id="condition-count">0</span></p>
-                    <p>Protocols: <span id="protocol-count">0</span></p>
-                    <p>Version: <span id="config-version">-</span></p>
+                    <!-- Action Buttons -->
+                    <div class="action-bar">
+                        <button id="clear-btn" class="btn-secondary">Clear All</button>
+                        <button id="route-btn" class="btn-primary">Search Protocols</button>
+                    </div>
                 </div>
-            </section>
-        </aside>
 
-        <div id="visualization">
-            <svg id="graph"></svg>
-            <div id="tooltip" class="hidden"></div>
+                <!-- Right Column: Results -->
+                <div class="right-column">
+                    <!-- Activated Protocols -->
+                    <div id="results-section" class="card">
+                        <div class="card-header">
+                            <div style="flex: 1;">
+                                <h2>Matched Hyperedges</h2>
+                                <span class="card-subtitle">Clinical contexts with proven protocols</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <span id="results-count" class="card-badge">0 matched</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p id="results-empty" class="empty-state">Select conditions and click "Search Protocols" to see matched clinical contexts.</p>
+                            <div id="results"></div>
+                        </div>
+                    </div>
+
+                    <!-- Safety Assessment -->
+                    <div id="safety-section" class="card">
+                        <div class="card-header">
+                            <div>
+                                <h2>Safety Assessment</h2>
+                                <span class="card-subtitle">Ontology-derived safety axioms</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p id="safety-empty" class="empty-state">Select conditions to see contraindications, interactions, and safe treatments.</p>
+                            <div id="safety-inconsistencies" class="safety-box violations hidden"></div>
+                            <div id="safety-contraindications" class="safety-box contraindications hidden"></div>
+                            <div id="safety-treatments" class="safety-box treatments hidden"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Protocol Graph Section (spans full width) -->
+            <div id="graph-section" class="card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <h2>Protocol Hypergraph Visualization</h2>
+                    <div class="card-header-actions">
+                        <button id="toggle-graph-btn" class="btn-secondary">
+                            <span id="graph-toggle-text">Hide Graph</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="graph-body" class="card-body" style="padding: 0;">
+                    <div id="visualization">
+                        <svg id="graph"></svg>
+                        <div id="tooltip" class="hidden"></div>
+                    </div>
+                </div>
+                <div id="graph-info" class="graph-info-panel">
+                    <p>Nodes: <span id="condition-count">0</span></p>
+                    <p>Hyperedges: <span id="protocol-count">0</span></p>
+                    <p>Config Version: <span id="config-version">-</span></p>
+                </div>
+                
+                <!-- Audit Trail Panel (inside graph section) -->
+                <div id="audit-panel" class="audit-panel">
+                    <div class="audit-panel-header">
+                        <h3>Execution Trail</h3>
+                    </div>
+                    <div class="audit-panel-body">
+                        <div id="audit-pills" class="audit-pills"></div>
+                        <div id="audit-details" class="audit-details"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
+
 
     <script src="/static/js/api-client.js"></script>
     <script src="/static/js/graph-renderer.js"></script>
