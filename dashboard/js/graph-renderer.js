@@ -192,23 +192,21 @@ class HypergraphRenderer {
                 return;
             }
 
-            // padding needs to account for node radius (24px ring) + extra space
-            // for 3+ nodes, needs to be much bigger to clearly show it encompasses other protocols
-            const nodeRadius = 24; // outer ring radius
-            const extraPadding = points.length >= 3 ? 65 : 20;
-            const padding = nodeRadius + extraPadding;
+            // padding is extra space beyond the node radius
+            const extraPadding = points.length >= 3 ? 14 : 20;
             
             // generate path using ONLY this hull's node positions
-            const path = this._createHullPath(points, padding);
+            const path = this._createHullPath(points, extraPadding);
             group.select('path').attr('d', path);
         });
     }
 
     _createHullPath(points, padding) {
+        const nodeVisualRadius = 24; // outer ring radius
         if (points.length === 1) {
             // circle for single node
             const [x, y] = points[0];
-            const r = padding;
+            const r = nodeVisualRadius + padding;
             return `M ${x - r} ${y} 
                     a ${r} ${r} 0 1 0 ${r * 2} 0 
                     a ${r} ${r} 0 1 0 ${-r * 2} 0`;
@@ -216,63 +214,41 @@ class HypergraphRenderer {
 
         if (points.length === 2) {
             // pill shape for two nodes
-            return this._pillPath(points[0], points[1], padding);
+            return this._pillPath(points[0], points[1], nodeVisualRadius + padding);
         }
 
-        // convex hull for 3+ nodes
-        const hull = d3.polygonHull(points);
-        if (!hull || hull.length < 3) {
-            // fallback to pill shape if hull fails (collinear points)
-            if (points.length === 2) return this._pillPath(points[0], points[1], padding);
-            // fallback to enclosing circle for other cases
-            return this._enclosingCircle(points, padding);
-        }
-
-        const nodeVisualRadius = 24; // outer ring radius
+        // for 3+ nodes, expand each node outward from centroid
+        // then smooth the path with extra points for rounded corners
         const centroid = this._centroid(points);
-        
-        // expand hull vertices outward from centroid, maintaining consistent spacing
-        const expanded = hull.map(hullPoint => {
-            const dx = hullPoint[0] - centroid[0];
-            const dy = hullPoint[1] - centroid[1];
+
+        // sort points by angle from centroid for proper ordering
+        const sortedPoints = points.slice().sort((a, b) => {
+            const angleA = Math.atan2(a[1] - centroid[1], a[0] - centroid[0]);
+            const angleB = Math.atan2(b[1] - centroid[1], b[0] - centroid[0]);
+            return angleA - angleB;
+        });
+
+        // expand each node outward from centroid
+        const expanded = sortedPoints.map(point => {
+            const dx = point[0] - centroid[0];
+            const dy = point[1] - centroid[1];
             const dist = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (dist < 0.1) {
-                return [hullPoint[0] + nodeVisualRadius + padding, hullPoint[1]];
+                // node at centroid - expand in arbitrary direction
+                return [point[0] + nodeVisualRadius + padding, point[1]];
             }
-            
-            // expand by node visual radius + padding
+
             const expandDist = nodeVisualRadius + padding;
             return [
-                hullPoint[0] + (dx / dist) * expandDist,
-                hullPoint[1] + (dy / dist) * expandDist
+                point[0] + (dx / dist) * expandDist,
+                point[1] + (dy / dist) * expandDist
             ];
         });
 
-        // use smooth curve with very low tension for rounded, circular corners
-        // add more intermediate points for smoother curves
-        const smoothed = [];
-        for (let i = 0; i < expanded.length; i++) {
-            const curr = expanded[i];
-            const next = expanded[(i + 1) % expanded.length];
-            smoothed.push(curr);
-            // add 3 intermediate points for very smooth curves
-            smoothed.push([
-                curr[0] * 0.75 + next[0] * 0.25,
-                curr[1] * 0.75 + next[1] * 0.25
-            ]);
-            smoothed.push([
-                curr[0] * 0.5 + next[0] * 0.5,
-                curr[1] * 0.5 + next[1] * 0.5
-            ]);
-            smoothed.push([
-                curr[0] * 0.25 + next[0] * 0.75,
-                curr[1] * 0.25 + next[1] * 0.75
-            ]);
-        }
-        
-        // use basis curve for maximally smooth, circular corners
-        return d3.line().curve(d3.curveBasisClosed)(smoothed);
+        // cardinal curve passes through each vertex, treating nodes equally
+        // higher tension keeps the shape closer to the expanded triangle
+        return d3.line().curve(d3.curveCardinalClosed.tension(0.35))(expanded);
     }
     
     _enclosingCircle(points, padding) {
