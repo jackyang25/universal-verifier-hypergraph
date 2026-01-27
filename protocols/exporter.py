@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 import colorsys
 
 if TYPE_CHECKING:
-    from protocol_router.router import ProtocolRouter
+    from protocols.router import ProtocolRouter
 
 
 class D3Exporter:

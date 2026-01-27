@@ -7,7 +7,7 @@ from pathlib import Path
 from protocols.router import ProtocolRouter
 
 # Config path (exported for API layer)
-CONFIG_PATH = os.getenv("CONFIG_PATH", "config/clinical_protocols.yaml")
+CONFIG_PATH = os.getenv("CONFIG_PATH", "protocols/config/clinical_protocols.yaml")
 
 __all__ = ["get_router", "reload_router", "CONFIG_PATH"]
 

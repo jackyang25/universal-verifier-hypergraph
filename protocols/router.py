@@ -12,7 +12,7 @@ are present in the patient context.
 from pathlib import Path
 from typing import Iterator, Optional, Union
 
-from protocol_router.protocol import Protocol
+from protocols.protocol import Protocol
 
 
 class ProtocolRouter:
@@ -358,7 +358,7 @@ class ProtocolRouter:
             ValueError: If file extension is not supported
             FileNotFoundError: If config file doesn't exist
         """
-        from protocol_router.loader import load_from_json, load_from_yaml
+        from protocols.loader import load_from_json, load_from_yaml
         
         path = Path(path)
         
@@ -376,7 +376,7 @@ class ProtocolRouter:
         Args:
             path: Path to save config file (.yaml, .yml, or .json)
         """
-        from protocol_router.loader import save_to_json, save_to_yaml
+        from protocols.loader import save_to_json, save_to_yaml
         
         path = Path(path)
         

@@ -3,8 +3,8 @@
 from typing import TYPE_CHECKING, Iterable
 
 if TYPE_CHECKING:
-    from protocol_router.protocol import Protocol
-    from protocol_router.router import ProtocolRouter
+    from protocols.protocol import Protocol
+    from protocols.router import ProtocolRouter
 
 
 def normalize_conditions(conditions: Iterable[str]) -> frozenset[str]:

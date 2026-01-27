@@ -25,7 +25,6 @@ COPY protocols/ protocols/
 COPY ontology/ ontology/
 COPY verification/ verification/
 COPY api/ api/
-COPY config/ config/
 COPY dashboard/ dashboard/
 
 EXPOSE 8000

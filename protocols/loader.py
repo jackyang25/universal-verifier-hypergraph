@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from protocol_router.router import ProtocolRouter
+    from protocols.router import ProtocolRouter
 
 
 def load_from_yaml(path: Union[str, Path]) -> "ProtocolRouter":
@@ -25,7 +25,7 @@ def load_from_yaml(path: Union[str, Path]) -> "ProtocolRouter":
     """
     import yaml
     
-    from protocol_router.router import ProtocolRouter
+    from protocols.router import ProtocolRouter
     
     path = Path(path)
     
@@ -53,7 +53,7 @@ def load_from_json(path: Union[str, Path]) -> "ProtocolRouter":
         json.JSONDecodeError: If JSON is malformed
         ValueError: If required fields are missing
     """
-    from protocol_router.router import ProtocolRouter
+    from protocols.router import ProtocolRouter
     
     path = Path(path)
     

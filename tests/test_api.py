@@ -4,13 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import app
-from api.dependencies import get_protocol_router, reload_protocol_router
+from protocols.dependencies import get_router, reload_router
 
 
 @pytest.fixture
 def client():
     """Create test client."""
-    reload_protocol_router()  # ensure fresh router
+    reload_router()  # ensure fresh router
     return TestClient(app)
 
 

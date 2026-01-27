@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from protocol_router import Protocol, ProtocolRouter, load_from_yaml, load_from_json
-from protocol_router.loader import save_to_yaml, save_to_json
-from protocol_router.utils import (
+from protocols import Protocol, ProtocolRouter, load_from_yaml, load_from_json
+from protocols.loader import save_to_yaml, save_to_json
+from protocols.utils import (
     compute_coverage,
     diff_routers,
     find_interaction_protocols,
@@ -509,7 +509,7 @@ class TestIntegration:
 
     def test_load_example_config(self):
         """Load the example clinical_protocols.yaml config."""
-        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
+        config_path = Path(__file__).parent.parent / "protocols" / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
@@ -522,7 +522,7 @@ class TestIntegration:
 
     def test_example_config_versions(self):
         """Test that example config has proper versioning."""
-        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
+        config_path = Path(__file__).parent.parent / "protocols" / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
@@ -539,7 +539,7 @@ class TestIntegration:
 
     def test_realistic_patient_scenario(self):
         """Test a realistic patient matching scenario."""
-        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
+        config_path = Path(__file__).parent.parent / "protocols" / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")
@@ -562,7 +562,7 @@ class TestIntegration:
 
     def test_version_manifest_from_example(self):
         """Test version manifest export from example config."""
-        config_path = Path(__file__).parent.parent / "config" / "clinical_protocols.yaml"
+        config_path = Path(__file__).parent.parent / "protocols" / "config" / "clinical_protocols.yaml"
         
         if not config_path.exists():
             pytest.skip("Example config not found")

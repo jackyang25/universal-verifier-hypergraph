@@ -4,13 +4,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./config:/app/config
-      - ./protocol_router:/app/protocol_router
+      - ./protocols:/app/protocols
       - ./api:/app/api
-      - ./playground:/app/playground
       - ./tests:/app/tests
     environment:
       - ENV=development
-      - CONFIG_PATH=config/clinical_protocols.yaml
+      - CONFIG_PATH=protocols/config/clinical_protocols.yaml
       - CORS_ORIGINS=*
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
