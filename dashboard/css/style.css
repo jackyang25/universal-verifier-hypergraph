@@ -249,7 +249,7 @@ header .subtitle {
 /* Main Container */
 .emr-main {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: visible;
     padding: 2rem;
 }
 
@@ -261,6 +261,20 @@ header .subtitle {
     gap: 1.5rem;
 }
 
+/* Unified Panel - groups the two columns */
+.unified-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 1px 3px var(--shadow);
+    padding: 1.5rem;
+    height: 600px;
+}
+
 /* Two Column Layout */
 .two-column-layout {
     display: grid;
@@ -269,50 +283,127 @@ header .subtitle {
     align-items: stretch;
     width: 100%;
     overflow: visible;
+    flex: 1;
+    min-height: 0;
 }
 
 .left-column,
 .right-column {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
     min-width: 0;
     width: 100%;
+    min-height: 0;
 }
 
 .right-column {
     align-self: stretch;
 }
 
-/* Left column: card should grow, action bar stays fixed */
-.left-column > .card {
+/* Both columns: cards should grow equally */
+.unified-panel .left-column > .card,
+.unified-panel .right-column > .card {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.left-column > .card .card-body {
+.unified-panel .left-column > .card .card-body,
+.unified-panel .right-column .card .card-body {
     flex: 1;
     overflow: hidden;
     padding: 0;
     min-height: 0;
-}
-
-.left-column > .action-bar {
-    flex-shrink: 0;
-}
-
-/* Right column: both cards should grow equally but not stretch beyond */
-.right-column > .card {
-    flex: 1 1 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
-.right-column .card .card-body {
+.unified-panel .right-column .tab-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.unified-panel .right-column .tab-pane {
+    flex: 1;
     overflow-y: auto;
+    height: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.unified-panel .right-column .tab-pane::-webkit-scrollbar {
+    display: none;
+}
+
+.unified-panel .left-column .tab-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.unified-panel .left-column .tab-pane {
+    flex: 1;
+    overflow-y: auto;
+    height: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.unified-panel .left-column .tab-pane::-webkit-scrollbar {
+    display: none;
+}
+
+/* Resize handle for unified panel */
+.unified-panel {
+    flex: 0 0 auto;
+    min-height: 300px;
+    position: relative;
+}
+
+.panel-resize-handle {
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 24px;
+    cursor: ns-resize;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+}
+
+.panel-resize-handle::before {
+    content: '';
+    width: 80px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: all 0.2s;
+}
+
+.panel-resize-handle:hover::before {
+    background: var(--accent);
+    width: 100px;
+    height: 4px;
+}
+
+.unified-panel.resizing {
+    user-select: none;
+}
+
+body.resizing {
+    cursor: ns-resize;
+    user-select: none;
 }
 
 .empty-state {
@@ -321,6 +412,7 @@ header .subtitle {
     padding: 2.5rem 2rem;
     font-size: 0.875rem;
     line-height: 1.6;
+    margin: 0;
 }
 
 /* Tabs */
@@ -371,11 +463,25 @@ header .subtitle {
     display: none;
     height: 420px;
     overflow-y: auto;
-    padding: 0.75rem;
 }
 
 .tab-pane.active {
     display: block;
+}
+
+/* Different styling for conditions tabs vs results tabs */
+.left-column .tab-pane {
+    padding: 0.75rem;
+}
+
+/* Results tab content styling */
+#results-tab-content {
+    height: auto;
+    flex: 1;
+}
+
+#results-tab-content .tab-pane {
+    height: 100%;
 }
 
 .conditions-list {
@@ -407,10 +513,6 @@ header .subtitle {
 
 .condition-checkbox-item:active {
     transform: scale(0.99);
-}
-
-.condition-checkbox-item:last-child {
-    border-bottom: none;
 }
 
 .condition-checkbox-item input[type="checkbox"] {
@@ -636,17 +738,11 @@ header .subtitle {
     box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
 }
 
-/* Action Bar */
-.action-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border);
+
+/* Keep normal card border radius inside unified panel */
+.unified-panel .left-column > .card,
+.unified-panel .right-column > .card {
     border-radius: var(--radius-lg);
-    box-shadow: 0 1px 3px var(--shadow);
 }
 
 .action-bar-right {
@@ -655,7 +751,7 @@ header .subtitle {
 }
 
 .btn-primary {
-    padding: 0.875rem 1.75rem;
+    padding: 0.75rem 2rem;
     background: var(--accent);
     color: white;
     border: none;
@@ -664,13 +760,21 @@ header .subtitle {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     white-space: nowrap;
+    min-width: 160px;
 }
 
 .btn-primary:hover {
     background: var(--accent-hover);
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
 }
 
 .btn-primary:disabled {
@@ -680,8 +784,8 @@ header .subtitle {
 }
 
 .btn-secondary {
-    padding: 0.875rem 1.75rem;
-    background: var(--bg-tertiary);
+    padding: 0.75rem 1.5rem;
+    background: white;
     color: var(--text-primary);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -690,11 +794,20 @@ header .subtitle {
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
 }
 
 .btn-secondary:hover {
-    background: var(--bg-secondary);
-    border-color: var(--accent);
+    background: var(--bg-tertiary);
+    border-color: var(--text-secondary);
+    transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
 }
 
 /* Results */
@@ -1104,10 +1217,14 @@ header .subtitle {
 
 /* Safety Assessment */
 .safety-box {
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     padding: 1.125rem;
     border: 1px solid;
     border-radius: var(--radius-md);
+}
+
+.safety-box:last-child {
+    margin-bottom: 0;
 }
 
 .safety-box.violations {
@@ -1347,21 +1464,12 @@ header .subtitle {
     color: var(--text-secondary);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+/* Hide scrollbars globally but keep functionality */
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-::-webkit-scrollbar-track {
-    background: var(--bg-tertiary);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--text-muted);
+*::-webkit-scrollbar {
+    display: none;
 }

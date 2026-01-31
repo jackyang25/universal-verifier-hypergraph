@@ -24,27 +24,38 @@ class UIControls {
         document.getElementById('clear-btn').addEventListener('click', () => this.clearSelection());
         document.getElementById('toggle-graph-btn').addEventListener('click', () => this.toggleGraph());
         
-        // Tab switching
+        // Tab switching - handle each tab group separately
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
                 const tabName = btn.getAttribute('data-tab');
-                this._switchTab(tabName);
+                const tabGroup = btn.closest('.card-body, .card');
+                this._switchTab(tabName, tabGroup);
             });
         });
     }
 
-    _switchTab(tabName) {
-        // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+    _switchTab(tabName, tabGroup = null) {
+        // If no tab group specified, find the containing group
+        if (!tabGroup) {
+            tabGroup = document.querySelector(`[data-tab="${tabName}"]`)?.closest('.card-body, .card');
+        }
+        
+        if (!tabGroup) return;
+        
+        // Update tab buttons within this group only
+        tabGroup.querySelectorAll('.tab-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        tabGroup.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
         
-        // Update tab panes
-        document.querySelectorAll('.tab-pane').forEach(pane => {
+        // Update tab panes within this group only
+        tabGroup.querySelectorAll('.tab-pane').forEach(pane => {
             pane.classList.remove('active');
         });
-        document.getElementById(`tab-${tabName}`).classList.add('active');
+        const targetPane = tabGroup.querySelector(`#tab-${tabName}`);
+        if (targetPane) {
+            targetPane.classList.add('active');
+        }
     }
 
     async initialize(graphData) {
@@ -341,7 +352,6 @@ class UIControls {
     }
 
     async _checkSafety() {
-        const section = document.getElementById('safety-section');
         const emptyState = document.getElementById('safety-empty');
         const inconsistenciesBox = document.getElementById('safety-inconsistencies');
         const contraindicationsBox = document.getElementById('safety-contraindications');
