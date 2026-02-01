@@ -87,3 +87,84 @@ entities:
         code: "91273001"
       - system: ICD-10
         code: E87.2
+
+  - id: asthma
+    name: Asthma
+    description: Chronic inflammatory airway disease with reversible obstruction
+    codes:
+      - system: SNOMED-CT
+        code: "195967001"
+      - system: ICD-10
+        code: J45
+
+  - id: copd
+    name: Chronic Obstructive Pulmonary Disease
+    description: Progressive lung disease with airflow limitation
+    codes:
+      - system: SNOMED-CT
+        code: "13645005"
+      - system: ICD-10
+        code: J44
+
+  - id: heart_failure
+    name: Heart Failure
+    description: Inability of heart to pump sufficient blood to meet body needs
+    codes:
+      - system: SNOMED-CT
+        code: "84114007"
+      - system: ICD-10
+        code: I50
+
+  - id: atrial_fibrillation
+    name: Atrial Fibrillation
+    description: Irregular and often rapid heart rhythm
+    codes:
+      - system: SNOMED-CT
+        code: "49436004"
+      - system: ICD-10
+        code: I48
+
+  - id: coronary_artery_disease
+    name: Coronary Artery Disease
+    description: Narrowing or blockage of coronary arteries
+    codes:
+      - system: SNOMED-CT
+        code: "53741008"
+      - system: ICD-10
+        code: I25
+
+  - id: stroke
+    name: Stroke
+    description: Cerebrovascular accident with brain tissue damage
+    codes:
+      - system: SNOMED-CT
+        code: "230690007"
+      - system: ICD-10
+        code: I63
+
+  - id: tuberculosis
+    name: Tuberculosis
+    description: Bacterial infection primarily affecting the lungs
+    codes:
+      - system: SNOMED-CT
+        code: "56717001"
+      - system: ICD-10
+        code: A15
+
+  - id: depression
+    name: Major Depressive Disorder
+    description: Persistent mood disorder affecting daily functioning
+    codes:
+      - system: SNOMED-CT
+        code: "370143000"
+      - system: ICD-10
+        code: F33
+
+  - id: hypothyroidism
+    name: Hypothyroidism
+    description: Underactive thyroid gland with reduced hormone production
+    codes:
+      - system: SNOMED-CT
+        code: "40930008"
+      - system: ICD-10
+        code: E03
