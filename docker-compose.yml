@@ -8,7 +8,6 @@ services:
       - ./api:/app/api
       - ./tests:/app/tests
       - ./ontology:/app/ontology
-      - ./verification:/app/verification
     environment:
       - ENV=development
       - CONFIG_PATH=protocols/config/clinical_protocols.yaml

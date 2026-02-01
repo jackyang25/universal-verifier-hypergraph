@@ -84,16 +84,6 @@ class ProtocolRouterAPI {
         });
     }
 
-    // Execution (placeholder until verifiers are implemented)
-    async verifyProtocols(conditions) {
-        return this._fetch('/verify/run', {
-            method: 'POST',
-            body: JSON.stringify({
-                conditions: Array.from(conditions),
-            }),
-        });
-    }
-
     // Ontology safety checks
     async checkSafety(conditions) {
         return this._fetch('/ontology/check', {

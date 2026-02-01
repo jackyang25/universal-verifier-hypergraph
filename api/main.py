@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from starlette.requests import Request
 from starlette.responses import Response
 
-from api.routers import execute, graph, ontology, protocols, routing
+from api.routers import graph, ontology, protocols, routing
 from api.models import HealthResponse
 from protocols import __version__ as router_version
 
@@ -50,7 +50,6 @@ async def disable_cache_in_dev(request: Request, call_next):
 app.include_router(graph.router, prefix="/api/graph", tags=["graph"])
 app.include_router(protocols.router, prefix="/api/protocols", tags=["protocols"])
 app.include_router(routing.router, prefix="/api/routing", tags=["routing"])
-app.include_router(execute.router, prefix="/api/verify", tags=["verify"])
 app.include_router(ontology.router, prefix="/api/ontology", tags=["ontology"])
 
 

@@ -130,40 +130,6 @@ class HealthResponse(BaseModel):
     version: str
 
 
-class VerifyRequest(BaseModel):
-    """Request model for verifying activated protocols."""
-    
-    conditions: Set[str] = Field(..., description="Active patient conditions")
-
-
-class VerifyProtocolResult(BaseModel):
-    """Verification result for a single protocol."""
-
-    protocol_id: str
-    protocol_name: str
-    version: str
-    status: str  # "proved" | "failed" | "warning" | "missing_interaction" | "not_implemented"
-    message: Optional[str] = None
-
-    # LEAN verification outputs
-    lean_code: Optional[str] = Field(None, description="Generated LEAN 4 code")
-    proof_output: Optional[str] = Field(None, description="LEAN proof execution output")
-    errors: List[str] = Field(default_factory=list, description="Verification errors")
-    warnings: List[str] = Field(default_factory=list, description="Verification warnings")
-
-    # Verification details
-    verifications_passed: List[str] = Field(default_factory=list, description="List of passed verifications")
-    verifications_failed: List[str] = Field(default_factory=list, description="List of failed verifications")
-
-
-class VerifyResponse(BaseModel):
-    """Response model for protocol verification."""
-    
-    matched_conditions: List[str]
-    results: List[VerifyProtocolResult]
-    timestamp: datetime
-
-
 class SafetyCheckRequest(BaseModel):
     """Request model for safety checks."""
     conditions: List[str]
