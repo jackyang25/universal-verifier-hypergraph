@@ -1,0 +1,224 @@
+# Dose restrictions (categorical safety levels)
+# Safety verification layer - defines dose safety categories for substances in specific patient states
+# Uses categories for rigorous formal verification (no numeric values)
+
+relation_type: requires_dose_adjustment
+
+relations:
+  # Renal impairment safety bounds
+  - id: metformin_moderate_renal
+    source_id: metformin
+    target_id: moderate_renal_impairment
+    dose_category: reduced
+    strength: strong
+    evidence: "Risk of lactic acidosis with reduced renal clearance when eGFR 30-44"
+
+  - id: glyburide_mild_renal
+    source_id: glyburide
+    target_id: mild_renal_impairment
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Hypoglycemia risk from reduced clearance when eGFR 45-59"
+
+  - id: glyburide_moderate_renal
+    source_id: glyburide
+    target_id: moderate_renal_impairment
+    dose_category: severely_restricted
+    strength: strong
+    evidence: "High hypoglycemia risk from reduced clearance when eGFR 30-44"
+
+  # Hepatic impairment safety bounds
+  - id: metformin_hepatic
+    source_id: metformin
+    target_id: hepatic_impairment
+    dose_category: reduced
+    strength: strong
+    evidence: "Lactic acidosis risk with hepatic dysfunction"
+
+  # Pediatric safety bounds
+  - id: metformin_adolescent
+    source_id: metformin
+    target_id: pediatric_adolescent
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Requires weight-based dosing for ages 10-17"
+
+  # Geriatric safety bounds
+  - id: metformin_geriatric
+    source_id: metformin
+    target_id: geriatric
+    dose_category: reduced
+    strength: moderate
+    evidence: "Increased lactic acidosis risk due to age-related renal decline"
+
+  - id: glyburide_geriatric
+    source_id: glyburide
+    target_id: geriatric
+    dose_category: severely_restricted
+    strength: strong
+    evidence: "Severe hypoglycemia risk in elderly"
+
+  # Pregnancy safety bounds - diabetes medications
+  - id: insulin_pregnancy
+    source_id: insulin
+    target_id: pregnant
+    dose_category: standard
+    strength: strong
+    evidence: "Preferred for glycemic control in pregnancy; does not cross placenta"
+
+  - id: metformin_pregnancy
+    source_id: metformin
+    target_id: pregnant
+    dose_category: use_with_caution
+    strength: strong
+    evidence: "Use lowest effective dose; high doses increase lactic acidosis risk"
+
+  - id: glyburide_pregnancy
+    source_id: glyburide
+    target_id: pregnant
+    dose_category: reduced
+    strength: moderate
+    evidence: "Crosses placenta; use lowest effective dose to minimize fetal hypoglycemia"
+
+  - id: glyburide_first_trimester
+    source_id: glyburide
+    target_id: first_trimester
+    dose_category: avoid_if_possible
+    strength: strong
+    evidence: "Sulfonylureas may cross placenta; prefer insulin or metformin in first trimester"
+
+  # Pregnancy safety bounds - hypertension medications
+  - id: labetalol_pregnancy
+    source_id: labetalol
+    target_id: pregnant
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Monitor for maternal-fetal effects; preferred beta-blocker in pregnancy"
+
+  - id: methyldopa_pregnancy
+    source_id: methyldopa
+    target_id: pregnant
+    dose_category: standard
+    strength: strong
+    evidence: "First-line antihypertensive in pregnancy; long safety record"
+
+  - id: nifedipine_pregnancy
+    source_id: nifedipine
+    target_id: pregnant
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Safe in pregnancy; avoid sublingual administration"
+
+  - id: amlodipine_pregnancy
+    source_id: amlodipine
+    target_id: pregnant
+    dose_category: reduced
+    strength: moderate
+    evidence: "Limited pregnancy data; prefer labetalol, methyldopa, or nifedipine"
+
+  # Pregnancy safety bounds - HIV medications
+  - id: tenofovir_pregnancy
+    source_id: tenofovir
+    target_id: pregnant
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Preferred NRTI backbone in pregnancy; monitor renal function"
+
+  - id: dolutegravir_pregnancy
+    source_id: dolutegravir
+    target_id: pregnant
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Preferred integrase inhibitor; low neural tube defect risk after first trimester"
+
+  - id: dolutegravir_first_trimester
+    source_id: dolutegravir
+    target_id: first_trimester
+    dose_category: reduced
+    strength: strong
+    evidence: "Small increased neural tube defect risk; discuss alternatives with patient"
+
+  - id: efavirenz_pregnancy
+    source_id: efavirenz
+    target_id: pregnant
+    dose_category: reduced
+    strength: moderate
+    evidence: "Can continue if virally suppressed; avoid initiating in pregnancy"
+
+  - id: efavirenz_first_trimester
+    source_id: efavirenz
+    target_id: first_trimester
+    dose_category: avoid_if_possible
+    strength: strong
+    evidence: "Historical neural tube defect concern; switch to dolutegravir if possible"
+
+  # Weight-based safety bounds
+  - id: tenofovir_low_weight
+    source_id: tenofovir
+    target_id: low_body_weight
+    dose_category: reduced
+    strength: moderate
+    conditions:
+      - weight_below_50kg
+    evidence: "Toxicity risk in low body weight patients"
+
+  # HIV drugs - renal impairment
+  - id: tenofovir_moderate_renal
+    source_id: tenofovir
+    target_id: moderate_renal_impairment
+    dose_category: severely_restricted
+    strength: strong
+    evidence: "Nephrotoxicity risk with reduced clearance when eGFR 30-49"
+
+  # Common medication + renal impairment scenarios
+  - id: lisinopril_moderate_renal
+    source_id: lisinopril
+    target_id: moderate_renal_impairment
+    dose_category: severely_restricted
+    strength: strong
+    evidence: "Hyperkalemia and acute kidney injury risk when eGFR 30-44"
+
+  - id: lisinopril_mild_renal
+    source_id: lisinopril
+    target_id: mild_renal_impairment
+    dose_category: reduced
+    strength: moderate
+    evidence: "Reduced clearance requires dose adjustment when eGFR 45-59"
+
+  # Heart failure safety bounds
+  - id: lisinopril_heart_failure
+    source_id: lisinopril
+    target_id: heart_failure
+    dose_category: use_with_caution
+    strength: moderate
+    evidence: "Hypotension risk in severe heart failure at high doses"
+
+  - id: metformin_heart_failure
+    source_id: metformin
+    target_id: heart_failure
+    dose_category: severely_restricted
+    strength: strong
+    evidence: "Lactic acidosis risk in decompensated heart failure"
+
+  # Hypertension medication safety
+  - id: losartan_moderate_renal
+    source_id: losartan
+    target_id: moderate_renal_impairment
+    dose_category: reduced
+    strength: moderate
+    evidence: "Hyperkalemia risk with reduced renal clearance"
+
+  - id: labetalol_asthma
+    source_id: labetalol
+    target_id: asthma
+    dose_category: avoid_if_possible
+    strength: moderate
+    evidence: "Bronchospasm risk - consider alternatives first"
+
+  # HIV treatment + comorbidity
+  - id: efavirenz_hepatic
+    source_id: efavirenz
+    target_id: hepatic_impairment
+    dose_category: reduced
+    strength: moderate
+    evidence: "Hepatotoxicity and CNS effects with impaired metabolism"

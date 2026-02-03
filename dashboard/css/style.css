@@ -1307,6 +1307,11 @@ body.resizing {
     color: var(--success);
 }
 
+.safety-icon-badge.info {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+}
+
 .safety-subtitle {
     font-size: 0.8125rem;
     color: var(--text-secondary);

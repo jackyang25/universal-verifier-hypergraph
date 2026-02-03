@@ -80,3 +80,18 @@ entities:
     codes:
       - system: SNOMED-CT
         code: "420422005"
+
+  - id: egfr_30_45
+    name: eGFR 30-45
+    description: Estimated glomerular filtration rate between 30-45 mL/min/1.73m2
+    parent_id: reduced_egfr
+
+  - id: egfr_30_49
+    name: eGFR 30-49
+    description: Estimated glomerular filtration rate between 30-49 mL/min/1.73m2
+    parent_id: reduced_egfr
+
+  - id: egfr_below_30
+    name: eGFR Below 30
+    description: Estimated glomerular filtration rate less than 30 mL/min/1.73m2
+    parent_id: reduced_egfr

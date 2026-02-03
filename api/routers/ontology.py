@@ -35,6 +35,7 @@ def check_safety(
             available=False,
             contraindicated_substances=[],
             safe_treatments=[],
+            dose_limits=[],
             consistency_violations=[],
             conditions_checked=request.conditions,
         )
@@ -74,10 +75,39 @@ def check_safety(
         for entity in safe
     ]
     
+    # Get dose limits
+    dose_limits_dict = ontology_bridge.get_dose_limits(conditions)
+    dose_limits_data = []
+    
+    # Category severity order (most restrictive first)
+    category_severity = {
+        "avoid_if_possible": 0,
+        "severely_restricted": 1,
+        "reduced": 2,
+        "use_with_caution": 3,
+        "standard": 4,
+    }
+    
+    for substance_id, limits in dose_limits_dict.items():
+        substance = ontology_bridge.registry.get_entity(substance_id)
+        substance_name = substance.name if substance else substance_id
+        
+        # Find most restrictive category (exclude 'standard' as it means no restriction)
+        categories = [l.get("dose_category") for l in limits if l.get("dose_category") and l.get("dose_category") != "standard"]
+        if categories:
+            most_restrictive = min(categories, key=lambda c: category_severity.get(c, 99))
+            dose_limits_data.append({
+                "id": substance_id,
+                "name": substance_name,
+                "category": most_restrictive,
+                "limits": [l for l in limits if l.get("dose_category") != "standard"]
+            })
+    
     return SafetyCheckResponse(
         available=True,
         contraindicated_substances=contraindicated_data,
         safe_treatments=safe_data,
+        dose_limits=dose_limits_data,
         consistency_violations=violations,
         conditions_checked=sorted(conditions),
     )

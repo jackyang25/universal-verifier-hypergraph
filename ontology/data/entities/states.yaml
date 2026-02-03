@@ -65,3 +65,78 @@ entities:
     name: Third Trimester
     description: Weeks 27-40 of pregnancy
     parent_id: pregnant
+
+  - id: geriatric
+    name: Geriatric
+    description: Patient 80 years of age or older
+    parent_id: elderly
+    codes:
+      - system: SNOMED-CT
+        code: "105436006"
+
+  - id: age_10_16
+    name: Age 10-16
+    description: Patient age between 10 and 16 years
+    parent_id: pediatric
+
+  - id: low_body_weight
+    name: Low Body Weight
+    description: Body weight significantly below normal range
+    codes:
+      - system: SNOMED-CT
+        code: "248342006"
+
+  - id: weight_below_50kg
+    name: Weight Below 50kg
+    description: Body weight less than 50 kilograms
+    parent_id: low_body_weight
+
+  # Granular renal impairment stages
+  - id: mild_renal_impairment
+    name: Mild Renal Impairment
+    description: eGFR 45-59 mL/min/1.73m2 (CKD Stage 3a)
+    parent_id: renal_impairment
+    codes:
+      - system: SNOMED-CT
+        code: "723190003"
+
+  - id: moderate_renal_impairment
+    name: Moderate Renal Impairment
+    description: eGFR 30-44 mL/min/1.73m2 (CKD Stage 3b)
+    parent_id: renal_impairment
+    codes:
+      - system: SNOMED-CT
+        code: "236425005"
+
+  - id: severe_renal_impairment
+    name: Severe Renal Impairment
+    description: eGFR 15-29 mL/min/1.73m2 (CKD Stage 4)
+    parent_id: renal_impairment
+    codes:
+      - system: SNOMED-CT
+        code: "433146000"
+
+  # Granular pediatric age groups
+  - id: pediatric_adolescent
+    name: Pediatric Adolescent
+    description: Age 10-17 years
+    parent_id: pediatric
+    codes:
+      - system: SNOMED-CT
+        code: "133936004"
+
+  - id: pediatric_child
+    name: Pediatric Child
+    description: Age 2-9 years
+    parent_id: pediatric
+    codes:
+      - system: SNOMED-CT
+        code: "410602000"
+
+  - id: pediatric_infant
+    name: Pediatric Infant
+    description: Age 0-2 years
+    parent_id: pediatric
+    codes:
+      - system: SNOMED-CT
+        code: "3658006"

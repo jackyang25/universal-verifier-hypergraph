@@ -199,6 +199,12 @@ class OntologySchema:
                     result.add_warning(
                         f"Treatment target '{target.id}' is not a disorder"
                     )
+            
+            if relation.relation_type == RelationType.REQUIRES_DOSE_ADJUSTMENT:
+                if source.entity_type != EntityType.SUBSTANCE:
+                    result.add_warning(
+                        f"Dose adjustment source '{source.id}' is not a substance"
+                    )
         
         return result
     

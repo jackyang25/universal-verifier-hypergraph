@@ -355,11 +355,13 @@ class UIControls {
         const emptyState = document.getElementById('safety-empty');
         const inconsistenciesBox = document.getElementById('safety-inconsistencies');
         const contraindicationsBox = document.getElementById('safety-contraindications');
+        const doseLimitsBox = document.getElementById('safety-dose-limits');
         const treatmentsBox = document.getElementById('safety-treatments');
 
         // Hide all safety items initially
         inconsistenciesBox.classList.add('hidden');
         contraindicationsBox.classList.add('hidden');
+        doseLimitsBox.classList.add('hidden');
         treatmentsBox.classList.add('hidden');
 
         if (this.selectedConditions.size === 0) {
@@ -375,6 +377,7 @@ class UIControls {
             this.audit.lastSafety = {
                 violations: result.consistency_violations?.length || 0,
                 contraindications: result.contraindicated_substances?.length || 0,
+                doseLimits: result.dose_limits?.length || 0,
                 safeTreatments: result.safe_treatments?.length || 0,
             };
             if (!result || !result.available) {
@@ -416,6 +419,29 @@ class UIControls {
                         <div class="safety-item safety-danger">
                             <div class="safety-item-name">${c.name}</div>
                             <div class="safety-item-detail">${c.reason}</div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            // Display dose limits
+            if (result.dose_limits && result.dose_limits.length > 0) {
+                hasContent = true;
+                doseLimitsBox.classList.remove('hidden');
+                
+                // Format category for display
+                const formatCategory = (cat) => {
+                    if (!cat) return 'Restricted';
+                    return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                };
+                
+                doseLimitsBox.innerHTML = `
+                    <h3><span class="safety-icon-badge info">⚑</span> Dose Restrictions</h3>
+                    <p class="safety-subtitle">Safety categories for substances</p>
+                    ${result.dose_limits.map(d => `
+                        <div class="safety-item safety-info">
+                            <div class="safety-item-name">${d.name}</div>
+                            <div class="safety-item-detail">${formatCategory(d.category)}</div>
                         </div>
                     `).join('')}
                 `;

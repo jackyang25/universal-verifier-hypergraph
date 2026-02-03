@@ -39,6 +39,7 @@ class CoreAxioms:
         - CONTRAINDICATED_IN relations -> contraindication axioms
         - EXCLUDES relations -> mutual exclusion axioms
         - REQUIRES relations -> requirement axioms
+        - REQUIRES_DOSE_ADJUSTMENT relations -> dose constraint axioms
         
         Returns:
             List of generated axioms
@@ -97,6 +98,33 @@ class CoreAxioms:
             generated.append(axiom)
             self.axiom_registry.register(axiom)
         
+        # generate dose constraint axioms
+        dose_limits = self.registry.get_relations_by_type(
+            RelationType.REQUIRES_DOSE_ADJUSTMENT
+        )
+        for rel in dose_limits:
+            # build description focused on categorical safety constraint
+            category = rel.dose_category.value if rel.dose_category else "restricted"
+            description = (
+                f"Substance {rel.source_id} is {category.replace('_', ' ')} "
+                f"when {rel.target_id} is present"
+            )
+            
+            # use relation's actual ID to ensure uniqueness
+            axiom = Axiom(
+                id=f"dose_constraint_{rel.id}",
+                axiom_type=AxiomType.DOSE_CONSTRAINT,
+                name=f"{rel.source_id} {category} in {rel.target_id}",
+                description=description,
+                antecedent=frozenset({rel.target_id}),
+                consequent=frozenset({rel.source_id}),
+                negated=False,  # constraint applies, not prohibition
+                evidence=rel.evidence,
+                dose_category=category,  # categorical safety level for Lean formalization
+            )
+            generated.append(axiom)
+            self.axiom_registry.register(axiom)
+        
         return generated
     
     def get_contraindications_for_state(self, state_id: str) -> List[Axiom]:
@@ -113,9 +141,27 @@ class CoreAxioms:
             if entity_id in a.antecedent or entity_id in a.consequent
         ]
     
+    def get_dose_constraints_for_state(self, state_id: str) -> List[Axiom]:
+        """Get all dose constraint axioms for a physiologic state."""
+        return [
+            a for a in self.axiom_registry.get_by_type(AxiomType.DOSE_CONSTRAINT)
+            if state_id in a.antecedent
+        ]
+    
+    def get_dose_constraints_for_substance(self, substance_id: str) -> List[Axiom]:
+        """Get all dose constraint axioms for a substance."""
+        return [
+            a for a in self.axiom_registry.get_by_type(AxiomType.DOSE_CONSTRAINT)
+            if substance_id in a.consequent
+        ]
+    
     def check_consistency(self, entity_ids: frozenset) -> List[str]:
         """
         Check if a set of entities is consistent with axioms.
+        
+        Note: DOSE_CONSTRAINT axioms are informational safety bounds, not logical
+        constraints. They are excluded from consistency checking - dose limits
+        are reported separately via get_dose_limits().
         
         Returns:
             List of violated axiom descriptions (empty if consistent)
@@ -123,6 +169,10 @@ class CoreAxioms:
         violations = []
         
         for axiom in self.axiom_registry.iter_axioms():
+            # skip dose constraints - they're informational, not logical requirements
+            if axiom.axiom_type == AxiomType.DOSE_CONSTRAINT:
+                continue
+            
             # check if antecedent is satisfied
             if not axiom.antecedent.issubset(entity_ids):
                 continue

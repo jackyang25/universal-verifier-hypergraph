@@ -28,6 +28,7 @@ class RelationType(Enum):
     REQUIRES = "requires"
     EXCLUDES = "excludes"
     MODIFIES = "modifies"
+    REQUIRES_DOSE_ADJUSTMENT = "requires_dose_adjustment"
 
 
 class Severity(Enum):
@@ -46,6 +47,21 @@ class Temporality(Enum):
     CHRONIC = "chronic"
     INTERMITTENT = "intermittent"
     RESOLVED = "resolved"
+
+
+class DoseCategory(Enum):
+    """
+    Categorical dose safety levels for formal verification.
+    
+    Used instead of numeric values to enable rigorous Lean proofs
+    and avoid false precision in safety bounds.
+    """
+    
+    STANDARD = "standard"                        # no adjustment needed
+    USE_WITH_CAUTION = "use_with_caution"        # monitor closely, may need adjustment
+    REDUCED = "reduced"                          # reduce from standard dose
+    SEVERELY_RESTRICTED = "severely_restricted"  # significant reduction required
+    AVOID_IF_POSSIBLE = "avoid_if_possible"      # use only if no alternatives
 
 
 @dataclass(frozen=True)
@@ -131,6 +147,7 @@ class Relation:
         strength: Optional confidence or strength indicator
         conditions: Optional qualifying conditions for this relation
         evidence: Optional reference to supporting evidence
+        dose_category: Categorical safety level (for REQUIRES_DOSE_ADJUSTMENT relations)
     """
     
     id: str
@@ -140,6 +157,7 @@ class Relation:
     strength: Optional[str] = None  # "absolute", "strong", "moderate", "weak"
     conditions: FrozenSet[str] = field(default_factory=frozenset)
     evidence: Optional[str] = None
+    dose_category: Optional[DoseCategory] = None  # categorical safety level
     
     def __post_init__(self) -> None:
         if not self.source_id:
@@ -166,6 +184,8 @@ class Relation:
             result["conditions"] = sorted(self.conditions)
         if self.evidence:
             result["evidence"] = self.evidence
+        if self.dose_category is not None:
+            result["dose_category"] = self.dose_category.value
         return result
     
     @classmethod
@@ -175,6 +195,10 @@ class Relation:
         if "conditions" in data:
             conditions = frozenset(data["conditions"])
         
+        dose_category = None
+        if "dose_category" in data:
+            dose_category = DoseCategory(data["dose_category"])
+        
         return cls(
             id=data["id"],
             relation_type=RelationType(data["relation_type"]),
@@ -183,6 +207,7 @@ class Relation:
             strength=data.get("strength"),
             conditions=conditions,
             evidence=data.get("evidence"),
+            dose_category=dose_category,
         )
 
 

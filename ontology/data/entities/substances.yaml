@@ -14,11 +14,6 @@ entities:
       - system: RxNorm
         code: "6809"
 
-  - id: metformin_high_dose
-    name: Metformin High Dose
-    description: Metformin at doses exceeding 2000mg daily
-    parent_id: metformin
-
   - id: insulin
     name: Insulin
     description: Peptide hormone for glucose regulation

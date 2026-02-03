@@ -14,6 +14,7 @@ class AxiomType(Enum):
     REQUIREMENT = "requirement"                 # A requires B
     EQUIVALENCE = "equivalence"                 # A iff B
     HIERARCHY = "hierarchy"                     # A is_a B (subsumption)
+    DOSE_CONSTRAINT = "dose_constraint"         # dosage adjustment required for substance in state
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class Axiom:
         consequent: Entity ids that form the "then" part
         negated: If true, the consequent is negated (for exclusions)
         evidence: Optional reference to supporting evidence
+        dose_category: Categorical safety level for dose constraints
     """
     
     id: str
@@ -43,6 +45,7 @@ class Axiom:
     consequent: FrozenSet[str]  # then these must/must not hold
     negated: bool = False       # if true, consequent must NOT hold
     evidence: Optional[str] = None
+    dose_category: Optional[str] = None  # categorical safety level for Lean formalization
     
     def __post_init__(self) -> None:
         if not self.id:
@@ -68,6 +71,8 @@ class Axiom:
         }
         if self.evidence:
             result["evidence"] = self.evidence
+        if self.dose_category is not None:
+            result["dose_category"] = self.dose_category
         return result
     
     @classmethod
@@ -82,6 +87,7 @@ class Axiom:
             consequent=frozenset(data.get("consequent", [])),
             negated=data.get("negated", False),
             evidence=data.get("evidence"),
+            dose_category=data.get("dose_category"),
         )
 
 

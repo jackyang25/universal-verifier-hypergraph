@@ -80,6 +80,8 @@ class OntologyBridge:
         """
         Get substances contraindicated for given conditions.
         
+        Also checks parent entities (e.g., first_trimester inherits from pregnant).
+        
         Args:
             conditions: Patient conditions
             
@@ -90,7 +92,10 @@ class OntologyBridge:
         
         contraindicated = []
         
-        for condition in conditions:
+        # expand conditions to include ancestors
+        expanded_conditions = self._expand_conditions_with_ancestors(conditions)
+        
+        for condition in expanded_conditions:
             relations = self.registry.get_incoming_relations(condition)
             for rel in relations:
                 if rel.relation_type == RelationType.CONTRAINDICATED_IN:
@@ -243,11 +248,14 @@ class OntologyBridge:
         """
         from ontology.types import RelationType
         
+        # expand conditions to include ancestors
+        expanded_conditions = self._expand_conditions_with_ancestors(conditions)
+        
         try:
             relations = self.registry.get_outgoing_relations(substance_id)
             for rel in relations:
                 if rel.relation_type == RelationType.CONTRAINDICATED_IN:
-                    if rel.target_id in conditions:
+                    if rel.target_id in expanded_conditions:
                         target = self.registry.get_entity(rel.target_id)
                         state_name = target.name if target else rel.target_id
                         return f"Contraindicated in {state_name}"
@@ -285,3 +293,100 @@ class OntologyBridge:
             pass
         
         return "Recommended"
+    
+    def _get_condition_with_ancestors(self, condition: str) -> Set[str]:
+        """Get a condition and all its ancestor entities (parent chain)."""
+        result = {condition}
+        entity = self.registry.get_entity(condition)
+        while entity and entity.parent_id:
+            result.add(entity.parent_id)
+            entity = self.registry.get_entity(entity.parent_id)
+        return result
+    
+    def _expand_conditions_with_ancestors(self, conditions: Set[str]) -> Set[str]:
+        """Expand conditions to include all ancestor entities."""
+        expanded = set()
+        for condition in conditions:
+            expanded.update(self._get_condition_with_ancestors(condition))
+        return expanded
+    
+    def get_dose_limits(self, conditions: Set[str]) -> dict[str, List[dict]]:
+        """
+        Get dose safety categories for substances given patient conditions.
+        
+        Also checks parent entities (e.g., first_trimester inherits from pregnant).
+        
+        Args:
+            conditions: Patient conditions
+            
+        Returns:
+            Dictionary mapping substance_id to list of dose restrictions
+        """
+        from ontology.types import RelationType
+        
+        limits = {}
+        
+        # expand conditions to include ancestors
+        expanded_conditions = self._expand_conditions_with_ancestors(conditions)
+        
+        for condition in expanded_conditions:
+            relations = self.registry.get_incoming_relations(condition)
+            for rel in relations:
+                if rel.relation_type == RelationType.REQUIRES_DOSE_ADJUSTMENT:
+                    substance_id = rel.source_id
+                    if substance_id not in limits:
+                        limits[substance_id] = []
+                    
+                    limit = {
+                        "condition": condition,
+                        "strength": rel.strength,
+                        "evidence": rel.evidence,
+                    }
+                    
+                    if rel.dose_category is not None:
+                        limit["dose_category"] = rel.dose_category.value
+                    
+                    limits[substance_id].append(limit)
+        
+        return limits
+    
+    def get_dose_limit_for_substance(
+        self, substance_id: str, conditions: Set[str]
+    ) -> List[dict]:
+        """
+        Get dose safety categories for a specific substance given conditions.
+        
+        Args:
+            substance_id: Substance entity ID
+            conditions: Patient conditions
+            
+        Returns:
+            List of dose restrictions with categorical safety levels
+        """
+        from ontology.types import RelationType
+        
+        limits = []
+        
+        try:
+            relations = self.registry.get_outgoing_relations(substance_id)
+            for rel in relations:
+                if rel.relation_type == RelationType.REQUIRES_DOSE_ADJUSTMENT:
+                    if rel.target_id in conditions:
+                        target = self.registry.get_entity(rel.target_id)
+                        state_name = target.name if target else rel.target_id
+                        
+                        limit = {
+                            "condition": rel.target_id,
+                            "condition_name": state_name,
+                            "strength": rel.strength,
+                            "evidence": rel.evidence,
+                        }
+                        
+                        if rel.dose_category is not None:
+                            limit["dose_category"] = rel.dose_category.value
+                        
+                        limits.append(limit)
+        except Exception:
+            pass
+        
+        return limits
