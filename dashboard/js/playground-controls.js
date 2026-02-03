@@ -356,12 +356,14 @@ class UIControls {
         const inconsistenciesBox = document.getElementById('safety-inconsistencies');
         const contraindicationsBox = document.getElementById('safety-contraindications');
         const doseLimitsBox = document.getElementById('safety-dose-limits');
+        const interactionsBox = document.getElementById('safety-interactions');
         const treatmentsBox = document.getElementById('safety-treatments');
 
         // Hide all safety items initially
         inconsistenciesBox.classList.add('hidden');
         contraindicationsBox.classList.add('hidden');
         doseLimitsBox.classList.add('hidden');
+        interactionsBox.classList.add('hidden');
         treatmentsBox.classList.add('hidden');
 
         if (this.selectedConditions.size === 0) {
@@ -378,6 +380,7 @@ class UIControls {
                 violations: result.consistency_violations?.length || 0,
                 contraindications: result.contraindicated_substances?.length || 0,
                 doseLimits: result.dose_limits?.length || 0,
+                interactions: result.drug_interactions?.length || 0,
                 safeTreatments: result.safe_treatments?.length || 0,
             };
             if (!result || !result.available) {
@@ -442,6 +445,22 @@ class UIControls {
                         <div class="safety-item safety-info">
                             <div class="safety-item-name">${d.name}</div>
                             <div class="safety-item-detail">${formatCategory(d.category)}</div>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
+            // Display drug interactions
+            if (result.drug_interactions && result.drug_interactions.length > 0) {
+                hasContent = true;
+                interactionsBox.classList.remove('hidden');
+                interactionsBox.innerHTML = `
+                    <h3><span class="safety-icon-badge warning">⚠</span> Drug Interactions</h3>
+                    <p class="safety-subtitle">Monitor when combining these treatments</p>
+                    ${result.drug_interactions.map(i => `
+                        <div class="safety-item safety-warning">
+                            <div class="safety-item-name">${i.substance1_name} + ${i.substance2_name}</div>
+                            <div class="safety-item-detail">${i.evidence}</div>
                         </div>
                     `).join('')}
                 `;

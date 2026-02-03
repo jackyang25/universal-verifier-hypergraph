@@ -133,6 +133,51 @@ class OntologyBridge:
         
         return treatments
     
+    def get_drug_interactions(self, substance_ids: Set[str]) -> List[dict]:
+        """
+        Get interactions between a set of substances.
+        
+        Args:
+            substance_ids: Set of substance entity IDs to check
+            
+        Returns:
+            List of interaction dicts with substance pairs and details
+        """
+        from ontology.types import RelationType
+        
+        interactions = []
+        checked = set()
+        
+        for substance_id in substance_ids:
+            relations = self.registry.get_interactions_for(substance_id)
+            for rel in relations:
+                # Get the other substance in the interaction
+                other_id = rel.target_id if rel.source_id == substance_id else rel.source_id
+                
+                # Only include if both substances are in our set
+                if other_id not in substance_ids:
+                    continue
+                
+                # Avoid duplicates (A-B and B-A)
+                pair = tuple(sorted([substance_id, other_id]))
+                if pair in checked:
+                    continue
+                checked.add(pair)
+                
+                substance1 = self.registry.get_entity(pair[0])
+                substance2 = self.registry.get_entity(pair[1])
+                
+                interactions.append({
+                    "substance1_id": pair[0],
+                    "substance1_name": substance1.name if substance1 else pair[0],
+                    "substance2_id": pair[1],
+                    "substance2_name": substance2.name if substance2 else pair[1],
+                    "strength": rel.strength,
+                    "evidence": rel.evidence,
+                })
+        
+        return interactions
+    
     def get_safe_treatments(self, conditions: Set[str]) -> List[Entity]:
         """
         Get treatments that are not contraindicated for given conditions.

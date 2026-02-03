@@ -4,7 +4,7 @@ Project context for AI coding assistants.
 
 ## Project Overview
 
-**Universal Verifier Hypergraph** - A clinical safety verification system using formal ontology and hypergraph-based protocol routing. Designed for Lean theorem proving integration.
+**Clinical Safety Verification System** - A formally verified clinical safety framework using ontology and hypergraph-based protocol routing. Designed for Lean theorem proving integration.
 
 ### Core Purpose
 

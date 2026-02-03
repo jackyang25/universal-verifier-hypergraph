@@ -141,6 +141,7 @@ class SafetyCheckResponse(BaseModel):
     contraindicated_substances: List[dict]
     safe_treatments: List[dict]
     dose_limits: List[dict]
+    drug_interactions: List[dict]
     consistency_violations: List[str]
     conditions_checked: List[str]
 

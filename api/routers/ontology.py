@@ -36,6 +36,7 @@ def check_safety(
             contraindicated_substances=[],
             safe_treatments=[],
             dose_limits=[],
+            drug_interactions=[],
             consistency_violations=[],
             conditions_checked=request.conditions,
         )
@@ -103,11 +104,16 @@ def check_safety(
                 "limits": [l for l in limits if l.get("dose_category") != "standard"]
             })
     
+    # Get drug-drug interactions between safe treatments
+    safe_treatment_ids = set(entity.id for entity in safe)
+    interactions = ontology_bridge.get_drug_interactions(safe_treatment_ids)
+    
     return SafetyCheckResponse(
         available=True,
         contraindicated_substances=contraindicated_data,
         safe_treatments=safe_data,
         dose_limits=dose_limits_data,
+        drug_interactions=interactions,
         consistency_violations=violations,
         conditions_checked=sorted(conditions),
     )

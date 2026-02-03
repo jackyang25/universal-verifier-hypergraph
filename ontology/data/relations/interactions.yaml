@@ -1,25 +1,85 @@
 # Interaction relations
-# Express clinically significant interactions between substances
+# Express clinically significant drug-drug interactions
+# These show when combining safe treatments requires monitoring
 
 relation_type: interacts_with
 
 relations:
+  # Diabetes drug interactions
   - source_id: metformin
     target_id: insulin
     strength: moderate
-    evidence: "Combination increases hypoglycemia risk; requires dose adjustment"
+    evidence: "Combination increases hypoglycemia risk; monitor blood glucose closely"
 
   - source_id: glyburide
     target_id: insulin
     strength: strong
     evidence: "Additive hypoglycemia risk; typically not combined"
 
+  - source_id: glipizide
+    target_id: insulin
+    strength: strong
+    evidence: "Additive hypoglycemia risk; typically not combined"
+
+  - source_id: glyburide
+    target_id: metformin
+    strength: moderate
+    evidence: "Common combination but increases hypoglycemia risk; monitor closely"
+
+  - source_id: glipizide
+    target_id: metformin
+    strength: moderate
+    evidence: "Common combination but increases hypoglycemia risk; monitor closely"
+
+  # Hypertension drug interactions
   - source_id: lisinopril
     target_id: losartan
     strength: strong
-    evidence: "Dual RAAS blockade increases adverse events"
+    evidence: "Dual RAAS blockade increases hyperkalemia and renal adverse events"
 
+  - source_id: enalapril
+    target_id: losartan
+    strength: strong
+    evidence: "Dual RAAS blockade increases hyperkalemia and renal adverse events"
+
+  - source_id: labetalol
+    target_id: nifedipine
+    strength: moderate
+    evidence: "Additive hypotension and bradycardia; monitor blood pressure"
+
+  - source_id: labetalol
+    target_id: amlodipine
+    strength: moderate
+    evidence: "Additive hypotension and bradycardia; monitor blood pressure"
+
+  # HIV drug interactions
   - source_id: tenofovir
     target_id: metformin
     strength: moderate
     evidence: "Both cleared renally; monitor renal function closely"
+
+  - source_id: dolutegravir
+    target_id: metformin
+    strength: moderate
+    evidence: "Dolutegravir increases metformin levels; consider dose adjustment"
+
+  # Cross-class interactions
+  - source_id: metformin
+    target_id: lisinopril
+    strength: moderate
+    evidence: "Both affect renal function; monitor in patients with renal impairment"
+
+  - source_id: metformin
+    target_id: losartan
+    strength: moderate
+    evidence: "Both affect renal function; monitor in patients with renal impairment"
+
+  - source_id: insulin
+    target_id: labetalol
+    strength: moderate
+    evidence: "Beta blockers may mask hypoglycemia symptoms; monitor blood glucose"
+
+  - source_id: glyburide
+    target_id: labetalol
+    strength: moderate
+    evidence: "Beta blockers may mask hypoglycemia symptoms; monitor blood glucose"
