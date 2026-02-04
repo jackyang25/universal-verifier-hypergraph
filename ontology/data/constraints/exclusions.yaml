@@ -34,3 +34,34 @@ relations:
   - source_id: hyperglycemia
     target_id: hypoglycemia
     evidence: "Blood glucose cannot be simultaneously high and low"
+
+  # Age group exclusions
+  - source_id: pediatric_infant
+    target_id: pediatric_adolescent
+    evidence: "Age groups are mutually exclusive"
+
+  - source_id: pediatric_infant
+    target_id: age_over_65
+    evidence: "Age groups are mutually exclusive"
+
+  - source_id: pediatric_adolescent
+    target_id: age_over_65
+    evidence: "Age groups are mutually exclusive"
+
+  # Physiologic state incompatibilities
+  - source_id: pregnant
+    target_id: breastfeeding
+    evidence: "Cannot be simultaneously pregnant and breastfeeding for drug safety assessment"
+
+  # Disorder type exclusions (T1DM vs T2DM)
+  - source_id: diabetes_mellitus_type_1
+    target_id: diabetes_mellitus_type_2
+    evidence: "Diabetes type 1 and type 2 are distinct conditions"
+
+  - source_id: diabetes_mellitus_type_1
+    target_id: gestational_diabetes
+    evidence: "T1DM and gestational diabetes are distinct conditions"
+
+  - source_id: diabetes_mellitus_type_2
+    target_id: gestational_diabetes
+    evidence: "T2DM and gestational diabetes are distinct conditions"

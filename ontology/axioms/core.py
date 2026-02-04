@@ -6,6 +6,7 @@ import yaml
 
 from ontology.axioms.base import Axiom, AxiomType, AxiomRegistry
 from ontology.registry import OntologyRegistry
+from ontology.types import RelationType
 
 
 class CoreAxioms:
@@ -44,7 +45,6 @@ class CoreAxioms:
         Returns:
             List of generated axioms
         """
-        from ontology.types import RelationType
         
         generated = []
         

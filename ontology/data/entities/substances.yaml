@@ -127,3 +127,107 @@ entities:
     codes:
       - system: RxNorm
         code: "195085"
+
+  # Asthma/COPD medications
+  - id: albuterol
+    name: Albuterol
+    description: Short-acting beta-2 agonist bronchodilator
+    codes:
+      - system: RxNorm
+        code: "435"
+
+  - id: budesonide
+    name: Budesonide
+    description: Inhaled corticosteroid for asthma control
+    codes:
+      - system: RxNorm
+        code: "1759"
+
+  - id: tiotropium
+    name: Tiotropium
+    description: Long-acting muscarinic antagonist for COPD
+    codes:
+      - system: RxNorm
+        code: "202414"
+
+  # Atrial fibrillation medications
+  - id: warfarin
+    name: Warfarin
+    description: Vitamin K antagonist anticoagulant
+    codes:
+      - system: RxNorm
+        code: "11289"
+
+  - id: metoprolol
+    name: Metoprolol
+    description: Beta-1 selective blocker for rate control
+    codes:
+      - system: RxNorm
+        code: "6918"
+
+  - id: apixaban
+    name: Apixaban
+    description: Direct oral anticoagulant (DOAC)
+    codes:
+      - system: RxNorm
+        code: "1364430"
+
+  # Coronary artery disease / stroke medications
+  - id: aspirin
+    name: Aspirin
+    description: Antiplatelet agent for cardiovascular protection
+    codes:
+      - system: RxNorm
+        code: "1191"
+
+  - id: clopidogrel
+    name: Clopidogrel
+    description: P2Y12 inhibitor antiplatelet agent
+    codes:
+      - system: RxNorm
+        code: "32968"
+
+  - id: atorvastatin
+    name: Atorvastatin
+    description: HMG-CoA reductase inhibitor (statin)
+    codes:
+      - system: RxNorm
+        code: "83367"
+
+  # Hypothyroidism medication
+  - id: levothyroxine
+    name: Levothyroxine
+    description: Thyroid hormone replacement therapy
+    codes:
+      - system: RxNorm
+        code: "10582"
+
+  # Major depressive disorder medications
+  - id: sertraline
+    name: Sertraline
+    description: Selective serotonin reuptake inhibitor (SSRI)
+    codes:
+      - system: RxNorm
+        code: "36437"
+
+  - id: fluoxetine
+    name: Fluoxetine
+    description: Selective serotonin reuptake inhibitor (SSRI)
+    codes:
+      - system: RxNorm
+        code: "4493"
+
+  # Tuberculosis medications
+  - id: rifampin
+    name: Rifampin
+    description: First-line antitubercular antibiotic
+    codes:
+      - system: RxNorm
+        code: "9384"
+
+  - id: isoniazid
+    name: Isoniazid
+    description: First-line antitubercular antibiotic
+    codes:
+      - system: RxNorm
+        code: "6038"

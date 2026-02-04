@@ -441,12 +441,17 @@ class UIControls {
                 doseLimitsBox.innerHTML = `
                     <h3><span class="safety-icon-badge info">⚑</span> Dose Restrictions</h3>
                     <p class="safety-subtitle">Safety categories for substances</p>
-                    ${result.dose_limits.map(d => `
-                        <div class="safety-item safety-info">
-                            <div class="safety-item-name">${d.name}</div>
-                            <div class="safety-item-detail">${formatCategory(d.category)}</div>
-                        </div>
-                    `).join('')}
+                    ${result.dose_limits.map(d => {
+                        // Get unique condition names from limits
+                        const conditions = [...new Set(d.limits.map(l => l.condition_name))];
+                        const conditionText = conditions.length > 0 ? ` for ${conditions.join(', ')}` : '';
+                        return `
+                            <div class="safety-item safety-info">
+                                <div class="safety-item-name">${d.name}</div>
+                                <div class="safety-item-detail">${formatCategory(d.category)}${conditionText}</div>
+                            </div>
+                        `;
+                    }).join('')}
                 `;
             }
 

@@ -56,3 +56,106 @@ relations:
     target_id: lactic_acidosis
     strength: absolute
     evidence: "Metformin can precipitate or worsen lactic acidosis"
+
+  # Breastfeeding contraindications
+  - source_id: dolutegravir
+    target_id: breastfeeding
+    strength: strong
+    evidence: "Limited safety data in breastfeeding; prefer alternatives"
+
+  - source_id: efavirenz
+    target_id: breastfeeding
+    strength: strong
+    evidence: "CNS effects and potential harm to infant; avoid if possible"
+
+  # Heart failure contraindications
+  - source_id: amlodipine
+    target_id: heart_failure
+    strength: moderate
+    evidence: "May worsen heart failure; use with caution or avoid"
+
+  - source_id: nifedipine
+    target_id: heart_failure
+    strength: moderate
+    evidence: "Negative inotropic effects may worsen heart failure"
+
+  # Asthma contraindications
+  - source_id: metoprolol
+    target_id: asthma
+    strength: strong
+    evidence: "Beta blockers cause bronchospasm; avoid in asthma"
+
+  - source_id: labetalol
+    target_id: asthma
+    strength: moderate
+    evidence: "Beta blockade component may cause bronchospasm"
+
+  # COPD contraindications
+  - source_id: metoprolol
+    target_id: copd
+    strength: moderate
+    evidence: "May worsen respiratory function in COPD"
+
+  # Bleeding risk - anticoagulant contraindications
+  - source_id: warfarin
+    target_id: pregnant
+    strength: absolute
+    evidence: "Teratogenic; causes fetal warfarin syndrome"
+
+  - source_id: apixaban
+    target_id: pregnant
+    strength: absolute
+    evidence: "Limited safety data; avoid in pregnancy"
+
+  - source_id: warfarin
+    target_id: severe_renal_impairment
+    strength: strong
+    evidence: "Increased bleeding risk with reduced clearance"
+
+  - source_id: apixaban
+    target_id: severe_renal_impairment
+    strength: strong
+    evidence: "Requires dose adjustment; avoid if eGFR < 15"
+
+  # Antiplatelet contraindications
+  - source_id: aspirin
+    target_id: asthma
+    strength: moderate
+    evidence: "Aspirin-exacerbated respiratory disease in subset of asthma patients"
+
+  - source_id: clopidogrel
+    target_id: hepatic_impairment
+    strength: strong
+    evidence: "Prodrug requiring hepatic activation and increased bleeding risk"
+
+  # SSRI contraindications
+  - source_id: sertraline
+    target_id: pregnant
+    strength: moderate
+    evidence: "Use only if benefit outweighs risk; potential neonatal adaptation issues"
+
+  - source_id: fluoxetine
+    target_id: pregnant
+    strength: moderate
+    evidence: "Crosses placenta; weigh risks vs benefits"
+
+  - source_id: sertraline
+    target_id: breastfeeding
+    strength: moderate
+    evidence: "Excreted in breast milk; monitor infant"
+
+  # TB medication contraindications
+  - source_id: rifampin
+    target_id: hepatic_impairment
+    strength: strong
+    evidence: "Hepatotoxic; avoid in severe hepatic disease"
+
+  - source_id: isoniazid
+    target_id: hepatic_impairment
+    strength: strong
+    evidence: "Hepatotoxic; monitor LFTs closely or avoid"
+
+  - source_id: rifampin
+    target_id: pregnant
+    strength: moderate
+    evidence: "Use with caution; essential for TB treatment but monitor closely"

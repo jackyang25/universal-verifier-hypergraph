@@ -85,3 +85,204 @@ relations:
     target_id: labetalol
     strength: moderate
     evidence: "Beta blockers may mask hypoglycemia symptoms; monitor blood glucose"
+
+  # Additional HIV drug interactions
+  - source_id: efavirenz
+    target_id: amlodipine
+    strength: moderate
+    evidence: "Efavirenz induces CYP3A4; may decrease amlodipine levels"
+
+  - source_id: tenofovir
+    target_id: lisinopril
+    strength: moderate
+    evidence: "Both affect renal function; monitor eGFR closely"
+
+  - source_id: tenofovir
+    target_id: enalapril
+    strength: moderate
+    evidence: "Both affect renal function; monitor eGFR closely"
+
+  - source_id: emtricitabine
+    target_id: metformin
+    strength: moderate
+    evidence: "Both renally cleared; monitor renal function"
+
+  # Beta blocker interactions
+  - source_id: metoprolol
+    target_id: insulin
+    strength: moderate
+    evidence: "Beta blockers mask hypoglycemia symptoms"
+
+  - source_id: metoprolol
+    target_id: glyburide
+    strength: moderate
+    evidence: "Beta blockers mask hypoglycemia symptoms"
+
+  - source_id: metoprolol
+    target_id: amlodipine
+    strength: moderate
+    evidence: "Additive cardiac depression and hypotension"
+
+  - source_id: metoprolol
+    target_id: nifedipine
+    strength: moderate
+    evidence: "Additive cardiac depression and hypotension"
+
+  # Anticoagulant interactions
+  - source_id: warfarin
+    target_id: metformin
+    strength: moderate
+    evidence: "Metformin may enhance warfarin effect; monitor INR"
+
+  - source_id: apixaban
+    target_id: dolutegravir
+    strength: moderate
+    evidence: "Dolutegravir may increase apixaban levels"
+
+  - source_id: apixaban
+    target_id: efavirenz
+    strength: strong
+    evidence: "Efavirenz decreases apixaban levels; avoid combination"
+
+  # Inhaled medication interactions (generally minimal systemic interactions)
+  - source_id: budesonide
+    target_id: metformin
+    strength: moderate
+    evidence: "Corticosteroids may increase blood glucose; monitor"
+
+  - source_id: budesonide
+    target_id: glyburide
+    strength: moderate
+    evidence: "Corticosteroids may increase blood glucose; adjust dose"
+
+  # Antiplatelet + anticoagulant interactions
+  - source_id: aspirin
+    target_id: warfarin
+    strength: strong
+    evidence: "Increased bleeding risk; use combination with caution"
+
+  - source_id: aspirin
+    target_id: apixaban
+    strength: strong
+    evidence: "Increased bleeding risk; often used together in ACS but monitor"
+
+  - source_id: clopidogrel
+    target_id: warfarin
+    strength: strong
+    evidence: "Significantly increased bleeding risk"
+
+  - source_id: clopidogrel
+    target_id: apixaban
+    strength: strong
+    evidence: "Increased bleeding risk; use with caution"
+
+  - source_id: aspirin
+    target_id: clopidogrel
+    strength: moderate
+    evidence: "DAPT increases bleeding risk but often clinically indicated"
+
+  # SSRI interactions
+  - source_id: sertraline
+    target_id: warfarin
+    strength: moderate
+    evidence: "SSRIs increase bleeding risk and may enhance warfarin effect"
+
+  - source_id: fluoxetine
+    target_id: warfarin
+    strength: strong
+    evidence: "Strong CYP2C9 inhibitor; increases warfarin levels"
+
+  - source_id: sertraline
+    target_id: aspirin
+    strength: moderate
+    evidence: "Both increase bleeding risk; monitor for GI bleeding"
+
+  - source_id: fluoxetine
+    target_id: metoprolol
+    strength: moderate
+    evidence: "Fluoxetine inhibits CYP2D6; increases metoprolol levels"
+
+  # TB drug interactions (rifampin is major CYP450 inducer)
+  - source_id: rifampin
+    target_id: warfarin
+    strength: strong
+    evidence: "Rifampin strongly induces warfarin metabolism; significantly decreased INR"
+
+  - source_id: rifampin
+    target_id: metoprolol
+    strength: moderate
+    evidence: "Rifampin induces metabolism; may reduce metoprolol efficacy"
+
+  - source_id: rifampin
+    target_id: atorvastatin
+    strength: strong
+    evidence: "Rifampin reduces statin levels; may need dose adjustment"
+
+  - source_id: rifampin
+    target_id: apixaban
+    strength: strong
+    evidence: "Rifampin significantly decreases apixaban levels; avoid combination"
+
+  - source_id: rifampin
+    target_id: dolutegravir
+    strength: strong
+    evidence: "Rifampin decreases dolutegravir levels; requires dose adjustment"
+
+  - source_id: rifampin
+    target_id: efavirenz
+    strength: moderate
+    evidence: "Complex bidirectional interaction; monitor antiretroviral efficacy"
+
+  - source_id: isoniazid
+    target_id: warfarin
+    strength: moderate
+    evidence: "Isoniazid may enhance warfarin effect"
+
+  # Statin interactions
+  - source_id: atorvastatin
+    target_id: amlodipine
+    strength: moderate
+    evidence: "Amlodipine increases atorvastatin levels; monitor for myopathy"
+
+  - source_id: atorvastatin
+    target_id: dolutegravir
+    strength: moderate
+    evidence: "Monitor for increased statin effects"
+
+  # Thyroid hormone interactions
+  - source_id: levothyroxine
+    target_id: warfarin
+    strength: moderate
+    evidence: "Levothyroxine enhances warfarin effect; monitor INR"
+
+  - source_id: levothyroxine
+    target_id: metformin
+    strength: moderate
+    evidence: "Hypothyroidism affects glucose metabolism; monitor blood glucose"
+
+  - source_id: levothyroxine
+    target_id: sertraline
+    strength: moderate
+    evidence: "SSRIs may affect thyroid function; monitor TSH"
+
+  # Additional antihypertensive combinations
+  - source_id: lisinopril
+    target_id: amlodipine
+    strength: moderate
+    evidence: "Common combination; additive hypotension, monitor blood pressure"
+
+  - source_id: enalapril
+    target_id: amlodipine
+    strength: moderate
+    evidence: "Common combination; additive hypotension, monitor blood pressure"
+
+  # Sulfonylurea cross-interactions
+  - source_id: glipizide
+    target_id: glyburide
+    strength: strong
+    evidence: "Combining sulfonylureas significantly increases hypoglycemia risk"
+
+  - source_id: glipizide
+    target_id: labetalol
+    strength: moderate
+    evidence: "Beta blockers may mask hypoglycemia symptoms; monitor blood glucose"

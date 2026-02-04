@@ -27,3 +27,35 @@ relations:
     target_id: pregnant
     strength: absolute
     evidence: "Fetal findings require pregnancy"
+
+  # Clinical monitoring requirements using findings
+  - source_id: tenofovir
+    target_id: reduced_egfr
+    strength: strong
+    evidence: "Renal function monitoring required due to nephrotoxicity risk"
+
+  - source_id: glyburide
+    target_id: elevated_hba1c
+    strength: moderate
+    evidence: "HbA1c monitoring required to assess glycemic control"
+
+  - source_id: dolutegravir
+    target_id: detectable_viral_load
+    strength: strong
+    evidence: "Viral load monitoring required to assess ART efficacy"
+
+  # Disorder-finding associations
+  - source_id: diabetes_mellitus_type_2
+    target_id: elevated_hba1c
+    strength: moderate
+    evidence: "Diabetes diagnosis typically involves elevated HbA1c"
+
+  - source_id: hiv_infection
+    target_id: detectable_viral_load
+    strength: moderate
+    evidence: "HIV infection initially presents with detectable viral load"
+
+  - source_id: hypertension
+    target_id: elevated_blood_pressure
+    strength: strong
+    evidence: "Hypertension is defined by persistently elevated blood pressure"

@@ -97,11 +97,21 @@ def check_safety(
         categories = [l.get("dose_category") for l in limits if l.get("dose_category") and l.get("dose_category") != "standard"]
         if categories:
             most_restrictive = min(categories, key=lambda c: category_severity.get(c, 99))
+            
+            # Convert condition IDs to readable names
+            limits_with_names = []
+            for l in limits:
+                if l.get("dose_category") != "standard":
+                    condition_entity = ontology_bridge.registry.get_entity(l["condition"])
+                    limit_with_name = l.copy()
+                    limit_with_name["condition_name"] = condition_entity.name if condition_entity else l["condition"]
+                    limits_with_names.append(limit_with_name)
+            
             dose_limits_data.append({
                 "id": substance_id,
                 "name": substance_name,
                 "category": most_restrictive,
-                "limits": [l for l in limits if l.get("dose_category") != "standard"]
+                "limits": limits_with_names
             })
     
     # Get drug-drug interactions between safe treatments
