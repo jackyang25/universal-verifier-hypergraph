@@ -149,6 +149,98 @@ class OntologySchema:
         if recommendations_dir.exists():
             for yaml_file in sorted(recommendations_dir.glob("*.yaml")):
                 self.load_relations_file(yaml_file)
+        
+        # validate no contradictions between contraindications and dose restrictions
+        self._validate_no_constraint_conflicts()
+        
+        # validate no self-referential relations
+        self._validate_no_self_references()
+        
+        # validate enum values
+        self._validate_enum_values()
+    
+    def _validate_no_self_references(self) -> None:
+        """
+        Check that no relation has the same entity as source and target.
+        
+        Raises:
+            ValueError: If self-referential relations are found
+        """
+        self_refs = []
+        for rel in self.registry.iter_relations():
+            if rel.source_id == rel.target_id:
+                self_refs.append(f"{rel.relation_type.value}: {rel.source_id}")
+        
+        if self_refs:
+            raise ValueError(
+                f"Self-referential relations found (entity cannot relate to itself): {', '.join(self_refs)}"
+            )
+    
+    def _validate_enum_values(self) -> None:
+        """
+        Check that all enum values (dose_category, strength) are valid.
+        
+        Raises:
+            ValueError: If invalid enum values are found
+        """
+        from ontology.types import DoseCategory
+        
+        valid_categories = {c.value for c in DoseCategory}
+        # strength is Optional[str] with expected values per Relation comment
+        valid_strengths = {"absolute", "strong", "moderate", "weak"}
+        
+        invalid_doses = []
+        invalid_strengths = []
+        
+        for rel in self.registry.iter_relations():
+            # check dose categories
+            if rel.dose_category and rel.dose_category.value not in valid_categories:
+                invalid_doses.append(f"{rel.id}: '{rel.dose_category.value}'")
+            
+            # check strength values
+            if rel.strength and rel.strength not in valid_strengths:
+                invalid_strengths.append(f"{rel.id}: '{rel.strength}'")
+        
+        errors = []
+        if invalid_doses:
+            errors.append(f"Invalid dose categories: {', '.join(invalid_doses)}")
+        if invalid_strengths:
+            errors.append(f"Invalid strength values: {', '.join(invalid_strengths)}")
+        
+        if errors:
+            raise ValueError(f"Enum validation failed: {'; '.join(errors)}")
+    
+    def _validate_no_constraint_conflicts(self) -> None:
+        """
+        Check that the same substance-condition pair doesn't appear in both
+        contraindications and dose_restrictions.
+        
+        Raises:
+            ValueError: If contradictory constraints are found
+        """
+        from ontology.types import RelationType
+        
+        # Get all contraindication pairs
+        contraindication_pairs = set()
+        for rel in self.registry.iter_relations():
+            if rel.relation_type == RelationType.CONTRAINDICATED_IN:
+                contraindication_pairs.add((rel.source_id, rel.target_id))
+        
+        # Check dose restrictions for conflicts
+        conflicts = []
+        for rel in self.registry.iter_relations():
+            if rel.relation_type == RelationType.REQUIRES_DOSE_ADJUSTMENT:
+                pair = (rel.source_id, rel.target_id)
+                if pair in contraindication_pairs:
+                    conflicts.append(pair)
+        
+        if conflicts:
+            conflict_strs = [f"{s} + {c}" for s, c in conflicts]
+            raise ValueError(
+                f"Contradictory constraints found - same substance-condition pairs appear in both "
+                f"contraindications and dose_restrictions: {', '.join(conflict_strs)}. "
+                f"A substance should either be contraindicated OR have dose restrictions, not both."
+            )
     
     def validate(self) -> ValidationResult:
         """

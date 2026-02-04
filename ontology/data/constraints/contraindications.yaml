@@ -85,16 +85,6 @@ relations:
     strength: strong
     evidence: "Beta blockers cause bronchospasm; avoid in asthma"
 
-  - source_id: labetalol
-    target_id: asthma
-    strength: moderate
-    evidence: "Beta blockade component may cause bronchospasm"
-
-  # COPD contraindications
-  - source_id: metoprolol
-    target_id: copd
-    strength: moderate
-    evidence: "May worsen respiratory function in COPD"
 
   # Bleeding risk - anticoagulant contraindications
   - source_id: warfarin
