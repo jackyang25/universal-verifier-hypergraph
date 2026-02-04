@@ -1,6 +1,7 @@
-# Dose restrictions (categorical safety levels)
-# Safety verification layer - defines dose safety categories for substances in specific patient states
-# Uses categories for rigorous formal verification (no numeric values)
+# Dose restrictions (generates DOSE_CONSTRAINT axioms)
+# Defines categorical safety levels for substances in specific patient states
+# These are formal safety bounds enforced in verification
+# Uses categories (not numeric values) for rigorous formal verification
 
 relation_type: requires_dose_adjustment
 

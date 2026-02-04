@@ -1,5 +1,6 @@
-# Treatment relations
+# Treatment relations (informational, not axioms)
 # Express which substances treat which disorders
+# Used for suggesting therapies, not formal safety constraints
 
 relation_type: treats
 

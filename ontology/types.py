@@ -18,17 +18,37 @@ class EntityType(Enum):
 
 
 class RelationType(Enum):
-    """Classification of relations between entities."""
+    """
+    Classification of relations between entities.
     
+    Relations are divided into two categories:
+    
+    AXIOM-GENERATING (formal safety constraints):
+    - CONTRAINDICATED_IN: absolute prohibition, generates CONTRAINDICATION axiom
+    - REQUIRES_DOSE_ADJUSTMENT: categorical safety bound, generates DOSE_CONSTRAINT axiom
+    - EXCLUDES: mutual exclusion, generates MUTUAL_EXCLUSION axiom
+    - REQUIRES: dependency constraint, generates REQUIREMENT axiom
+    
+    INFORMATIONAL (not axioms):
+    - TREATS: treatment recommendation, used for suggesting therapies
+    - INTERACTS_WITH: monitoring warning, displayed as clinical alerts
+    - INDICATES, CAUSES, MODIFIES: descriptive relations (currently unused)
+    """
+    
+    # axiom-generating relations (safety constraints)
     CONTRAINDICATED_IN = "contraindicated_in"
+    REQUIRES_DOSE_ADJUSTMENT = "requires_dose_adjustment"
+    EXCLUDES = "excludes"
+    REQUIRES = "requires"
+    
+    # informational relations (not axioms)
     TREATS = "treats"
+    INTERACTS_WITH = "interacts_with"
+    
+    # descriptive relations (currently unused)
     INDICATES = "indicates"
     CAUSES = "causes"
-    INTERACTS_WITH = "interacts_with"
-    REQUIRES = "requires"
-    EXCLUDES = "excludes"
     MODIFIES = "modifies"
-    REQUIRES_DOSE_ADJUSTMENT = "requires_dose_adjustment"
 
 
 class Severity(Enum):

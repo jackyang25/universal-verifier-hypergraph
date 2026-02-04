@@ -1,5 +1,7 @@
-# Interaction relations
+# Interaction relations (informational, not axioms)
 # Express clinically significant drug-drug interactions
+# These provide monitoring recommendations but do NOT prohibit combinations
+# Used for displaying warnings in UI, not formal safety constraints
 # These show when combining safe treatments requires monitoring
 
 relation_type: interacts_with

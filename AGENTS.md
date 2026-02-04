@@ -58,7 +58,10 @@ Formal clinical knowledge representation.
 YAML definitions (source of truth):
 
 - **`entities/`** - Disorders, substances, states, findings
-- **`relations/`** - Contraindications, dose_limits, treatments, exclusions
+- **`constraints/`** - Safety constraints that generate axioms for formal verification
+  - contraindications.yaml, dose_restrictions.yaml, exclusions.yaml, requirements.yaml
+- **`recommendations/`** - Clinical guidance that doesn't generate axioms
+  - interactions.yaml (monitoring warnings), treatments.yaml (therapy suggestions)
 
 ### `api/`
 FastAPI REST endpoints.
@@ -188,7 +191,7 @@ Edit `ontology/data/entities/<type>.yaml`:
 ```
 
 ### Add Contraindication
-Edit `ontology/data/relations/contraindications.yaml`:
+Edit `ontology/data/constraints/contraindications.yaml`:
 ```yaml
 - source_id: substance_id
   target_id: condition_id
@@ -197,7 +200,7 @@ Edit `ontology/data/relations/contraindications.yaml`:
 ```
 
 ### Add Dose Restriction
-Edit `ontology/data/relations/dose_limits.yaml`:
+Edit `ontology/data/constraints/dose_restrictions.yaml`:
 ```yaml
 - id: unique_id
   source_id: substance_id

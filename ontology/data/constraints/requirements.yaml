@@ -1,5 +1,6 @@
-# Requirement relations
+# Requirement relations (generates REQUIREMENT axioms)
 # Express when one entity requires another
+# These enforce dependency constraints in formal verification
 
 relation_type: requires
 

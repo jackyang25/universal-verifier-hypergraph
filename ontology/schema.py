@@ -121,22 +121,33 @@ class OntologySchema:
         │   ├── disorders.yaml
         │   ├── substances.yaml
         │   └── states.yaml
-        └── relations/
-            ├── contraindications.yaml
-            └── interactions.yaml
+        ├── constraints/
+        │   ├── contraindications.yaml
+        │   ├── dose_restrictions.yaml
+        │   ├── exclusions.yaml
+        │   └── requirements.yaml
+        └── recommendations/
+            ├── interactions.yaml
+            └── treatments.yaml
         ```
         """
         entities_dir = path / "entities"
-        relations_dir = path / "relations"
+        constraints_dir = path / "constraints"
+        recommendations_dir = path / "recommendations"
         
         # load entities first (relations depend on them)
         if entities_dir.exists():
             for yaml_file in sorted(entities_dir.glob("*.yaml")):
                 self.load_entities_file(yaml_file)
         
-        # then load relations
-        if relations_dir.exists():
-            for yaml_file in sorted(relations_dir.glob("*.yaml")):
+        # load constraint relations (generate axioms)
+        if constraints_dir.exists():
+            for yaml_file in sorted(constraints_dir.glob("*.yaml")):
+                self.load_relations_file(yaml_file)
+        
+        # load recommendation relations (informational)
+        if recommendations_dir.exists():
+            for yaml_file in sorted(recommendations_dir.glob("*.yaml")):
                 self.load_relations_file(yaml_file)
     
     def validate(self) -> ValidationResult:

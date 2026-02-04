@@ -1,6 +1,7 @@
-# Contraindication relations
+# Contraindication relations (generates CONTRAINDICATION axioms)
 # Express when a substance should NEVER be used in a given state
-# For dose-dependent restrictions, use dose_limits.yaml instead
+# These are absolute prohibitions enforced in formal verification
+# For dose-dependent restrictions, use dose_restrictions.yaml instead
 
 relation_type: contraindicated_in
 

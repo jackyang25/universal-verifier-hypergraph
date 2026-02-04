@@ -1,5 +1,6 @@
-# Mutual exclusion relations
+# Mutual exclusion relations (generates MUTUAL_EXCLUSION axioms)
 # Express logical incompatibilities between entities
+# These enforce constraints that two things cannot coexist in formal verification
 
 relation_type: excludes
 
