@@ -4,7 +4,12 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 
+import yaml
+
 if TYPE_CHECKING:
+    from protocols.router import ProtocolRouter
+else:
+    # Import at runtime to avoid circular dependency
     from protocols.router import ProtocolRouter
 
 
@@ -23,10 +28,6 @@ def load_from_yaml(path: Union[str, Path]) -> "ProtocolRouter":
         yaml.YAMLError: If YAML is malformed
         ValueError: If required fields are missing
     """
-    import yaml
-    
-    from protocols.router import ProtocolRouter
-    
     path = Path(path)
     
     if not path.exists():
@@ -53,8 +54,6 @@ def load_from_json(path: Union[str, Path]) -> "ProtocolRouter":
         json.JSONDecodeError: If JSON is malformed
         ValueError: If required fields are missing
     """
-    from protocols.router import ProtocolRouter
-    
     path = Path(path)
     
     if not path.exists():
@@ -74,8 +73,6 @@ def save_to_yaml(router: "ProtocolRouter", path: Union[str, Path]) -> None:
         router: ProtocolRouter to export
         path: Destination file path
     """
-    import yaml
-    
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     

@@ -12,7 +12,9 @@ from api.models import (
     EntityCategory,
     EntityResponse,
 )
+from ontology.bridge import OntologyBridge
 from protocols import ProtocolRouter
+from verification import SafetyVerifier
 
 router = APIRouter()
 
@@ -20,118 +22,84 @@ router = APIRouter()
 @router.post("/check", response_model=SafetyCheckResponse)
 def check_safety(
     request: SafetyCheckRequest,
-    ontology_bridge: Optional["OntologyBridge"] = Depends(get_ontology_bridge_dependency),
+    ontology_bridge: Optional[OntologyBridge] = Depends(get_ontology_bridge_dependency),
 ):
     """
-    Check safety for given patient conditions.
+    Verify proposed action against conformal set and patient context.
     
-    Returns:
-    - Contraindicated substances
-    - Safe treatment options
-    - Consistency violations (invalid condition combinations)
+    **Input:**
+    - `conformal_set`: List of uncertain diagnoses from conformal prediction
+      (e.g., ["hellp_syndrome", "aflp"])
+    - `proposed_action`: Action to verify (type: "substance" or "action", id, dose)
+      (e.g., {"type": "substance", "id": "labetalol", "dose": "20mg IV"})
+    - `patient_context`: Known patient conditions (comorbidities, ga_weeks, physiologic_states)
+      (e.g., {"comorbidities": ["asthma"], "ga_weeks": 32})
+    
+    **Three-step verification process:**
+    1. Protocol Matching & Axiom Retrieval - Query hypergraph for relevant axioms
+    2. Protocol Proof Execution - Run protocol-linked proofs
+    3. Certificate Generation - Return verification certificate with 7 components
+    
+    **Returns verification certificate with:**
+    - verification_status (VERIFIED/BLOCKED/REPAIR_NEEDED)
+    - contraindications (blocking violations with physiology-based rationale)
+    - alternatives (repair guidance with dosing)
+    - dose_limits (informational warnings)
+    - consistency_violations (mutual exclusions)
+    - required_actions (requirement satisfaction status)
+    - process_trace (audit trail)
     """
     if not ontology_bridge:
         return SafetyCheckResponse(
             available=False,
-            contraindicated_substances=[],
-            safe_treatments=[],
-            dose_limits=[],
-            drug_interactions=[],
-            consistency_violations=[],
-            conditions_checked=request.conditions,
+            verification_status=None,
+            conformal_set=request.conformal_set,
+            proposed_action=request.proposed_action.dict(),
         )
     
-    conditions = set(request.conditions)
+    # Use SafetyVerifier for the 3-step safety check
+    verifier = SafetyVerifier(ontology_bridge)
     
-    # Validate conditions exist
-    valid, invalid = ontology_bridge.validate_conditions(conditions)
-    if not valid:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unknown conditions: {invalid}"
+    try:
+        # Run verification
+        certificate = verifier.verify(
+            conformal_set=request.conformal_set,
+            proposed_action=request.proposed_action.dict(),
+            patient_context=request.patient_context.dict() if request.patient_context else {},
         )
-    
-    # Check consistency
-    violations = ontology_bridge.check_consistency(conditions)
-    
-    # Get contraindicated substances
-    contraindicated = ontology_bridge.get_contraindicated_substances(conditions)
-    contraindicated_data = [
-        {
-            "id": entity.id,
-            "name": entity.name,
-            "reason": ontology_bridge.get_contraindication_reason(entity.id, conditions),
-        }
-        for entity in contraindicated
-    ]
-    
-    # Get safe treatments
-    safe = ontology_bridge.get_safe_treatments(conditions)
-    safe_data = [
-        {
-            "id": entity.id,
-            "name": entity.name,
-            "indication": ontology_bridge.get_treatment_indication(entity.id, conditions),
-        }
-        for entity in safe
-    ]
-    
-    # Get dose limits
-    dose_limits_dict = ontology_bridge.get_dose_limits(conditions)
-    dose_limits_data = []
-    
-    # Category severity order (most restrictive first)
-    category_severity = {
-        "avoid_if_possible": 0,
-        "severely_restricted": 1,
-        "reduced": 2,
-        "use_with_caution": 3,
-        "standard": 4,
-    }
-    
-    for substance_id, limits in dose_limits_dict.items():
-        substance = ontology_bridge.registry.get_entity(substance_id)
-        substance_name = substance.name if substance else substance_id
         
-        # Find most restrictive category (exclude 'standard' as it means no restriction)
-        categories = [l.get("dose_category") for l in limits if l.get("dose_category") and l.get("dose_category") != "standard"]
-        if categories:
-            most_restrictive = min(categories, key=lambda c: category_severity.get(c, 99))
-            
-            # Convert condition IDs to readable names
-            limits_with_names = []
-            for l in limits:
-                if l.get("dose_category") != "standard":
-                    condition_entity = ontology_bridge.registry.get_entity(l["condition"])
-                    limit_with_name = l.copy()
-                    limit_with_name["condition_name"] = condition_entity.name if condition_entity else l["condition"]
-                    limits_with_names.append(limit_with_name)
-            
-            dose_limits_data.append({
-                "id": substance_id,
-                "name": substance_name,
-                "category": most_restrictive,
-                "limits": limits_with_names
-            })
+        # Convert certificate to dict (it has a to_dict() method)
+        cert_dict = certificate.to_dict()
+        
+        # Return as API response
+        return SafetyCheckResponse(
+            available=True,
+            verification_status=cert_dict["verification_status"],
+            contraindications=cert_dict["contraindications"],
+            alternatives=cert_dict["alternatives"],
+            dose_limits=cert_dict["dose_limits"],
+            consistency_violations=cert_dict["consistency_violations"],
+            required_actions=cert_dict["required_actions"],
+            process_trace=cert_dict["process_trace"],
+            lean_proof_id=cert_dict["lean_proof_id"],
+            conformal_set=request.conformal_set,
+            proposed_action=request.proposed_action.dict(),
+        )
     
-    # Get drug-drug interactions between safe treatments
-    safe_treatment_ids = set(entity.id for entity in safe)
-    interactions = ontology_bridge.get_drug_interactions(safe_treatment_ids)
-    
-    return SafetyCheckResponse(
-        available=True,
-        contraindicated_substances=contraindicated_data,
-        safe_treatments=safe_data,
-        dose_limits=dose_limits_data,
-        drug_interactions=interactions,
-        consistency_violations=violations,
-        conditions_checked=sorted(conditions),
-    )
+    except Exception as e:
+        # Handle verification errors gracefully
+        return SafetyCheckResponse(
+            available=True,
+            verification_status="ERROR",
+            process_trace=[f"Verification error: {str(e)}"],
+            conformal_set=request.conformal_set,
+            proposed_action=request.proposed_action.dict(),
+        )
 
 
 @router.get("/status", response_model=OntologyStatusResponse)
 def get_ontology_status(
-    ontology_bridge: Optional["OntologyBridge"] = Depends(get_ontology_bridge_dependency),
+    ontology_bridge: Optional[OntologyBridge] = Depends(get_ontology_bridge_dependency),
 ):
     """Get ontology module availability status."""
     if not ontology_bridge:
@@ -151,7 +119,7 @@ def get_ontology_status(
 
 @router.get("/entities", response_model=AllEntitiesResponse)
 def get_all_entities(
-    ontology_bridge: Optional["OntologyBridge"] = Depends(get_ontology_bridge_dependency),
+    ontology_bridge: Optional[OntologyBridge] = Depends(get_ontology_bridge_dependency),
     protocol_router: ProtocolRouter = Depends(get_protocol_router_dependency),
 ):
     """
@@ -181,16 +149,13 @@ def get_all_entities(
         "physiologic_state": "Physiologic States",
         "finding": "Clinical Findings",
         "substance": "Substances & Medications",
+        "action": "Clinical Actions",
     }
     
-    # group entities by type (exclude substances for condition selection)
+    # group entities by type (include all types)
     categories_data = {}
     for entity in ontology_bridge.registry.iter_entities():
         entity_type = entity.entity_type.value
-        
-        # skip substances - they're medications, not patient conditions
-        if entity_type == "substance":
-            continue
             
         if entity_type not in categories_data:
             categories_data[entity_type] = []
@@ -208,7 +173,7 @@ def get_all_entities(
         entities.sort(key=lambda e: e.name)
     
     # build response categories in preferred order
-    category_order = ["disorder", "physiologic_state", "finding"]
+    category_order = ["disorder", "physiologic_state", "finding", "substance", "action"]
     categories = []
     for cat_type in category_order:
         if cat_type in categories_data:

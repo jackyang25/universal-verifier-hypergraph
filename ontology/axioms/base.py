@@ -20,10 +20,10 @@ class AxiomType(Enum):
 @dataclass(frozen=True)
 class Axiom:
     """
-    A formal axiom expressing domain knowledge.
+    A formal axiom (protocol) expressing domain knowledge.
     
-    Axioms are the foundation for formal proofs. They express truths
-    that are assumed to hold in the clinical domain.
+    Each axiom has a linked proof that can be executed at runtime.
+    Axioms are the foundation for formal proofs.
     
     Attributes:
         id: Unique identifier
@@ -35,6 +35,8 @@ class Axiom:
         negated: If true, the consequent is negated (for exclusions)
         evidence: Optional reference to supporting evidence
         dose_category: Categorical safety level for dose constraints
+        proof_link: Link to pre-built proof executable
+        lean_code: Optional Lean 4 proof code
     """
     
     id: str
@@ -46,6 +48,8 @@ class Axiom:
     negated: bool = False       # if true, consequent must NOT hold
     evidence: Optional[str] = None
     dose_category: Optional[str] = None  # categorical safety level for Lean formalization
+    proof_link: Optional[str] = None  # link to pre-built proof (proof function name or executable path)
+    lean_code: Optional[str] = None  # Lean 4 proof code
     
     def __post_init__(self) -> None:
         if not self.id:
@@ -73,6 +77,10 @@ class Axiom:
             result["evidence"] = self.evidence
         if self.dose_category is not None:
             result["dose_category"] = self.dose_category
+        if self.proof_link:
+            result["proof_link"] = self.proof_link
+        if self.lean_code:
+            result["lean_code"] = self.lean_code
         return result
     
     @classmethod
@@ -88,6 +96,8 @@ class Axiom:
             negated=data.get("negated", False),
             evidence=data.get("evidence"),
             dose_category=data.get("dose_category"),
+            proof_link=data.get("proof_link"),
+            lean_code=data.get("lean_code"),
         )
 
 

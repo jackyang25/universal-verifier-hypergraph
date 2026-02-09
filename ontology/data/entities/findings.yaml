@@ -1,97 +1,64 @@
-# Clinical finding entities for the clinical universe
-# These represent observable patient characteristics and test results
+# Clinical findings for maternal care
 
 entity_type: finding
 
 entities:
-  - id: hyperglycemia
-    name: Hyperglycemia
-    description: Elevated blood glucose level
+  # Hypertension severity
+  - id: severe_hypertension
+    name: Severe Hypertension
+    description: BP ≥ 160/110 mmHg
     codes:
       - system: SNOMED-CT
-        code: "80394007"
+        code: "38341003"
 
-  - id: hypoglycemia
-    name: Hypoglycemia
-    description: Low blood glucose level
+  - id: mild_hypertension
+    name: Mild Hypertension
+    description: BP 140-159/90-109 mmHg
     codes:
       - system: SNOMED-CT
-        code: "302866003"
+        code: "371622005"
 
-  - id: elevated_hba1c
-    name: Elevated HbA1c
-    description: Glycated hemoglobin above target range
-    codes:
-      - system: SNOMED-CT
-        code: "165679005"
-
+  # Proteinuria
   - id: proteinuria
     name: Proteinuria
-    description: Protein detected in urine
+    description: Protein in urine (≥300 mg/24hr or protein/creatinine ratio ≥0.3)
     codes:
       - system: SNOMED-CT
         code: "29738008"
 
-  - id: elevated_blood_pressure
-    name: Elevated Blood Pressure
-    description: Blood pressure above normal range
+  # Laboratory findings
+  - id: thrombocytopenia
+    name: Thrombocytopenia
+    description: Low platelet count (<100,000/μL)
     codes:
       - system: SNOMED-CT
-        code: "24184005"
+        code: "415116008"
 
-  - id: reduced_egfr
-    name: Reduced eGFR
-    description: Estimated glomerular filtration rate below 60 mL/min/1.73m2
+  - id: elevated_liver_enzymes
+    name: Elevated Liver Enzymes
+    description: AST or ALT > 2x upper limit normal
     codes:
       - system: SNOMED-CT
-        code: "431857002"
+        code: "166643006"
 
-  - id: positive_hiv_test
-    name: Positive HIV Test
-    description: Laboratory confirmation of HIV infection
+  - id: hemolysis
+    name: Hemolysis
+    description: Evidence of red blood cell breakdown
     codes:
       - system: SNOMED-CT
-        code: "165816005"
+        code: "73320003"
 
-  - id: detectable_viral_load
-    name: Detectable Viral Load
-    description: HIV RNA detected in blood
+  # Symptoms
+  - id: headache_severe
+    name: Severe Headache
+    description: Persistent severe headache unrelieved by medication
     codes:
       - system: SNOMED-CT
-        code: "315124004"
+        code: "25064002"
 
-  - id: undetectable_viral_load
-    name: Undetectable Viral Load
-    description: HIV RNA below detection limit
+  - id: visual_disturbance
+    name: Visual Disturbance
+    description: Blurred vision, scotomata, or other visual changes
     codes:
       - system: SNOMED-CT
-        code: "315123005"
-
-  - id: fetal_macrosomia
-    name: Fetal Macrosomia
-    description: Estimated fetal weight exceeds 4000g
-    codes:
-      - system: SNOMED-CT
-        code: "62531004"
-
-  - id: ketoacidosis
-    name: Ketoacidosis
-    description: Metabolic acidosis with ketone body accumulation
-    codes:
-      - system: SNOMED-CT
-        code: "420422005"
-
-  - id: egfr_30_45
-    name: eGFR 30-45
-    description: Estimated glomerular filtration rate between 30-45 mL/min/1.73m2
-    parent_id: reduced_egfr
-
-  - id: egfr_30_49
-    name: eGFR 30-49
-    description: Estimated glomerular filtration rate between 30-49 mL/min/1.73m2
-    parent_id: reduced_egfr
-
-  - id: egfr_below_30
-    name: eGFR Below 30
-    description: Estimated glomerular filtration rate less than 30 mL/min/1.73m2
-    parent_id: reduced_egfr
+        code: "63102001"

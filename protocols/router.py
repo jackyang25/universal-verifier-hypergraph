@@ -10,9 +10,13 @@ are present in the patient context.
 """
 
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Iterator, Optional, Union, TYPE_CHECKING
 
 from protocols.protocol import Protocol
+
+if TYPE_CHECKING:
+    # Import for type hints only - actual imports done lazily to avoid circular dependency
+    from protocols.loader import load_from_json, load_from_yaml, save_to_json, save_to_yaml
 
 
 class ProtocolRouter:
@@ -397,6 +401,7 @@ class ProtocolRouter:
             ValueError: If file extension is not supported
             FileNotFoundError: If config file doesn't exist
         """
+        # Lazy import to avoid circular dependency (loader imports ProtocolRouter)
         from protocols.loader import load_from_json, load_from_yaml
         
         path = Path(path)
@@ -415,6 +420,7 @@ class ProtocolRouter:
         Args:
             path: Path to save config file (.yaml, .yml, or .json)
         """
+        # Lazy import to avoid circular dependency (loader imports ProtocolRouter)
         from protocols.loader import save_to_json, save_to_yaml
         
         path = Path(path)

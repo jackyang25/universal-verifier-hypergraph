@@ -1,4 +1,8 @@
-.PHONY: start stop logs test clean
+.PHONY: build start stop logs test clean
+
+build:  ## Build Docker images (no cache)
+	docker-compose build --no-cache
+	@echo "Docker images rebuilt"
 
 start:  ## Start the server (Docker)
 	docker-compose up --build -d
@@ -10,9 +14,6 @@ stop:  ## Stop the server
 
 logs:  ## View server logs
 	docker-compose logs -f
-
-test:  ## Run tests in container
-	docker-compose run --rm api pytest tests/ -v
 
 clean:  ## Remove containers and cache
 	docker-compose down -v --rmi local

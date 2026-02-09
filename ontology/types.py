@@ -9,10 +9,11 @@ class EntityType(Enum):
     """Classification of clinical entities."""
     
     DISORDER = "disorder"
-    FINDING = "finding"
     SUBSTANCE = "substance"
-    PROCEDURE = "procedure"
     PHYSIOLOGIC_STATE = "physiologic_state"
+    ACTION = "action"
+    FINDING = "finding"
+    PROCEDURE = "procedure"
     ORGANISM = "organism"
     QUALIFIER = "qualifier"
 
@@ -27,12 +28,11 @@ class RelationType(Enum):
     - CONTRAINDICATED_IN: absolute prohibition, generates CONTRAINDICATION axiom
     - REQUIRES_DOSE_ADJUSTMENT: categorical safety bound, generates DOSE_CONSTRAINT axiom
     - EXCLUDES: mutual exclusion, generates MUTUAL_EXCLUSION axiom
-    - REQUIRES: dependency constraint, generates REQUIREMENT axiom
+    - REQUIRES: dependency/requirement, generates REQUIREMENT axiom
     
     INFORMATIONAL (not axioms):
     - TREATS: treatment recommendation, used for suggesting therapies
-    - INTERACTS_WITH: monitoring warning, displayed as clinical alerts
-    - INDICATES, CAUSES, MODIFIES: descriptive relations (currently unused)
+    - INTERACTS_WITH: drug-drug interaction warning, displayed as clinical alerts
     """
     
     # axiom-generating relations (safety constraints)
@@ -44,11 +44,6 @@ class RelationType(Enum):
     # informational relations (not axioms)
     TREATS = "treats"
     INTERACTS_WITH = "interacts_with"
-    
-    # descriptive relations (currently unused)
-    INDICATES = "indicates"
-    CAUSES = "causes"
-    MODIFIES = "modifies"
 
 
 class Severity(Enum):

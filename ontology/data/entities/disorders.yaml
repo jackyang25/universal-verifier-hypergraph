@@ -1,170 +1,88 @@
-# Disorder entities for the clinical universe
-# These represent pathological conditions and diseases
+# Maternal and comorbid conditions requiring protocol verification
+# Focus: delivery timing and drug safety decisions
 
 entity_type: disorder
 
 entities:
-  - id: diabetes_mellitus
-    name: Diabetes Mellitus
-    description: Metabolic disorder characterized by elevated blood glucose levels
+  # Hypertensive disorders of pregnancy (HDP)
+  - id: gestational_htn
+    name: Gestational Hypertension
+    description: New-onset hypertension after 20 weeks without proteinuria
     codes:
-      - system: SNOMED-CT
-        code: "73211009"
       - system: ICD-10
-        code: E11
-
-  - id: diabetes_mellitus_type_1
-    name: Diabetes Mellitus Type 1
-    description: Autoimmune destruction of pancreatic beta cells
-    parent_id: diabetes_mellitus
-    codes:
-      - system: SNOMED-CT
-        code: "46635009"
-      - system: ICD-10
-        code: E10
-
-  - id: diabetes_mellitus_type_2
-    name: Diabetes Mellitus Type 2
-    description: Insulin resistance with relative insulin deficiency
-    parent_id: diabetes_mellitus
-    codes:
-      - system: SNOMED-CT
-        code: "44054006"
-      - system: ICD-10
-        code: E11
-
-  - id: gestational_diabetes
-    name: Gestational Diabetes
-    description: Diabetes diagnosed during pregnancy
-    parent_id: diabetes_mellitus
-    codes:
-      - system: SNOMED-CT
-        code: "11687002"
-      - system: ICD-10
-        code: O24.4
-
-  - id: hypertension
-    name: Hypertension
-    description: Persistently elevated arterial blood pressure
-    codes:
-      - system: SNOMED-CT
-        code: "38341003"
-      - system: ICD-10
-        code: I10
-
-  - id: hiv_infection
-    name: HIV Infection
-    description: Infection with human immunodeficiency virus
-    codes:
-      - system: SNOMED-CT
-        code: "86406008"
-      - system: ICD-10
-        code: B20
+        code: O13
 
   - id: preeclampsia
     name: Preeclampsia
-    description: Pregnancy-specific hypertensive disorder with proteinuria
+    description: Hypertension with proteinuria or end-organ dysfunction after 20 weeks
     codes:
-      - system: SNOMED-CT
-        code: "398254007"
       - system: ICD-10
-        code: O14
+        code: O14.0
 
-  - id: chronic_kidney_disease
-    name: Chronic Kidney Disease
-    description: Progressive loss of kidney function over time
+  - id: preeclampsia_severe
+    name: Severe Preeclampsia
+    description: Preeclampsia with severe features (BP ≥160/110, CNS symptoms, etc.)
+    parent_id: preeclampsia
     codes:
-      - system: SNOMED-CT
-        code: "709044004"
       - system: ICD-10
-        code: N18
+        code: O14.1
 
-  - id: lactic_acidosis
-    name: Lactic Acidosis
-    description: Metabolic acidosis due to lactate accumulation
+  - id: hellp_syndrome
+    name: HELLP Syndrome
+    description: Hemolysis, Elevated Liver enzymes, Low Platelets
+    parent_id: preeclampsia_severe
     codes:
-      - system: SNOMED-CT
-        code: "91273001"
       - system: ICD-10
-        code: E87.2
+        code: O14.2
 
+  - id: eclampsia
+    name: Eclampsia
+    description: New-onset seizures in preeclampsia without other cause
+    parent_id: preeclampsia_severe
+    codes:
+      - system: ICD-10
+        code: O15
+
+  - id: aflp
+    name: Acute Fatty Liver of Pregnancy
+    description: Rare hepatic complication of pregnancy with microvesicular steatosis
+    codes:
+      - system: ICD-10
+        code: O26.61
+
+  # Placental/hemorrhage emergencies
+  - id: placental_abruption
+    name: Placental Abruption
+    description: Premature separation of placenta from uterus
+    codes:
+      - system: ICD-10
+        code: O45
+
+  - id: placenta_previa
+    name: Placenta Previa
+    description: Placenta covering cervical os
+    codes:
+      - system: ICD-10
+        code: O44
+
+  # Comorbidities affecting drug choice
   - id: asthma
     name: Asthma
-    description: Chronic inflammatory airway disease with reversible obstruction
+    description: Chronic inflammatory airway disease
     codes:
-      - system: SNOMED-CT
-        code: "195967001"
       - system: ICD-10
         code: J45
 
-  - id: copd
-    name: Chronic Obstructive Pulmonary Disease
-    description: Progressive lung disease with airflow limitation
+  - id: heart_block
+    name: Heart Block
+    description: Impaired electrical conduction in the heart
     codes:
-      - system: SNOMED-CT
-        code: "13645005"
       - system: ICD-10
-        code: J44
+        code: I44
 
   - id: heart_failure
     name: Heart Failure
-    description: Inability of heart to pump sufficient blood to meet body needs
+    description: Inability of heart to pump sufficient blood
     codes:
-      - system: SNOMED-CT
-        code: "84114007"
       - system: ICD-10
         code: I50
-
-  - id: atrial_fibrillation
-    name: Atrial Fibrillation
-    description: Irregular and often rapid heart rhythm
-    codes:
-      - system: SNOMED-CT
-        code: "49436004"
-      - system: ICD-10
-        code: I48
-
-  - id: coronary_artery_disease
-    name: Coronary Artery Disease
-    description: Narrowing or blockage of coronary arteries
-    codes:
-      - system: SNOMED-CT
-        code: "53741008"
-      - system: ICD-10
-        code: I25
-
-  - id: stroke
-    name: Stroke
-    description: Cerebrovascular accident with brain tissue damage
-    codes:
-      - system: SNOMED-CT
-        code: "230690007"
-      - system: ICD-10
-        code: I63
-
-  - id: tuberculosis
-    name: Tuberculosis
-    description: Bacterial infection primarily affecting the lungs
-    codes:
-      - system: SNOMED-CT
-        code: "56717001"
-      - system: ICD-10
-        code: A15
-
-  - id: depression
-    name: Major Depressive Disorder
-    description: Persistent mood disorder affecting daily functioning
-    codes:
-      - system: SNOMED-CT
-        code: "370143000"
-      - system: ICD-10
-        code: F33
-
-  - id: hypothyroidism
-    name: Hypothyroidism
-    description: Underactive thyroid gland with reduced hormone production
-    codes:
-      - system: SNOMED-CT
-        code: "40930008"
-      - system: ICD-10
-        code: E03

@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
-from ontology.types import Entity, EntityType
+from ontology.types import Entity, EntityType, RelationType
 from ontology.schema import OntologySchema, ValidationResult
 from ontology.axioms.core import CoreAxioms
 
@@ -88,7 +88,6 @@ class OntologyBridge:
         Returns:
             List of contraindicated substance entities
         """
-        from ontology.types import RelationType
         
         contraindicated = []
         
@@ -115,7 +114,6 @@ class OntologyBridge:
         Returns:
             List of treatment substance entities
         """
-        from ontology.types import RelationType
         
         treatments = []
         
@@ -143,7 +141,6 @@ class OntologyBridge:
         Returns:
             List of interaction dicts with substance pairs and details
         """
-        from ontology.types import RelationType
         
         interactions = []
         checked = set()
@@ -227,7 +224,6 @@ class OntologyBridge:
         Returns:
             ValidationResult with any errors/warnings
         """
-        from ontology.schema import ValidationResult
         
         result = ValidationResult(valid=True)
         
@@ -291,7 +287,6 @@ class OntologyBridge:
         Returns:
             Human-readable reason string
         """
-        from ontology.types import RelationType
         
         # expand conditions to include ancestors
         expanded_conditions = self._expand_conditions_with_ancestors(conditions)
@@ -320,7 +315,6 @@ class OntologyBridge:
         Returns:
             Human-readable indication string
         """
-        from ontology.types import RelationType
         
         try:
             relations = self.registry.get_outgoing_relations(substance_id)
@@ -367,7 +361,6 @@ class OntologyBridge:
         Returns:
             Dictionary mapping substance_id to list of dose restrictions
         """
-        from ontology.types import RelationType
         
         limits = {}
         
@@ -408,7 +401,6 @@ class OntologyBridge:
         Returns:
             List of dose restrictions with categorical safety levels
         """
-        from ontology.types import RelationType
         
         limits = []
         

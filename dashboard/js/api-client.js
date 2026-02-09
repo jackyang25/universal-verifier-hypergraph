@@ -84,12 +84,14 @@ class ProtocolRouterAPI {
         });
     }
 
-    // Ontology safety checks
-    async checkSafety(conditions) {
+    // Ontology safety checks (verification)
+    async checkSafety(conformalSet, proposedAction, patientContext) {
         return this._fetch('/ontology/check', {
             method: 'POST',
             body: JSON.stringify({
-                conditions: Array.from(conditions),
+                conformal_set: Array.from(conformalSet),
+                proposed_action: proposedAction,
+                patient_context: patientContext,
             }),
         });
     }

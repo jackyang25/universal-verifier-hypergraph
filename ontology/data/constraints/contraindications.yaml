@@ -1,151 +1,22 @@
-# Contraindication relations (generates CONTRAINDICATION axioms)
-# Express when a substance should NEVER be used in a given state
-# These are absolute prohibitions enforced in formal verification
-# For dose-dependent restrictions, use dose_restrictions.yaml instead
+# Drug contraindications for maternal care
 
 relation_type: contraindicated_in
 
 relations:
-  # Pregnancy contraindications - teratogenic substances
-  - source_id: lisinopril
-    target_id: pregnant
-    strength: absolute
-    evidence: "ACE inhibitors are teratogenic, particularly in 2nd/3rd trimester"
-
-  - source_id: enalapril
-    target_id: pregnant
-    strength: absolute
-    evidence: "ACE inhibitors are teratogenic"
-
-  - source_id: losartan
-    target_id: pregnant
-    strength: absolute
-    evidence: "ARBs are teratogenic, contraindicated throughout pregnancy"
-
-  # Severe renal impairment contraindications (eGFR < 30)
-  # Note: mild/moderate renal impairment uses dose_adjustments instead
-  - source_id: metformin
-    target_id: severe_renal_impairment
-    strength: absolute
-    evidence: "Risk of lactic acidosis when eGFR < 30; discontinue metformin"
-
-  - source_id: glyburide
-    target_id: severe_renal_impairment
-    strength: strong
-    evidence: "High hypoglycemia risk due to reduced clearance when eGFR < 30"
-
-  - source_id: tenofovir
-    target_id: severe_renal_impairment
-    strength: absolute
-    evidence: "Nephrotoxic; contraindicated when eGFR < 30"
-
-  # Pediatric contraindications (young children only)
-  # Note: pediatric_adolescent uses dose_adjustments instead
-  - source_id: metformin
-    target_id: pediatric_infant
-    strength: absolute
-    evidence: "Not approved for children under 10 years; insufficient safety data"
-
-  - source_id: metformin
-    target_id: pediatric_child
-    strength: absolute
-    evidence: "Not approved for children under 10 years; insufficient safety data"
-
-  # Condition-based contraindications
-  - source_id: metformin
-    target_id: lactic_acidosis
-    strength: absolute
-    evidence: "Metformin can precipitate or worsen lactic acidosis"
-
-  # Breastfeeding contraindications
-  - source_id: dolutegravir
-    target_id: breastfeeding
-    strength: strong
-    evidence: "Limited safety data in breastfeeding; prefer alternatives"
-
-  - source_id: efavirenz
-    target_id: breastfeeding
-    strength: strong
-    evidence: "CNS effects and potential harm to infant; avoid if possible"
-
-  # Heart failure contraindications
-  - source_id: amlodipine
-    target_id: heart_failure
-    strength: moderate
-    evidence: "May worsen heart failure; use with caution or avoid"
-
-  - source_id: nifedipine
-    target_id: heart_failure
-    strength: moderate
-    evidence: "Negative inotropic effects may worsen heart failure"
-
-  # Asthma contraindications
-  - source_id: metoprolol
+  # Labetalol contraindicated in asthma (beta-blocker bronchospasm)
+  - source_id: labetalol
     target_id: asthma
-    strength: strong
-    evidence: "Beta blockers cause bronchospasm; avoid in asthma"
-
-
-  # Bleeding risk - anticoagulant contraindications
-  - source_id: warfarin
-    target_id: pregnant
     strength: absolute
-    evidence: "Teratogenic; causes fetal warfarin syndrome"
+    evidence: "Beta-blockers cause bronchospasm; contraindicated in asthma per ACOG Practice Bulletin 222 (2020)"
 
-  - source_id: apixaban
-    target_id: pregnant
+  # Labetalol contraindicated in heart block
+  - source_id: labetalol
+    target_id: heart_block
     strength: absolute
-    evidence: "Limited safety data; avoid in pregnancy"
+    evidence: "Beta-blockers worsen heart block; contraindicated per ACOG guidelines"
 
-  - source_id: warfarin
-    target_id: severe_renal_impairment
-    strength: strong
-    evidence: "Increased bleeding risk with reduced clearance"
-
-  - source_id: apixaban
-    target_id: severe_renal_impairment
-    strength: strong
-    evidence: "Requires dose adjustment; avoid if eGFR < 15"
-
-  # Antiplatelet contraindications
-  - source_id: aspirin
-    target_id: asthma
-    strength: moderate
-    evidence: "Aspirin-exacerbated respiratory disease in subset of asthma patients"
-
-  - source_id: clopidogrel
-    target_id: hepatic_impairment
-    strength: strong
-    evidence: "Prodrug requiring hepatic activation and increased bleeding risk"
-
-  # SSRI contraindications
-  - source_id: sertraline
-    target_id: pregnant
-    strength: moderate
-    evidence: "Use only if benefit outweighs risk; potential neonatal adaptation issues"
-
-  - source_id: fluoxetine
-    target_id: pregnant
-    strength: moderate
-    evidence: "Crosses placenta; weigh risks vs benefits"
-
-  - source_id: sertraline
-    target_id: breastfeeding
-    strength: moderate
-    evidence: "Excreted in breast milk; monitor infant"
-
-  # TB medication contraindications
-  - source_id: rifampin
-    target_id: hepatic_impairment
-    strength: strong
-    evidence: "Hepatotoxic; avoid in severe hepatic disease"
-
-  - source_id: isoniazid
-    target_id: hepatic_impairment
-    strength: strong
-    evidence: "Hepatotoxic; monitor LFTs closely or avoid"
-
-  - source_id: rifampin
-    target_id: pregnant
-    strength: moderate
-    evidence: "Use with caution; essential for TB treatment but monitor closely"
+  # Magnesium sulfate contraindicated in renal failure
+  - source_id: magnesium_sulfate
+    target_id: renal_failure
+    strength: absolute
+    evidence: "Magnesium is renally excreted; toxicity risk in renal failure per ACOG"

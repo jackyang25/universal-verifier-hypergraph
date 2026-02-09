@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinical Safety Verification System</title>
+    <title>Universal Protocol Hypergraph</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
     <header>
         <div class="header-left">
-            <h1>Clinical Safety Verification System</h1>
-            <p class="subtitle">Formally Verified Drug Safety & Dose Restriction Checking</p>
+            <h1>Universal Protocol Hypergraph</h1>
+            <p class="subtitle">Clinical safety system through Lean-based verification</p>
         </div>
     </header>
 
@@ -21,36 +21,123 @@
             <!-- Two Column Layout -->
             <div class="unified-panel">
                 <div class="two-column-layout">
-                    <!-- Left Column: Conditions Selection -->
+                    <!-- Left Column: Verification Inputs -->
                     <div class="left-column">
                         <div class="card">
                             <div class="card-header">
                                 <div>
-                                    <h2>Patient Conditions</h2>
-                                    <span class="card-subtitle">Select clinical context</span>
+                                    <h2>Verification Inputs</h2>
                                 </div>
                             </div>
                             <div class="card-body" style="padding: 0;">
                                 <div class="tabs">
-                                    <button class="tab-btn active" data-tab="disorders">
-                                        <span class="tab-label">Medical Diagnoses</span>
+                                    <button class="tab-btn active" data-tab="conformal">
+                                        <span class="tab-label">Conformal Set</span>
                                     </button>
-                                    <button class="tab-btn" data-tab="states">
-                                        <span class="tab-label">Patient Status</span>
+                                    <button class="tab-btn" data-tab="context">
+                                        <span class="tab-label">Patient Context</span>
                                     </button>
-                                    <button class="tab-btn" data-tab="findings">
-                                        <span class="tab-label">Labs & Vitals</span>
+                                    <button class="tab-btn" data-tab="action">
+                                        <span class="tab-label">Proposed Action</span>
                                     </button>
                                 </div>
                                 <div class="tab-content">
-                                    <div id="tab-disorders" class="tab-pane active">
-                                        <div id="conditions-disorders" class="conditions-list"></div>
+                                    <!-- Tab 1: Conformal Set -->
+                                    <div id="tab-conformal" class="tab-pane active">
+                                        <div class="pill-section">
+                                            <div class="pill-hint">Select conditions for the conformal prediction set</div>
+                                            <div id="conditions-disorders" class="pill-container"></div>
+                                        </div>
                                     </div>
-                                    <div id="tab-states" class="tab-pane">
-                                        <div id="conditions-states" class="conditions-list"></div>
+                                    
+                                    <!-- Tab 2: Proposed Action -->
+                                    <div id="tab-action" class="tab-pane">
+                                        <div class="pill-section">
+                                            <div class="label-title" style="margin-bottom: 0.75rem;">Action Type</div>
+                                            <div class="action-type-segmented">
+                                                <button type="button" class="segment-btn" data-action-type="substance" id="action-type-substance">
+                                                    <span>💊 Medication</span>
+                                                </button>
+                                                <button type="button" class="segment-btn" data-action-type="action" id="action-type-action">
+                                                    <span>🧑‍⚕️ Clinical Action</span>
+                                                </button>
+                                            </div>
+                                            
+                                            <div id="substance-select" class="hidden" style="margin-top: 1.5rem;">
+                                                <div class="label-title" style="margin-bottom: 0.75rem;">Select Medication</div>
+                                                <div id="substance-pills" class="pill-container"></div>
+                                                <label class="input-label-block" style="margin-top: 1rem;">
+                                                    <span class="label-title">Dose</span>
+                                                    <input type="text" id="substance-dose" class="text-input" placeholder="e.g., 20mg IV bolus">
+                                                </label>
+                                            </div>
+                                            
+                                            <div id="action-select" class="hidden" style="margin-top: 1.5rem;">
+                                                <div class="label-title" style="margin-bottom: 0.75rem;">Select Action</div>
+                                                <div id="action-pills" class="pill-container"></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div id="tab-findings" class="tab-pane">
-                                        <div id="conditions-findings" class="conditions-list"></div>
+                                    
+                                    <!-- Tab 3: Patient Context -->
+                                    <div id="tab-context" class="tab-pane">
+                                        <div class="pill-section">
+                                            <div class="label-title" style="margin-bottom: 0.75rem;">Comorbidities</div>
+                                            <div id="context-comorbidities" class="pill-container"></div>
+                                            
+                                            <div class="label-title" style="margin-bottom: 0.75rem; margin-top: 1.5rem;">Physiologic States</div>
+                                            <div id="context-states" class="pill-container"></div>
+                                            
+                                            <div style="margin-top: 1.5rem;">
+                                                <div class="label-title" style="margin-bottom: 1rem;">
+                                                    Gestational Age
+                                                    <span id="ga-weeks-display" class="ga-display-value">Not set</span>
+                                                </div>
+                                                <div class="ga-slider-container">
+                                                    <div class="ga-slider-labels">
+                                                        <span class="ga-label">20w</span>
+                                                        <span class="ga-label">28w</span>
+                                                        <span class="ga-label">34w</span>
+                                                        <span class="ga-label">37w</span>
+                                                        <span class="ga-label">42w</span>
+                                                    </div>
+                                                    <input type="range" id="ga-weeks" class="ga-slider" min="20" max="42" step="1" value="">
+                                                    <div class="ga-range-indicators">
+                                                        <div class="ga-range preterm" title="Preterm (20-37 weeks)"></div>
+                                                        <div class="ga-range term" title="Term (37-42 weeks)"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tab 3: Proposed Action -->
+                                    <div id="tab-action" class="tab-pane">
+                                        <div class="pill-section">
+                                            <div class="label-title" style="margin-bottom: 0.75rem;">Action Type</div>
+                                            <div class="action-type-segmented">
+                                                <button type="button" class="segment-btn" data-action-type="substance" id="action-type-substance">
+                                                    <span>💊 Medication</span>
+                                                </button>
+                                                <button type="button" class="segment-btn" data-action-type="action" id="action-type-action">
+                                                    <span>⚕️ Clinical Action</span>
+                                                </button>
+                                            </div>
+                                            
+                                            <div id="substance-select" class="hidden" style="margin-top: 1.5rem;">
+                                                <div class="label-title" style="margin-bottom: 0.75rem;">Select Medication</div>
+                                                <div id="substance-pills" class="pill-container"></div>
+                                                <label class="input-label-block" style="margin-top: 1rem;">
+                                                    <span class="label-title">Dose</span>
+                                                    <input type="text" id="substance-dose" class="text-input" placeholder="e.g., 20mg IV bolus">
+                                                </label>
+                                            </div>
+                                            
+                                            <div id="action-select" class="hidden" style="margin-top: 1.5rem;">
+                                                <div class="label-title" style="margin-bottom: 0.75rem;">Select Action</div>
+                                                <div id="action-pills" class="pill-container"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -62,37 +149,35 @@
                         <div id="results-section" class="card">
                             <div class="card-header">
                                 <div style="flex: 1;">
-                                    <h2>Clinical Assessment</h2>
-                                    <span class="card-subtitle">Protocol matches and safety evaluation</span>
+                                    <h2>Verification Certificate</h2>
+                                    <span class="card-subtitle">Safety verification result</span>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <span id="results-count" class="card-badge">0 matched</span>
+                                    <span id="verification-status-badge" class="status-badge status-pending">PENDING</span>
                                 </div>
                             </div>
                             <div class="card-body" style="padding: 0;">
                                 <div class="tabs">
-                                    <button class="tab-btn active" data-tab="protocols">
-                                        <span class="tab-label">Matched Hyperedges</span>
+                                    <button class="tab-btn active" data-tab="violations">
+                                        <span class="tab-label">Violations</span>
                                     </button>
-                                    <button class="tab-btn" data-tab="safety">
-                                        <span class="tab-label">Safety Assessment</span>
+                                    <button class="tab-btn" data-tab="alternatives">
+                                        <span class="tab-label">Alternatives</span>
                                     </button>
                                 </div>
                                 <div class="tab-content" id="results-tab-content">
-                                    <div id="tab-protocols" class="tab-pane active">
+                                    <div id="tab-violations" class="tab-pane active">
                                         <div style="padding: 1.5rem;">
-                                            <p id="results-empty" class="empty-state" style="padding: 2.5rem 2rem;">Select conditions and click "Search Protocols" to see matched clinical contexts.</p>
-                                            <div id="results"></div>
+                                            <p id="results-empty" class="empty-state" style="padding: 2.5rem 2rem;">Enter conformal set, proposed action, and patient context, then click "Verify Safety".</p>
+                                            <div id="cert-contraindications" class="cert-section"></div>
+                                            <div id="cert-requirements" class="cert-section"></div>
+                                            <div id="cert-consistency" class="cert-section"></div>
                                         </div>
                                     </div>
-                                    <div id="tab-safety" class="tab-pane">
+                                    <div id="tab-alternatives" class="tab-pane">
                                         <div style="padding: 1.5rem;">
-                                            <p id="safety-empty" class="empty-state" style="padding: 2.5rem 2rem;">Select conditions to see contraindications, dose limits, and safe treatments.</p>
-                                            <div id="safety-inconsistencies" class="safety-box violations hidden"></div>
-                                            <div id="safety-contraindications" class="safety-box contraindications hidden"></div>
-                                            <div id="safety-dose-limits" class="safety-box dose-limits hidden"></div>
-                                            <div id="safety-interactions" class="safety-box interactions hidden"></div>
-                                            <div id="safety-treatments" class="safety-box treatments hidden"></div>
+                                            <div id="cert-alternatives" class="cert-section"></div>
+                                            <div id="cert-dose-limits" class="cert-section"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -108,7 +193,7 @@
                     <h2>Protocol Hypergraph Visualization</h2>
                     <div class="card-header-actions">
                         <button id="clear-btn" class="btn-secondary">Clear All</button>
-                        <button id="route-btn" class="btn-primary">Search Protocols</button>
+                        <button id="route-btn" class="btn-primary">Verify Safety</button>
                         <button id="toggle-graph-btn" class="btn-secondary">
                             <span id="graph-toggle-text">Hide Graph</span>
                         </button>

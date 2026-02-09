@@ -7,10 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application
-COPY protocols/ protocols/
-COPY ontology/ ontology/
-COPY api/ api/
-COPY dashboard/ dashboard/
+COPY . .
 
 EXPOSE 8000
 

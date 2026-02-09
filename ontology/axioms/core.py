@@ -53,8 +53,9 @@ class CoreAxioms:
             RelationType.CONTRAINDICATED_IN
         )
         for rel in contraindications:
+            axiom_id = f"contraindication_{rel.source_id}_{rel.target_id}"
             axiom = Axiom(
-                id=f"contraindication_{rel.source_id}_{rel.target_id}",
+                id=axiom_id,
                 axiom_type=AxiomType.CONTRAINDICATION,
                 name=f"{rel.source_id} contraindicated in {rel.target_id}",
                 description=f"Substance {rel.source_id} is contraindicated when {rel.target_id} is present",
@@ -62,6 +63,7 @@ class CoreAxioms:
                 consequent=frozenset({rel.source_id}),
                 negated=True,  # cannot use source when target is present
                 evidence=rel.evidence,
+                proof_link=f"proof_{axiom_id}",  # Link to proof function
             )
             generated.append(axiom)
             self.axiom_registry.register(axiom)
@@ -69,8 +71,9 @@ class CoreAxioms:
         # generate mutual exclusion axioms
         exclusions = self.registry.get_relations_by_type(RelationType.EXCLUDES)
         for rel in exclusions:
+            axiom_id = f"exclusion_{rel.source_id}_{rel.target_id}"
             axiom = Axiom(
-                id=f"exclusion_{rel.source_id}_{rel.target_id}",
+                id=axiom_id,
                 axiom_type=AxiomType.MUTUAL_EXCLUSION,
                 name=f"{rel.source_id} excludes {rel.target_id}",
                 description=f"{rel.source_id} and {rel.target_id} cannot coexist",
@@ -78,6 +81,7 @@ class CoreAxioms:
                 consequent=frozenset({rel.target_id}),
                 negated=True,
                 evidence=rel.evidence,
+                proof_link=f"proof_{axiom_id}",
             )
             generated.append(axiom)
             self.axiom_registry.register(axiom)
@@ -85,8 +89,9 @@ class CoreAxioms:
         # generate requirement axioms
         requirements = self.registry.get_relations_by_type(RelationType.REQUIRES)
         for rel in requirements:
+            axiom_id = f"requirement_{rel.source_id}_{rel.target_id}"
             axiom = Axiom(
-                id=f"requirement_{rel.source_id}_{rel.target_id}",
+                id=axiom_id,
                 axiom_type=AxiomType.REQUIREMENT,
                 name=f"{rel.source_id} requires {rel.target_id}",
                 description=f"When {rel.source_id} is used, {rel.target_id} must be present",
@@ -94,6 +99,7 @@ class CoreAxioms:
                 consequent=frozenset({rel.target_id}),
                 negated=False,
                 evidence=rel.evidence,
+                proof_link=f"proof_{axiom_id}",
             )
             generated.append(axiom)
             self.axiom_registry.register(axiom)
@@ -111,8 +117,9 @@ class CoreAxioms:
             )
             
             # use relation's actual ID to ensure uniqueness
+            axiom_id = f"dose_constraint_{rel.id}"
             axiom = Axiom(
-                id=f"dose_constraint_{rel.id}",
+                id=axiom_id,
                 axiom_type=AxiomType.DOSE_CONSTRAINT,
                 name=f"{rel.source_id} {category} in {rel.target_id}",
                 description=description,
@@ -121,6 +128,7 @@ class CoreAxioms:
                 negated=False,  # constraint applies, not prohibition
                 evidence=rel.evidence,
                 dose_category=category,  # categorical safety level for Lean formalization
+                proof_link=f"proof_{axiom_id}",
             )
             generated.append(axiom)
             self.axiom_registry.register(axiom)

@@ -1,865 +1,205 @@
-# Verified Clinical Contexts Configuration
+# Maternal Health Clinical Protocols Configuration
 #
 # Each verified context represents a HYPEREDGE in the clinical knowledge graph.
 # A hyperedge connects a set of patient conditions to a formally verified protocol.
-#
-# Proof Types:
-#   - independent: Single condition, base protocol
-#   - compositional: Multiple conditions, coordinates compatible base protocols
-#   - interaction: Multiple conditions, resolves conflicts with specialized protocol
 
 metadata:
-  config_version: "2.0.0"
-  last_updated: "2025-01-27"
-  description: "Hypergraph of verified clinical contexts with explicit protocol composition"
+  config_version: "3.0.0"
+  last_updated: "2026-02-08"
+  description: "Maternal health protocols for hypertensive disorders of pregnancy"
+  domain: "Maternal Care - Hypertensive Disorders"
 
 verified_contexts:
   # ============================================================================
   # INDEPENDENT PROTOCOLS: Base protocols for single conditions
   # ============================================================================
   
-  - context_id: "P001"
+  - context_id: "MAT001"
     hyperedge:
-      conditions: [pregnant]
+      conditions: [gestational_htn]
       proof:
         type: independent
-        lean_file: "verification/guidelines/pregnancy_protocol.lean"
+        lean_file: "verification/maternal/gestational_htn.lean"
         status: verified
-        verified_at: "2024-12-01"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Pregnancy Management Protocol"
-      description: "Clinical protocol for pregnant patients"
-      guideline_source: "US Antenatal Care Guideline"
-      version: "1.2.0"
-      regulatory:
-        country: "ZA"
-        body: "FDA"
-        reviewer: "ACOG Clinical Committee"
-        approval_status: "approved"
-
-  - context_id: "P002"
-    hyperedge:
-      conditions: [hiv_infection]
-      proof:
-        type: independent
-        lean_file: "verification/guidelines/hiv_protocol.lean"
-        status: verified
-        verified_at: "2024-11-15"
-    protocol:
-      name: "HIV Treatment Protocol"
-      description: "Clinical protocol for HIV-positive patients"
-      guideline_source: "US HIV Treatment Guideline"
-      version: "1.1.0"
-      regulatory:
-        country: "ZA"
-        body: "CDC"
-        reviewer: "CDC HIV/AIDS Prevention"
-        approval_status: "approved"
-
-  - context_id: "P003"
-    hyperedge:
-      conditions: [diabetes_mellitus]
-      proof:
-        type: independent
-        lean_file: "verification/guidelines/diabetes_protocol.lean"
-        status: verified
-        verified_at: "2024-10-20"
-    protocol:
-      name: "Diabetes Management Protocol"
-      description: "Clinical protocol for diabetic patients"
-      guideline_source: "US Diabetes Management Guideline"
+      name: "Gestational Hypertension Management"
+      description: "Protocol for gestational hypertension without severe features"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "ADA"
-        reviewer: "ADA Standards of Care Committee"
-        approval_status: "approved"
 
-  - context_id: "P004"
+  - context_id: "MAT002"
     hyperedge:
-      conditions: [hypertension]
+      conditions: [preeclampsia]
       proof:
         type: independent
-        lean_file: "verification/guidelines/hypertension_protocol.lean"
+        lean_file: "verification/maternal/preeclampsia.lean"
         status: verified
-        verified_at: "2024-10-20"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Hypertension Management Protocol"
-      description: "Clinical protocol for hypertensive patients"
-      guideline_source: "US Hypertension Guideline"
+      name: "Preeclampsia Management"
+      description: "Protocol for preeclampsia without severe features"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "AHA"
-        reviewer: "AHA/ACC Guideline Committee"
-        approval_status: "approved"
 
-  - context_id: "P005"
+  - context_id: "MAT003"
     hyperedge:
-      conditions: [age_over_65]
+      conditions: [preeclampsia_severe]
       proof:
         type: independent
-        lean_file: "verification/guidelines/elderly_protocol.lean"
+        lean_file: "verification/maternal/preeclampsia_severe.lean"
         status: verified
-        verified_at: "2024-09-15"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Geriatric Care Protocol"
-      description: "Clinical protocol for patients over 65"
-      guideline_source: "US Older Persons Care Guideline"
+      name: "Severe Preeclampsia Management"
+      description: "Protocol for preeclampsia with severe features"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "AGS"
-        reviewer: "American Geriatrics Society"
-        approval_status: "approved"
 
-  - context_id: "P006"
+  - context_id: "MAT004"
     hyperedge:
-      conditions: [pediatric]
+      conditions: [hellp_syndrome]
       proof:
         type: independent
-        lean_file: "verification/guidelines/pediatric_protocol.lean"
+        lean_file: "verification/maternal/hellp.lean"
         status: verified
-        verified_at: "2024-09-15"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Pediatric Care Protocol"
-      description: "Clinical protocol for pediatric patients"
-      guideline_source: "US Pediatric Care Guideline"
+      name: "HELLP Syndrome Management"
+      description: "Protocol for HELLP syndrome (requires immediate delivery)"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "AAP"
-        reviewer: "American Academy of Pediatrics"
-        approval_status: "approved"
 
-  - context_id: "P007"
+  - context_id: "MAT005"
     hyperedge:
-      conditions: [asthma]
+      conditions: [eclampsia]
       proof:
         type: independent
-        lean_file: "verification/guidelines/asthma_protocol.lean"
+        lean_file: "verification/maternal/eclampsia.lean"
         status: verified
-        verified_at: "2024-08-10"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Asthma Management Protocol"
-      description: "Clinical protocol for asthma patients"
-      guideline_source: "GINA Asthma Management Guideline"
+      name: "Eclampsia Management"
+      description: "Protocol for eclamptic seizures (requires magnesium + delivery)"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "NHLBI"
-        reviewer: "NHLBI Asthma Expert Panel"
-        approval_status: "approved"
 
-  - context_id: "P008"
+  - context_id: "MAT006"
     hyperedge:
-      conditions: [heart_failure]
+      conditions: [aflp]
       proof:
         type: independent
-        lean_file: "verification/guidelines/heart_failure_protocol.lean"
+        lean_file: "verification/maternal/aflp.lean"
         status: verified
-        verified_at: "2024-07-15"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Heart Failure Management Protocol"
-      description: "Clinical protocol for heart failure patients"
-      guideline_source: "ACC/AHA Heart Failure Guideline"
+      name: "Acute Fatty Liver of Pregnancy Management"
+      description: "Protocol for AFLP (requires immediate delivery)"
+      guideline_source: "ACOG/SMFM Clinical Guidance (2019)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "ACC"
-        reviewer: "ACC/AHA Joint Committee"
-        approval_status: "approved"
 
-  - context_id: "P009"
+  - context_id: "MAT007"
     hyperedge:
-      conditions: [copd]
+      conditions: [placental_abruption]
       proof:
         type: independent
-        lean_file: "verification/guidelines/copd_protocol.lean"
+        lean_file: "verification/maternal/abruption.lean"
         status: verified
-        verified_at: "2024-07-01"
+        verified_at: "2026-02-08"
     protocol:
-      name: "COPD Management Protocol"
-      description: "Clinical protocol for COPD patients"
-      guideline_source: "GOLD COPD Management Guideline"
+      name: "Placental Abruption Management"
+      description: "Protocol for placental abruption"
+      guideline_source: "ACOG Practice Bulletin 183 (2017)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "GOLD"
-        reviewer: "GOLD Scientific Committee"
-        approval_status: "approved"
 
-  - context_id: "P010"
+  - context_id: "MAT008"
     hyperedge:
-      conditions: [atrial_fibrillation]
+      conditions: [placenta_previa]
       proof:
         type: independent
-        lean_file: "verification/guidelines/atrial_fibrillation_protocol.lean"
+        lean_file: "verification/maternal/previa.lean"
         status: verified
-        verified_at: "2024-06-20"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Atrial Fibrillation Management Protocol"
-      description: "Clinical protocol for AF patients including anticoagulation"
-      guideline_source: "AHA/ACC/HRS AF Guideline"
+      name: "Placenta Previa Management"
+      description: "Protocol for placenta previa"
+      guideline_source: "ACOG Practice Bulletin 183 (2017)"
       version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "AHA"
-        reviewer: "AHA/ACC/HRS Joint Committee"
-        approval_status: "approved"
-
-  - context_id: "P011"
-    hyperedge:
-      conditions: [chronic_kidney_disease]
-      proof:
-        type: independent
-        lean_file: "verification/guidelines/ckd_protocol.lean"
-        status: verified
-        verified_at: "2024-06-15"
-    protocol:
-      name: "Chronic Kidney Disease Management Protocol"
-      description: "Clinical protocol for CKD patients"
-      guideline_source: "KDIGO CKD Guideline"
-      version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "KDIGO"
-        reviewer: "KDIGO Guideline Work Group"
-        approval_status: "approved"
-
-  - context_id: "P012"
-    hyperedge:
-      conditions: [tuberculosis]
-      proof:
-        type: independent
-        lean_file: "verification/guidelines/tuberculosis_protocol.lean"
-        status: verified
-        verified_at: "2024-05-10"
-    protocol:
-      name: "Tuberculosis Treatment Protocol"
-      description: "Clinical protocol for TB patients"
-      guideline_source: "WHO TB Treatment Guidelines"
-      version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "WHO"
-        reviewer: "WHO TB Guidelines Group"
-        approval_status: "approved"
-
-  - context_id: "P013"
-    hyperedge:
-      conditions: [hypothyroidism]
-      proof:
-        type: independent
-        lean_file: "verification/guidelines/hypothyroidism_protocol.lean"
-        status: verified
-        verified_at: "2024-05-01"
-    protocol:
-      name: "Hypothyroidism Management Protocol"
-      description: "Clinical protocol for hypothyroid patients"
-      guideline_source: "ATA Hypothyroidism Guideline"
-      version: "1.0.0"
-      regulatory:
-        country: "ZA"
-        body: "ATA"
-        reviewer: "American Thyroid Association"
-        approval_status: "approved"
 
   # ============================================================================
-  # INTERACTION PROTOCOLS: Specialized protocols that resolve conflicts
+  # INTERACTION PROTOCOLS: Drug safety with comorbidities
   # ============================================================================
 
-  - context_id: "P101"
+  - context_id: "MAT101"
     hyperedge:
-      conditions: [pregnant, hiv_infection]
+      conditions: [preeclampsia_severe, asthma]
       proof:
         type: interaction
-        lean_file: "verification/guidelines/pregnancy_hiv_interaction.lean"
-        resolves_conflicts_between: ["P001", "P002"]
+        lean_file: "verification/maternal/preeclampsia_asthma.lean"
         status: verified
-        verified_at: "2024-12-01"
+        verified_at: "2026-02-08"
     protocol:
-      name: "PMTCT Protocol"
-      description: "Prevention of mother-to-child HIV transmission"
-      guideline_source: "US PMTCT Guideline"
-      version: "1.1.0"
-      composition:
-        replaces: ["P001", "P002"]  # Does NOT use base protocols
-        reason: "Standard HIV meds contraindicated in pregnancy; specialized ART required"
-      regulatory:
-        country: "ZA"
-        body: "DHHS"
-        reviewer: "DHHS Perinatal HIV Guidelines Panel"
-        approval_status: "approved"
-
-  - context_id: "P102"
-    hyperedge:
-      conditions: [pregnant, diabetes_mellitus]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/pregnancy_diabetes_interaction.lean"
-        resolves_conflicts_between: ["P001", "P003"]
-        status: verified
-        verified_at: "2024-11-01"
-    protocol:
-      name: "Gestational Diabetes Protocol"
-      description: "Diabetes management during pregnancy"
-      guideline_source: "US Gestational Diabetes Guideline"
+      name: "Severe Preeclampsia with Asthma"
+      description: "Antihypertensive selection avoiding beta-blockers in asthma"
+      guideline_source: "ACOG Practice Bulletin 222 (2020), Section 4.2"
       version: "1.0.0"
-      composition:
-        replaces: ["P001", "P003"]
-        reason: "Oral hypoglycemics contraindicated; insulin dosing adjusted for pregnancy"
-      regulatory:
-        country: "ZA"
-        body: "ACOG"
-        reviewer: "ACOG Practice Bulletin Committee"
-        approval_status: "approved"
 
-  - context_id: "P103"
+  - context_id: "MAT102"
     hyperedge:
-      conditions: [pregnant, hypertension]
+      conditions: [preeclampsia_severe, heart_block]
       proof:
         type: interaction
-        lean_file: "verification/guidelines/pregnancy_hypertension_interaction.lean"
-        resolves_conflicts_between: ["P001", "P004"]
+        lean_file: "verification/maternal/preeclampsia_heart_block.lean"
         status: verified
-        verified_at: "2024-11-01"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Hypertensive Disorders in Pregnancy Protocol"
-      description: "Hypertension management during pregnancy"
-      guideline_source: "US Hypertensive Disorders in Pregnancy Guideline"
+      name: "Severe Preeclampsia with Heart Block"
+      description: "Antihypertensive selection avoiding beta-blockers in heart block"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      composition:
-        replaces: ["P001", "P004"]
-        reason: "ACE inhibitors/ARBs contraindicated; pregnancy-safe antihypertensives required"
-      regulatory:
-        country: "ZA"
-        body: "ACOG"
-        reviewer: "ACOG Task Force on Hypertension"
-        approval_status: "approved"
 
-  - context_id: "P104"
+  - context_id: "MAT103"
     hyperedge:
-      conditions: [pregnant, asthma]
+      conditions: [preeclampsia_severe, heart_failure]
       proof:
         type: interaction
-        lean_file: "verification/guidelines/pregnancy_asthma_interaction.lean"
-        resolves_conflicts_between: ["P001", "P007"]
+        lean_file: "verification/maternal/preeclampsia_heart_failure.lean"
         status: verified
-        verified_at: "2024-10-15"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Asthma in Pregnancy Protocol"
-      description: "Asthma management during pregnancy"
-      guideline_source: "GINA Pregnancy-Specific Recommendations"
+      name: "Severe Preeclampsia with Heart Failure"
+      description: "Careful antihypertensive management in heart failure"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      composition:
-        replaces: ["P001", "P007"]
-        reason: "Medication safety classification required; adjusted monitoring for maternal-fetal well-being"
-      regulatory:
-        country: "ZA"
-        body: "ACOG"
-        reviewer: "ACOG/GINA Joint Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P105"
-    hyperedge:
-      conditions: [hiv_infection, tuberculosis]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/hiv_tb_interaction.lean"
-        resolves_conflicts_between: ["P002", "P012"]
-        status: verified
-        verified_at: "2024-09-20"
-    protocol:
-      name: "TB-HIV Co-infection Protocol"
-      description: "Integrated management of TB and HIV co-infection"
-      guideline_source: "WHO TB-HIV Guidelines"
-      version: "1.0.0"
-      composition:
-        replaces: ["P002", "P012"]
-        reason: "Complex drug interactions between ART and TB medications; immune reconstitution syndrome risk"
-      regulatory:
-        country: "ZA"
-        body: "WHO"
-        reviewer: "WHO TB/HIV Co-infection Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P106"
-    hyperedge:
-      conditions: [breastfeeding, hiv_infection]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/breastfeeding_hiv_interaction.lean"
-        resolves_conflicts_between: ["P002"]
-        status: verified
-        verified_at: "2024-09-10"
-    protocol:
-      name: "Infant Feeding in HIV Context Protocol"
-      description: "Safe infant feeding practices for HIV-positive mothers"
-      guideline_source: "WHO HIV and Infant Feeding Guidelines"
-      version: "1.0.0"
-      composition:
-        replaces: ["P002"]
-        reason: "ART continuation required; exclusive breastfeeding with viral suppression monitoring"
-      regulatory:
-        country: "ZA"
-        body: "WHO"
-        reviewer: "WHO Maternal Child Health"
-        approval_status: "approved"
-
-  - context_id: "P107"
-    hyperedge:
-      conditions: [pediatric, asthma]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/pediatric_asthma_interaction.lean"
-        resolves_conflicts_between: ["P006", "P007"]
-        status: verified
-        verified_at: "2024-08-25"
-    protocol:
-      name: "Pediatric Asthma Protocol"
-      description: "Age-specific asthma management for children"
-      guideline_source: "GINA Pediatric Asthma Guidelines"
-      version: "1.0.0"
-      composition:
-        replaces: ["P006", "P007"]
-        reason: "Weight-based dosing; age-appropriate delivery devices; growth monitoring on ICS"
-      regulatory:
-        country: "ZA"
-        body: "AAP"
-        reviewer: "AAP Section on Allergy and Immunology"
-        approval_status: "approved"
 
   # ============================================================================
-  # COMPOSITIONAL PROTOCOLS: Coordinates compatible base protocols
+  # COMPOSITIONAL PROTOCOLS: Multiple maternal conditions
   # ============================================================================
 
-  - context_id: "P201"
+  - context_id: "MAT201"
     hyperedge:
-      conditions: [diabetes_mellitus, hypertension]
+      conditions: [hellp_syndrome, elevated_creatinine]
       proof:
         type: compositional
-        lean_file: "verification/guidelines/diabetes_hypertension_compositional.lean"
-        encapsulates: ["P003", "P004"]  # Uses base proofs
-        proves_only: compatibility
+        lean_file: "verification/maternal/hellp_renal.lean"
         status: verified
-        verified_at: "2024-10-20"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Cardio-Metabolic Risk Protocol"
-      description: "Coordinated management for diabetes and hypertension"
-      guideline_source: "US Cardio-Metabolic Risk Guideline"
+      name: "HELLP Syndrome with Renal Impairment"
+      description: "HELLP management with renal dysfunction (magnesium dose adjustment)"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      composition:
-        draws_from: ["P003", "P004"]  # Uses both base protocols
-        coordination:
-          - "Adjusted BP targets for diabetics (<130/80 vs <140/90)"
-          - "Monitor for drug interactions (e.g., thiazides affect glucose)"
-          - "Shared lifestyle interventions (diet, exercise)"
-          - "Prefer ACE-I/ARB for dual cardio-renal protection"
-      regulatory:
-        country: "ZA"
-        body: "ACC"
-        reviewer: "ACC/AHA Joint Committee"
-        approval_status: "approved"
 
-  - context_id: "P202"
+  - context_id: "MAT202"
     hyperedge:
-      conditions: [age_over_65, diabetes_mellitus]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/elderly_diabetes_compositional.lean"
-        encapsulates: ["P005", "P003"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-10-01"
-    protocol:
-      name: "Geriatric Diabetes Protocol"
-      description: "Age-adjusted diabetes management for elderly patients"
-      guideline_source: "US Diabetes in Older Adults Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P005", "P003"]
-        coordination:
-          - "Relaxed HbA1c targets (7.5-8.0% vs <7%) to reduce hypoglycemia risk"
-          - "Avoid sulfonylureas due to hypoglycemia risk in elderly"
-          - "Simplified medication regimens for adherence"
-          - "Increased fall risk monitoring with glucose fluctuations"
-      regulatory:
-        country: "ZA"
-        body: "AGS"
-        reviewer: "AGS/ADA Joint Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P203"
-    hyperedge:
-      conditions: [heart_failure, diabetes_mellitus]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/heart_failure_diabetes_compositional.lean"
-        encapsulates: ["P008", "P003"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-09-15"
-    protocol:
-      name: "Heart Failure with Diabetes Protocol"
-      description: "Coordinated cardio-metabolic management"
-      guideline_source: "ACC/AHA HF-Diabetes Management Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P008", "P003"]
-        coordination:
-          - "Prefer SGLT2 inhibitors for dual HF and glycemic benefit"
-          - "Avoid thiazolidinediones due to fluid retention risk"
-          - "Monitor for dehydration with diuretic-SGLT2i combination"
-          - "Coordinate cardiology and endocrinology follow-up"
-      regulatory:
-        country: "ZA"
-        body: "ACC"
-        reviewer: "ACC/AHA/ADA Joint Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P204"
-    hyperedge:
-      conditions: [chronic_kidney_disease, diabetes_mellitus]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/ckd_diabetes_compositional.lean"
-        encapsulates: ["P011", "P003"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-09-10"
-    protocol:
-      name: "Diabetic Kidney Disease Protocol"
-      description: "Integrated nephro-metabolic management"
-      guideline_source: "KDIGO Diabetes-CKD Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P011", "P003"]
-        coordination:
-          - "Adjust metformin dosing based on eGFR; discontinue if eGFR <30"
-          - "Prefer SGLT2i and GLP-1 RA for renal protection"
-          - "Target BP <130/80 with ACE-I or ARB for albuminuria reduction"
-          - "Monitor potassium with RAAS inhibitor use"
-      regulatory:
-        country: "ZA"
-        body: "KDIGO"
-        reviewer: "KDIGO/ADA Joint Committee"
-        approval_status: "approved"
-
-  - context_id: "P205"
-    hyperedge:
-      conditions: [hypertension, chronic_kidney_disease]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/hypertension_ckd_compositional.lean"
-        encapsulates: ["P004", "P011"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-09-05"
-    protocol:
-      name: "Hypertension with CKD Protocol"
-      description: "Renal-protective blood pressure management"
-      guideline_source: "KDIGO BP in CKD Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P004", "P011"]
-        coordination:
-          - "Target BP <130/80 for CKD patients"
-          - "First-line ACE-I or ARB if albuminuria present"
-          - "Monitor potassium and creatinine after RAAS inhibitor initiation"
-          - "Adjust diuretic choice based on eGFR (thiazide vs loop)"
-      regulatory:
-        country: "ZA"
-        body: "KDIGO"
-        reviewer: "KDIGO BP Work Group"
-        approval_status: "approved"
-
-  - context_id: "P206"
-    hyperedge:
-      conditions: [atrial_fibrillation, heart_failure]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/afib_heart_failure_compositional.lean"
-        encapsulates: ["P010", "P008"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-08-30"
-    protocol:
-      name: "AFib with Heart Failure Protocol"
-      description: "Coordinated rhythm and pump management"
-      guideline_source: "AHA/ACC AFib-HF Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P010", "P008"]
-        coordination:
-          - "Rate control preferred; beta-blockers serve dual purpose"
-          - "Anticoagulation mandatory (adjust for renal function)"
-          - "SGLT2i for HF regardless of rhythm"
-          - "Consider catheter ablation if rate control inadequate"
-      regulatory:
-        country: "ZA"
-        body: "AHA"
-        reviewer: "AHA/ACC Joint Committee"
-        approval_status: "approved"
-
-  - context_id: "P207"
-    hyperedge:
-      conditions: [asthma, copd]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/asthma_copd_overlap_compositional.lean"
-        encapsulates: ["P007", "P009"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-08-20"
-    protocol:
-      name: "Asthma-COPD Overlap Syndrome Protocol"
-      description: "Management of overlapping obstructive airway diseases"
-      guideline_source: "GINA-GOLD ACOS Guidelines"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P007", "P009"]
-        coordination:
-          - "Inhaled corticosteroids mandatory (higher risk than COPD alone)"
-          - "Avoid beta-blocker use for cardiac comorbidities"
-          - "Long-acting bronchodilators (LABA/LAMA combination)"
-          - "Regular spirometry and eosinophil monitoring"
-      regulatory:
-        country: "ZA"
-        body: "GOLD"
-        reviewer: "GINA-GOLD Joint Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P208"
-    hyperedge:
-      conditions: [age_over_65, hypertension]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/elderly_hypertension_compositional.lean"
-        encapsulates: ["P005", "P004"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-08-15"
-    protocol:
-      name: "Geriatric Hypertension Protocol"
-      description: "Age-adjusted blood pressure management"
-      guideline_source: "AGS Hypertension in Older Adults Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P005", "P004"]
-        coordination:
-          - "Target BP <130/80 if tolerated, but individualized approach"
-          - "Start low, go slow with medication titration"
-          - "Monitor for orthostatic hypotension and fall risk"
-          - "Avoid overtreatment in frail elderly (BP >150/90 acceptable)"
-      regulatory:
-        country: "ZA"
-        body: "AGS"
-        reviewer: "AGS Hypertension Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P209"
-    hyperedge:
-      conditions: [hypothyroidism, pregnant]
+      conditions: [eclampsia, asthma]
       proof:
         type: interaction
-        lean_file: "verification/guidelines/pregnancy_hypothyroidism_interaction.lean"
-        resolves_conflicts_between: ["P001", "P013"]
+        lean_file: "verification/maternal/eclampsia_asthma.lean"
         status: verified
-        verified_at: "2024-08-10"
+        verified_at: "2026-02-08"
     protocol:
-      name: "Hypothyroidism in Pregnancy Protocol"
-      description: "Thyroid management during pregnancy"
-      guideline_source: "ATA Thyroid Disease in Pregnancy Guideline"
+      name: "Eclampsia with Asthma"
+      description: "Eclampsia management avoiding beta-blockers for hypertension control"
+      guideline_source: "ACOG Practice Bulletin 222 (2020)"
       version: "1.0.0"
-      composition:
-        replaces: ["P001", "P013"]
-        reason: "Increased levothyroxine requirements; trimester-specific TSH targets; fetal neurodevelopment"
-      regulatory:
-        country: "ZA"
-        body: "ATA"
-        reviewer: "ATA Pregnancy Guidelines Task Force"
-        approval_status: "approved"
-
-  # ============================================================================
-  # COMPLEX INTERACTIONS: Multiple conditions requiring specialized resolution
-  # ============================================================================
-
-  - context_id: "P301"
-    hyperedge:
-      conditions: [pregnant, hiv_infection, diabetes_mellitus]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/pregnancy_hiv_diabetes_interaction.lean"
-        resolves_conflicts_between: ["P001", "P002", "P003"]
-        status: verified
-        verified_at: "2024-12-01"
-    protocol:
-      name: "Complex Antenatal Co-morbidity Protocol"
-      description: "Specialized protocol for pregnancy with HIV and diabetes"
-      guideline_source: "US Complex Antenatal Co-morbidity Guideline"
-      version: "1.0.0"
-      composition:
-        replaces: ["P001", "P002", "P003"]
-        reason: "Multiple drug contraindications; complex ART-insulin-pregnancy interactions"
-      regulatory:
-        country: "ZA"
-        body: "ACOG"
-        reviewer: "ACOG/DHHS Joint Panel"
-        approval_status: "approved"
-
-  - context_id: "P302"
-    hyperedge:
-      conditions: [diabetes_mellitus, hypertension, chronic_kidney_disease]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/diabetes_hypertension_ckd_compositional.lean"
-        encapsulates: ["P003", "P004", "P011"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-11-20"
-    protocol:
-      name: "Cardio-Renal-Metabolic Syndrome Protocol"
-      description: "Integrated management of diabetes, hypertension, and CKD triad"
-      guideline_source: "Kidney Disease Outcomes Quality Initiative"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P003", "P004", "P011"]
-        coordination:
-          - "SGLT2i and GLP-1 RA for triple cardio-renal-metabolic benefit"
-          - "ACE-I or ARB mandatory unless contraindicated"
-          - "Adjust all medications for declining eGFR"
-          - "Target BP <130/80; HbA1c <7% if safe"
-          - "Multidisciplinary care with nephrology, cardiology, endocrinology"
-      regulatory:
-        country: "ZA"
-        body: "KDIGO"
-        reviewer: "KDIGO Multi-Morbidity Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P303"
-    hyperedge:
-      conditions: [age_over_65, diabetes_mellitus, heart_failure]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/elderly_diabetes_heart_failure_compositional.lean"
-        encapsulates: ["P005", "P003", "P008"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-11-15"
-    protocol:
-      name: "Geriatric Cardio-Metabolic Syndrome Protocol"
-      description: "Age-sensitive management of diabetes and heart failure"
-      guideline_source: "AGS Complex Multi-Morbidity Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P005", "P003", "P008"]
-        coordination:
-          - "Prioritize SGLT2i for synergistic benefit in HF and diabetes"
-          - "Relaxed glycemic targets to avoid hypoglycemia (HbA1c 7.5-8.5%)"
-          - "Fluid management crucial with diuretics and SGLT2i"
-          - "Regular geriatric assessment for frailty and function"
-          - "Deprescribing review to minimize polypharmacy"
-      regulatory:
-        country: "ZA"
-        body: "AGS"
-        reviewer: "AGS/ACC/ADA Joint Panel"
-        approval_status: "approved"
-
-  - context_id: "P304"
-    hyperedge:
-      conditions: [hiv_infection, tuberculosis, diabetes_mellitus]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/hiv_tb_diabetes_interaction.lean"
-        resolves_conflicts_between: ["P002", "P012", "P003"]
-        status: verified
-        verified_at: "2024-11-10"
-    protocol:
-      name: "TB-HIV-Diabetes Co-infection Protocol"
-      description: "Integrated management of triple infectious-metabolic disease burden"
-      guideline_source: "WHO TB-HIV-DM Integration Guidelines"
-      version: "1.0.0"
-      composition:
-        replaces: ["P002", "P012", "P003"]
-        reason: "Rifampicin reduces ART and diabetes medication efficacy; steroid-induced hyperglycemia; immune reconstitution complications"
-      regulatory:
-        country: "ZA"
-        body: "WHO"
-        reviewer: "WHO Global TB-HIV-NCDs Expert Panel"
-        approval_status: "approved"
-
-  - context_id: "P305"
-    hyperedge:
-      conditions: [atrial_fibrillation, heart_failure, chronic_kidney_disease]
-      proof:
-        type: compositional
-        lean_file: "verification/guidelines/afib_hf_ckd_compositional.lean"
-        encapsulates: ["P010", "P008", "P011"]
-        proves_only: compatibility
-        status: verified
-        verified_at: "2024-11-05"
-    protocol:
-      name: "Cardio-Renal Syndrome with AFib Protocol"
-      description: "Complex cardiovascular-renal management"
-      guideline_source: "ESC/ERA Cardio-Renal Syndrome Guideline"
-      version: "1.0.0"
-      composition:
-        draws_from: ["P010", "P008", "P011"]
-        coordination:
-          - "Anticoagulation dose adjusted for renal function (DOAC preferred if eGFR >15)"
-          - "Avoid apixaban if eGFR <25; use warfarin"
-          - "Rate control with beta-blockers serving dual HF benefit"
-          - "SGLT2i for HF benefit regardless of diabetes status"
-          - "Close monitoring for drug accumulation and electrolyte imbalances"
-      regulatory:
-        country: "ZA"
-        body: "ESC"
-        reviewer: "ESC/ERA Joint Expert Committee"
-        approval_status: "approved"
-
-  - context_id: "P306"
-    hyperedge:
-      conditions: [pediatric, hiv_infection, tuberculosis]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/pediatric_hiv_tb_interaction.lean"
-        resolves_conflicts_between: ["P006", "P002", "P012"]
-        status: verified
-        verified_at: "2024-10-25"
-    protocol:
-      name: "Pediatric TB-HIV Co-infection Protocol"
-      description: "Age-specific TB-HIV co-management for children"
-      guideline_source: "WHO Pediatric TB-HIV Guidelines"
-      version: "1.0.0"
-      composition:
-        replaces: ["P006", "P002", "P012"]
-        reason: "Weight-based dosing of both ART and TB meds; growth monitoring; drug formulations for children; immune reconstitution in developing immune systems"
-      regulatory:
-        country: "ZA"
-        body: "WHO"
-        reviewer: "WHO Maternal Child TB-HIV Department"
-        approval_status: "approved"
-
-  - context_id: "P307"
-    hyperedge:
-      conditions: [pregnant, hypertension, chronic_kidney_disease]
-      proof:
-        type: interaction
-        lean_file: "verification/guidelines/pregnancy_hypertension_ckd_interaction.lean"
-        resolves_conflicts_between: ["P001", "P004", "P011"]
-        status: verified
-        verified_at: "2024-10-20"
-    protocol:
-      name: "High-Risk Pregnancy with Renal Disease Protocol"
-      description: "Specialized antenatal care for hypertension and CKD"
-      guideline_source: "ACOG High-Risk Pregnancy Guideline"
-      version: "1.0.0"
-      composition:
-        replaces: ["P001", "P004", "P011"]
-        reason: "ACE-I/ARBs contraindicated; preeclampsia risk stratification; renal function monitoring; specialized antihypertensives"
-      regulatory:
-        country: "ZA"
-        body: "ACOG"
-        reviewer: "ACOG Maternal-Fetal Medicine Committee"
-        approval_status: "approved"

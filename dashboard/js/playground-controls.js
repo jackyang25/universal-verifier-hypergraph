@@ -1,28 +1,56 @@
 /**
- * UI Controls for EMR-style condition selection
+ * UI Controls for verification input (conformal set + action + context)
  */
 class UIControls {
     constructor(renderer) {
         this.renderer = renderer;
-        this.selectedConditions = new Set();
+        this.selectedConformal = new Set();
+        this.selectedComorbidities = new Set();
+        this.selectedStates = new Set();
+        this.selectedSubstance = null;
+        this.selectedAction = null;
         this.entityCategories = [];
+        this.substances = [];
+        this.actions = [];
         this.conditionsWithProtocols = new Set();
         this.lastActivatedProtocols = [];
         this.graphMetadata = null;
         this.protocolToConditions = new Map();
         this.hullColorMap = new Map();
         this.audit = {
-            lastRouteAt: null,
-            lastRoute: null,
+            lastVerifyAt: null,
+            lastVerification: null,
         };
         
         this._bindEvents();
     }
 
     _bindEvents() {
-        document.getElementById('route-btn').addEventListener('click', () => this.routePatient());
+        document.getElementById('route-btn').addEventListener('click', () => this.verifyAction());
         document.getElementById('clear-btn').addEventListener('click', () => this.clearSelection());
         document.getElementById('toggle-graph-btn').addEventListener('click', () => this.toggleGraph());
+        
+        // Action type segmented control
+        document.querySelectorAll('.segment-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const type = e.currentTarget.getAttribute('data-action-type');
+                
+                // Update active state
+                document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                
+                // Show/hide appropriate section
+                document.getElementById('substance-select').classList.toggle('hidden', type !== 'substance');
+                document.getElementById('action-select').classList.toggle('hidden', type !== 'action');
+                
+                // Clear selections in hidden section
+                if (type === 'substance') {
+                    this.selectedAction = null;
+                } else {
+                    this.selectedSubstance = null;
+                }
+            });
+        });
         
         // Tab switching - handle each tab group separately
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -32,6 +60,27 @@ class UIControls {
                 this._switchTab(tabName, tabGroup);
             });
         });
+        
+        // Gestational age slider
+        const gaSlider = document.getElementById('ga-weeks');
+        const gaDisplay = document.getElementById('ga-weeks-display');
+        if (gaSlider && gaDisplay) {
+            gaSlider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value) {
+                    gaDisplay.textContent = `${value} weeks`;
+                    gaDisplay.style.color = 'var(--accent)';
+                } else {
+                    gaDisplay.textContent = 'Not set';
+                    gaDisplay.style.color = 'var(--text-muted)';
+                }
+            });
+            
+            // Initialize display
+            if (gaSlider.value) {
+                gaDisplay.textContent = `${gaSlider.value} weeks`;
+            }
+        }
     }
 
     _switchTab(tabName, tabGroup = null) {
@@ -69,13 +118,23 @@ class UIControls {
             this.hullColorMap.set(hull.id, hull.color);
         });
         
-        // Load all entities from ontology for condition selection
+        // Load all entities from ontology
         try {
             const entitiesData = await api.getAllEntities();
             if (entitiesData.available && entitiesData.categories) {
                 this.entityCategories = entitiesData.categories;
+                
+                // Extract substances and actions
+                entitiesData.categories.forEach(cat => {
+                    if (cat.category === 'substance') {
+                        this.substances = cat.entities;
+                    } else if (cat.category === 'action') {
+                        this.actions = cat.entities;
+                    }
+                });
+                
                 this.conditionsWithProtocols = new Set(entitiesData.conditions_with_protocols || []);
-                this._renderConditionsUI();
+                this._renderInputsUI();
             }
         } catch (e) {
             console.warn('Could not load ontology entities:', e);
@@ -85,69 +144,130 @@ class UIControls {
         this._renderAudit();
     }
 
-    _renderConditionsUI() {
-        // Map category types to container IDs
-        const containerMap = {
-            'disorder': 'conditions-disorders',
-            'physiologic_state': 'conditions-states',
-            'finding': 'conditions-findings'
-        };
-
-        // Clear all containers
-        Object.values(containerMap).forEach(containerId => {
-            const container = document.getElementById(containerId);
-            if (container) container.innerHTML = '';
-        });
-
-        // Render each category in its designated container
-        this.entityCategories.forEach(category => {
-            const containerId = containerMap[category.category];
-            if (!containerId) return;
+    _renderInputsUI() {
+        // Render conformal set as pills (disorders only - tab 1)
+        const conformalContainer = document.getElementById('conditions-disorders');
+        if (conformalContainer) {
+            const disorders = this.entityCategories.find(c => c.category === 'disorder')?.entities || [];
+            conformalContainer.innerHTML = disorders.map(entity => `
+                <button type="button" class="condition-pill" data-entity-id="${entity.id}" data-entity-name="${entity.name}">
+                    ${entity.name}
+                </button>
+            `).join('');
             
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            
-            // Render condition items for this category
-            category.entities.forEach(entity => {
-                const item = document.createElement('div');
-                item.className = 'condition-checkbox-item';
-                item.title = entity.description || entity.name;
-                
-                const hasProtocol = entity.has_protocols;
-                
-                item.innerHTML = `
-                    <input type="checkbox" id="cond-${entity.id}" value="${entity.id}">
-                    <label for="cond-${entity.id}" class="condition-label">${entity.name}</label>
-                    ${hasProtocol ? '<span class="protocol-indicator has-protocol" title="Has protocols"></span>' : ''}
-                `;
-
-                const checkbox = item.querySelector('input');
-                const label = item.querySelector('label');
-                
-                // Make entire item clickable
-                item.addEventListener('click', (e) => {
-                    // Let checkbox and label handle their own clicks
-                    if (e.target === checkbox || e.target === label) return;
+            conformalContainer.querySelectorAll('.condition-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    const entityId = e.currentTarget.getAttribute('data-entity-id');
                     
-                    // Toggle for any other click on the item
-                    checkbox.click();
-                });
-                
-                checkbox.addEventListener('change', () => {
-                    if (checkbox.checked) {
-                        this.selectedConditions.add(entity.id);
-                        item.classList.add('selected');
+                    if (this.selectedConformal.has(entityId)) {
+                        this.selectedConformal.delete(entityId);
+                        e.currentTarget.classList.remove('selected');
                     } else {
-                        this.selectedConditions.delete(entity.id);
-                        item.classList.remove('selected');
+                        this.selectedConformal.add(entityId);
+                        e.currentTarget.classList.add('selected');
                     }
-                    this.renderer.highlight(this.selectedConditions);
+                    
+                    this.renderer.highlight(new Set([...this.selectedConformal, ...this.selectedComorbidities]));
                     this._renderAudit();
                 });
-
-                container.appendChild(item);
             });
-        });
+        }
+
+        // Render substance pills (tab 2)
+        const substancePills = document.getElementById('substance-pills');
+        if (substancePills) {
+            substancePills.innerHTML = this.substances.map(s => `
+                <button type="button" class="condition-pill" data-substance-id="${s.id}" data-substance-name="${s.name}">
+                    ${s.name}
+                </button>
+            `).join('');
+            
+            substancePills.querySelectorAll('.condition-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    // Single selection for substances
+                    substancePills.querySelectorAll('.condition-pill').forEach(p => p.classList.remove('selected'));
+                    e.currentTarget.classList.add('selected');
+                    this.selectedSubstance = {
+                        id: e.currentTarget.getAttribute('data-substance-id'),
+                        name: e.currentTarget.getAttribute('data-substance-name')
+                    };
+                });
+            });
+        }
+
+        // Render action pills (tab 2)
+        const actionPills = document.getElementById('action-pills');
+        if (actionPills) {
+            actionPills.innerHTML = this.actions.map(a => `
+                <button type="button" class="condition-pill" data-action-id="${a.id}" data-action-name="${a.name}">
+                    ${a.name}
+                </button>
+            `).join('');
+            
+            actionPills.querySelectorAll('.condition-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    // Single selection for actions
+                    actionPills.querySelectorAll('.condition-pill').forEach(p => p.classList.remove('selected'));
+                    e.currentTarget.classList.add('selected');
+                    this.selectedAction = {
+                        id: e.currentTarget.getAttribute('data-action-id'),
+                        name: e.currentTarget.getAttribute('data-action-name')
+                    };
+                });
+            });
+        }
+
+        // Render comorbidity pills (tab 3)
+        const comorbContainer = document.getElementById('context-comorbidities');
+        if (comorbContainer) {
+            const disorders = this.entityCategories.find(c => c.category === 'disorder')?.entities || [];
+            comorbContainer.innerHTML = disorders.map(entity => `
+                <button type="button" class="condition-pill" data-entity-id="${entity.id}">
+                    ${entity.name}
+                </button>
+            `).join('');
+            
+            comorbContainer.querySelectorAll('.condition-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    const entityId = e.currentTarget.getAttribute('data-entity-id');
+                    
+                    if (this.selectedComorbidities.has(entityId)) {
+                        this.selectedComorbidities.delete(entityId);
+                        e.currentTarget.classList.remove('selected');
+                    } else {
+                        this.selectedComorbidities.add(entityId);
+                        e.currentTarget.classList.add('selected');
+                    }
+                    
+                    this.renderer.highlight(new Set([...this.selectedConformal, ...this.selectedComorbidities]));
+                });
+            });
+        }
+
+        // Render state pills (tab 3)
+        const stateContainer = document.getElementById('context-states');
+        if (stateContainer) {
+            const states = this.entityCategories.find(c => c.category === 'physiologic_state')?.entities || [];
+            stateContainer.innerHTML = states.map(entity => `
+                <button type="button" class="condition-pill" data-entity-id="${entity.id}">
+                    ${entity.name}
+                </button>
+            `).join('');
+            
+            stateContainer.querySelectorAll('.condition-pill').forEach(pill => {
+                pill.addEventListener('click', (e) => {
+                    const entityId = e.currentTarget.getAttribute('data-entity-id');
+                    
+                    if (this.selectedStates.has(entityId)) {
+                        this.selectedStates.delete(entityId);
+                        e.currentTarget.classList.remove('selected');
+                    } else {
+                        this.selectedStates.add(entityId);
+                        e.currentTarget.classList.add('selected');
+                    }
+                });
+            });
+        }
     }
 
     _updateGraphInfo(metadata) {
@@ -156,54 +276,111 @@ class UIControls {
         document.getElementById('config-version').textContent = metadata.config_version || '-';
     }
 
-    async routePatient() {
-        if (this.selectedConditions.size === 0) {
-            alert('Please select at least one condition');
+    async verifyAction() {
+        const verifyBtn = document.getElementById('route-btn');
+        
+        // Validate inputs
+        if (this.selectedConformal.size === 0) {
+            alert('Please select at least one condition in the conformal set');
             return;
         }
 
+        const activeSegment = document.querySelector('.segment-btn.active');
+        if (!activeSegment) {
+            alert('Please select an action type (Medication or Clinical Action)');
+            return;
+        }
+        
+        const actionType = activeSegment.getAttribute('data-action-type');
+
+        let proposedAction;
+        if (actionType === 'substance') {
+            if (!this.selectedSubstance) {
+                alert('Please select a medication');
+                return;
+            }
+            const dose = document.getElementById('substance-dose')?.value;
+            proposedAction = { type: 'substance', id: this.selectedSubstance.id, dose: dose || '' };
+        } else if (actionType === 'action') {
+            if (!this.selectedAction) {
+                alert('Please select a clinical action');
+                return;
+            }
+            proposedAction = { type: 'action', id: this.selectedAction.id };
+        }
+
+        // Build patient context
+        const patientContext = {
+            comorbidities: Array.from(this.selectedComorbidities),
+            states: Array.from(this.selectedStates),
+        };
+        
+        const gaWeeks = document.getElementById('ga-weeks')?.value;
+        if (gaWeeks) {
+            patientContext.ga_weeks = parseInt(gaWeeks);
+        }
+
+        // Disable button and show loading state
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = 'Verifying...';
+
         try {
-            const result = await api.routePatient(this.selectedConditions);
-            this.lastActivatedProtocols = result.activated_protocols || [];
-            this._displayResults(this.lastActivatedProtocols);
-            this._checkSafety();
+            // Call verification API
+            const result = await api.checkSafety(Array.from(this.selectedConformal), proposedAction, patientContext);
             
-            this.audit.lastRouteAt = new Date();
-            this.audit.lastRoute = {
-                matched_conditions: result.matched_conditions || Array.from(this.selectedConditions),
-                activated_protocols: this.lastActivatedProtocols,
-            };
+            this.audit.lastVerifyAt = new Date();
+            this.audit.lastVerification = result;
             
-            // Trigger safety check and wait for it to complete
-            await this._checkSafety();
+            this._displayVerificationResult(result);
             this._renderAudit();
         } catch (error) {
-            console.error('Routing failed:', error);
+            console.error('Verification failed:', error);
             alert(`Error: ${error.message}`);
-            this._auditError('route', error);
+            this._auditError('verify', error);
+        } finally {
+            // Re-enable button
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = 'Verify Safety';
         }
     }
 
     _auditError(kind, error) {
-        if (kind === 'route') {
-            this.audit.lastRouteAt = new Date();
-            this.audit.lastRoute = { error: error.message };
+        if (kind === 'verify') {
+            this.audit.lastVerifyAt = new Date();
+            this.audit.lastVerification = { error: error.message };
         }
         this._renderAudit();
     }
 
     clearSelection() {
-        this.selectedConditions.clear();
-        document.querySelectorAll('.condition-checkbox-item').forEach(item => {
-            item.classList.remove('selected');
-            const checkbox = item.querySelector('input[type="checkbox"]');
-            if (checkbox) checkbox.checked = false;
+        this.selectedConformal.clear();
+        this.selectedComorbidities.clear();
+        this.selectedStates.clear();
+        this.selectedSubstance = null;
+        this.selectedAction = null;
+        
+        document.querySelectorAll('.condition-pill').forEach(pill => {
+            pill.classList.remove('selected');
         });
-        this.renderer.highlight(this.selectedConditions);
-        this._displayResults([]);
-        this._checkSafety();
-        this.audit.lastRoute = null;
-        this.audit.lastRouteAt = null;
+        
+        document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('substance-dose').value = '';
+        
+        const gaSlider = document.getElementById('ga-weeks');
+        const gaDisplay = document.getElementById('ga-weeks-display');
+        if (gaSlider) gaSlider.value = '';
+        if (gaDisplay) {
+            gaDisplay.textContent = 'Not set';
+            gaDisplay.style.color = 'var(--text-muted)';
+        }
+        
+        document.getElementById('substance-select').classList.add('hidden');
+        document.getElementById('action-select').classList.add('hidden');
+        
+        this.renderer.highlight(new Set());
+        this._clearResults();
+        this.audit.lastVerification = null;
+        this.audit.lastVerifyAt = null;
         this._renderAudit();
     }
 
@@ -227,286 +404,140 @@ class UIControls {
         }
     }
 
-    _displayResults(protocols) {
-        const section = document.getElementById('results-section');
-        const results = document.getElementById('results');
+    _displayVerificationResult(result) {
         const emptyState = document.getElementById('results-empty');
-        const resultsCount = document.getElementById('results-count');
+        const statusBadge = document.getElementById('verification-status-badge');
+        
+        // Update status badge
+        if (statusBadge) {
+            const status = result.verification_status || 'PENDING';
+            statusBadge.textContent = status;
+            statusBadge.className = `status-badge status-${status.toLowerCase()}`;
+        }
 
-        if (!protocols || protocols.length === 0) {
-            results.innerHTML = '';
-            emptyState.classList.remove('hidden');
-            if (resultsCount) resultsCount.textContent = '0 matched';
+        // Show/hide empty state
+        if (result && result.available) {
+            emptyState?.classList.add('hidden');
+        } else {
+            emptyState?.classList.remove('hidden');
             return;
         }
 
-        emptyState.classList.add('hidden');
-        if (resultsCount) resultsCount.textContent = `${protocols.length} matched`;
-
-        results.innerHTML = protocols.map(p => {
-            const color = this.hullColorMap.get(p.id) || '#999999';
-            const proofType = p.proof_type || 'independent';
-            const isProven = p.proof_status === 'verified';
-            
-            let compositionHTML = '';
-            const hasComposition = (p.composition_draws_from && p.composition_draws_from.length > 0) || 
-                                  (p.composition_coordination && p.composition_coordination.length > 0);
-            
-            if (hasComposition) {
-                compositionHTML = `
-                    <div class="protocol-section">
-                        <div class="protocol-section-title">Composition</div>
-                        <div class="composition-container">`;
-                
-                // Group coordination points per protocol
-                const coordinations = p.composition_coordination || [];
-                const drawsFrom = p.composition_draws_from || [];
-                
-                if (drawsFrom.length > 0) {
-                    // Calculate how many coordination points per protocol (roughly)
-                    const coordsPerProtocol = Math.ceil(coordinations.length / drawsFrom.length);
-                    
-                    drawsFrom.forEach((protocolId, idx) => {
-                        const startIdx = idx * coordsPerProtocol;
-                        const protocolCoords = coordinations.slice(startIdx, startIdx + coordsPerProtocol);
-                        
-                        compositionHTML += `
-                            <div class="composition-protocol-card">
-                                <div class="composition-protocol-header">
-                                    <div class="composition-protocol-id">${protocolId}</div>
-                                </div>
-                                ${protocolCoords.length > 0 ? `
-                                    <div class="composition-adjustments">
-                                        ${protocolCoords.map(coord => `
-                                            <div class="composition-adjustment-item">
-                                                <span class="adjustment-bullet">•</span>
-                                                <span class="adjustment-text">${coord}</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
-                    });
-                } else if (coordinations.length > 0) {
-                    // If no draws_from but has coordinates, show them generically
-                    compositionHTML += `
-                        <div class="composition-protocol-card">
-                            <div class="composition-adjustments">
-                                ${coordinations.map(coord => `
-                                    <div class="composition-adjustment-item">
-                                        <span class="adjustment-bullet">•</span>
-                                        <span class="adjustment-text">${coord}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                compositionHTML += `</div>`;
-                
-                if (p.composition_reason) {
-                    compositionHTML += `<div class="composition-reason">${p.composition_reason}</div>`;
-                }
-                
-                compositionHTML += `</div>`;
-            }
-
-            return `
-                <div class="result-protocol" style="border-left: 4px solid ${color}">
-                    <div class="protocol-card-header">
-                        <div class="protocol-title-row">
-                            <div class="protocol-identifiers">
-                                <span class="protocol-id-badge">${p.id}</span>
-                            </div>
-                            <div class="protocol-badges">
-                                <span class="proof-type-badge ${proofType.toLowerCase()}">${proofType.toUpperCase()}</span>
-                                ${isProven ? '<span class="proven-badge">✓ Verified</span>' : ''}
-                            </div>
-                        </div>
-                        <h3 class="protocol-name">${p.name || p.guideline}</h3>
-                        <div class="protocol-meta-row">
-                            <div class="meta-item"><strong>Region:</strong> ${p.country || 'N/A'}</div>
-                            <div class="meta-item"><strong>Version:</strong> ${p.version || 'N/A'}</div>
-                        </div>
-                    </div>
-                    <div class="protocol-card-body">
-                        <div class="protocol-section">
-                            <div class="protocol-section-title">Clinical Context</div>
-                            <div class="condition-badges">
-                                ${(p.conditions || []).map(c => `<span class="condition-badge">${c}</span>`).join(' + ')}
-                            </div>
-                        </div>
-                        ${compositionHTML}
-                        <div class="protocol-section">
-                            <div class="protocol-section-title">Regulatory Information</div>
-                            <p><strong>Guideline:</strong> ${p.guideline || 'N/A'}</p>
-                            <p><strong>Regulatory Body:</strong> ${p.regulatory_body || 'N/A'}</p>
-                            ${p.reviewer ? `<p><strong>Reviewed By:</strong> ${p.reviewer}</p>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async _checkSafety() {
-        const emptyState = document.getElementById('safety-empty');
-        const inconsistenciesBox = document.getElementById('safety-inconsistencies');
-        const contraindicationsBox = document.getElementById('safety-contraindications');
-        const doseLimitsBox = document.getElementById('safety-dose-limits');
-        const interactionsBox = document.getElementById('safety-interactions');
-        const treatmentsBox = document.getElementById('safety-treatments');
-
-        // Hide all safety items initially
-        inconsistenciesBox.classList.add('hidden');
-        contraindicationsBox.classList.add('hidden');
-        doseLimitsBox.classList.add('hidden');
-        interactionsBox.classList.add('hidden');
-        treatmentsBox.classList.add('hidden');
-
-        if (this.selectedConditions.size === 0) {
-            emptyState.classList.remove('hidden');
-            this.audit.lastSafety = null;
-            return;
-        }
-
-        try {
-            const result = await api.checkSafety(Array.from(this.selectedConditions));
-            
-            // Store safety results for audit
-            this.audit.lastSafety = {
-                violations: result.consistency_violations?.length || 0,
-                contraindications: result.contraindicated_substances?.length || 0,
-                doseLimits: result.dose_limits?.length || 0,
-                interactions: result.drug_interactions?.length || 0,
-                safeTreatments: result.safe_treatments?.length || 0,
-            };
-            if (!result || !result.available) {
-                emptyState.classList.remove('hidden');
-                return;
-            }
-
-            let hasContent = false;
-
-            // Display ontology inconsistencies (consistency_violations)
-            if (result.consistency_violations && result.consistency_violations.length > 0) {
-                hasContent = true;
-                inconsistenciesBox.classList.remove('hidden');
-                inconsistenciesBox.innerHTML = `
-                    <h3><span class="safety-icon-badge warning">⚠</span> Ontology Inconsistencies</h3>
-                    <p class="safety-subtitle">Asserted axioms that may conflict</p>
-                    ${result.consistency_violations.map(violation => {
-                        const parts = violation.split(':');
-                        const axiomName = parts[0]?.trim() || violation;
-                        const detail = parts.length > 1 ? parts.slice(1).join(':').trim() : '';
-                        return `
-                            <div class="safety-item safety-warning">
-                                <div class="safety-item-name">${axiomName}</div>
-                                ${detail ? `<div class="safety-item-detail">${detail}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('')}
-                `;
-            }
-
-            // Display contraindications (contraindicated_substances)
-            if (result.contraindicated_substances && result.contraindicated_substances.length > 0) {
-                hasContent = true;
-                contraindicationsBox.classList.remove('hidden');
-                contraindicationsBox.innerHTML = `
-                    <h3><span class="safety-icon-badge danger">⊗</span> Contraindicated Substances</h3>
-                    <p class="safety-subtitle">Medications to avoid based on ontology</p>
-                    ${result.contraindicated_substances.map(c => `
+        // Display contraindications
+        const contraBox = document.getElementById('cert-contraindications');
+        if (contraBox) {
+            if (result.contraindications && result.contraindications.length > 0) {
+                contraBox.innerHTML = `
+                    <h3>Contraindications</h3>
+                    ${result.contraindications.map(c => `
                         <div class="safety-item safety-danger">
-                            <div class="safety-item-name">${c.name}</div>
-                            <div class="safety-item-detail">${c.reason}</div>
+                            <div class="safety-item-name">${c.substance} contraindicated in ${c.condition}</div>
+                            <div class="safety-item-detail"><strong>Strength:</strong> ${c.strength}</div>
+                            <div class="safety-item-detail">${c.rationale}</div>
+                            <div class="safety-item-detail"><em>${c.guideline}</em></div>
                         </div>
                     `).join('')}
                 `;
-            }
-
-            // Display dose limits
-            if (result.dose_limits && result.dose_limits.length > 0) {
-                hasContent = true;
-                doseLimitsBox.classList.remove('hidden');
-                
-                // Format category for display
-                const formatCategory = (cat) => {
-                    if (!cat) return 'Restricted';
-                    return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                };
-                
-                doseLimitsBox.innerHTML = `
-                    <h3><span class="safety-icon-badge info">⚑</span> Dose Restrictions</h3>
-                    <p class="safety-subtitle">Safety categories for substances</p>
-                    ${result.dose_limits.map(d => {
-                        // Get unique condition names from limits
-                        const conditions = [...new Set(d.limits.map(l => l.condition_name))];
-                        const conditionText = conditions.length > 0 ? ` for ${conditions.join(', ')}` : '';
-                        return `
-                            <div class="safety-item safety-info">
-                                <div class="safety-item-name">${d.name}</div>
-                                <div class="safety-item-detail">${formatCategory(d.category)}${conditionText}</div>
-                            </div>
-                        `;
-                    }).join('')}
-                `;
-            }
-
-            // Display drug interactions
-            if (result.drug_interactions && result.drug_interactions.length > 0) {
-                hasContent = true;
-                interactionsBox.classList.remove('hidden');
-                interactionsBox.innerHTML = `
-                    <h3><span class="safety-icon-badge warning">⚠</span> Drug Interactions</h3>
-                    <p class="safety-subtitle">Monitor when combining these treatments</p>
-                    ${result.drug_interactions.map(i => `
-                        <div class="safety-item safety-warning">
-                            <div class="safety-item-name">${i.substance1_name} + ${i.substance2_name}</div>
-                            <div class="safety-item-detail">${i.evidence}</div>
-                        </div>
-                    `).join('')}
-                `;
-            }
-
-            // Display safe treatments
-            if (result.safe_treatments && result.safe_treatments.length > 0) {
-                hasContent = true;
-                treatmentsBox.classList.remove('hidden');
-                treatmentsBox.innerHTML = `
-                    <h3><span class="safety-icon-badge success">✓</span> Safe Treatment Options</h3>
-                    <p class="safety-subtitle">Treatments supported by ontology axioms</p>
-                    ${result.safe_treatments.map(t => `
-                        <div class="safety-item safety-success">
-                            <div class="safety-item-name">${t.name}</div>
-                            <div class="safety-item-detail">${t.indication}</div>
-                        </div>
-                    `).join('')}
-                `;
-            }
-
-            // Show/hide content
-            if (hasContent) {
-                emptyState.classList.add('hidden');
             } else {
-                emptyState.classList.remove('hidden');
+                contraBox.innerHTML = '<p>No contraindications found.</p>';
             }
-        } catch (error) {
-            console.error('Safety check failed:', error);
-            emptyState.classList.remove('hidden');
         }
+
+        // Display requirements
+        const reqBox = document.getElementById('cert-requirements');
+        if (reqBox) {
+            if (result.required_actions && result.required_actions.length > 0) {
+                reqBox.innerHTML = `
+                    <h3>Required Actions</h3>
+                    ${result.required_actions.map(r => `
+                        <div class="safety-item ${r.satisfied ? 'safety-success' : 'safety-warning'}">
+                            <div class="safety-item-name">${r.action} for ${r.condition} - ${r.satisfied ? 'SATISFIED' : 'NOT SATISFIED'}</div>
+                            <div class="safety-item-detail">${r.rationale}</div>
+                            <div class="safety-item-detail"><em>${r.guideline}</em></div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                reqBox.innerHTML = '';
+            }
+        }
+
+        // Display consistency violations
+        const consBox = document.getElementById('cert-consistency');
+        if (consBox) {
+            if (result.consistency_violations && result.consistency_violations.length > 0) {
+                consBox.innerHTML = `
+                    <h3>Consistency Violations</h3>
+                    ${result.consistency_violations.map(v => `
+                        <div class="safety-item safety-warning">
+                            <div class="safety-item-name">${v.type}</div>
+                            <div class="safety-item-detail">${v.explanation}</div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                consBox.innerHTML = '';
+            }
+        }
+
+        // Display alternatives
+        const altBox = document.getElementById('cert-alternatives');
+        if (altBox) {
+            if (result.alternatives && result.alternatives.length > 0) {
+                altBox.innerHTML = `
+                    <h3>Suggested Alternatives</h3>
+                    ${result.alternatives.map(a => `
+                        <div class="safety-item safety-success">
+                            <div class="safety-item-name">${a.substance || a.action}</div>
+                            ${a.dose ? `<div class="safety-item-detail"><strong>Dose:</strong> ${a.dose}</div>` : ''}
+                            <div class="safety-item-detail">${a.rationale}</div>
+                            <div class="safety-item-detail"><em>${a.guideline}</em></div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                altBox.innerHTML = '<p>No alternatives needed.</p>';
+            }
+        }
+
+        // Display dose limits
+        const doseBox = document.getElementById('cert-dose-limits');
+        if (doseBox) {
+            if (result.dose_limits && result.dose_limits.length > 0) {
+                doseBox.innerHTML = `
+                    <h3>Dose Limits (Informational)</h3>
+                    ${result.dose_limits.map(d => `
+                        <div class="safety-item safety-info">
+                            <div class="safety-item-name">${d.substance} - ${d.category}</div>
+                            <div class="safety-item-detail">${d.rationale}</div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                doseBox.innerHTML = '';
+            }
+        }
+
     }
+
+    _clearResults() {
+        document.getElementById('results-empty')?.classList.remove('hidden');
+        document.getElementById('verification-status-badge').textContent = 'PENDING';
+        document.getElementById('verification-status-badge').className = 'status-badge status-pending';
+        document.getElementById('cert-contraindications').innerHTML = '';
+        document.getElementById('cert-requirements').innerHTML = '';
+        document.getElementById('cert-consistency').innerHTML = '';
+        document.getElementById('cert-alternatives').innerHTML = '';
+        document.getElementById('cert-dose-limits').innerHTML = '';
+    }
+
 
     _renderAudit() {
         const auditPills = document.getElementById('audit-pills');
         const auditDetails = document.getElementById('audit-details');
         if (!auditDetails || !auditPills) return;
 
-        // Compute metrics from matched protocols
-        const protocols = this.audit.lastRoute?.activated_protocols || [];
-        const metrics = this._computeMetrics(protocols);
+        const verification = this.audit.lastVerification;
 
         const steps = [
             {
@@ -519,37 +550,29 @@ class UIControls {
             },
             {
                 icon: '②',
-                label: 'Conditions Selected',
-                status: this.selectedConditions.size > 0 ? 'complete' : 'pending',
-                info: this.selectedConditions.size > 0 
-                    ? Array.from(this.selectedConditions).join(', ')
+                label: 'Conformal Set',
+                status: this.selectedConformal.size > 0 ? 'complete' : 'pending',
+                info: this.selectedConformal.size > 0 
+                    ? Array.from(this.selectedConformal).join(', ')
                     : null,
-                count: this.selectedConditions.size > 0 ? `${this.selectedConditions.size} selected` : null,
+                count: this.selectedConformal.size > 0 ? `${this.selectedConformal.size} conditions` : null,
             },
             {
                 icon: '③',
-                label: 'Safety Constraints',
-                status: this.audit.lastSafety ? 'complete' : 'pending',
-                info: this.audit.lastSafety,
-                count: this.audit.lastSafety 
-                    ? `${this.audit.lastSafety.violations + this.audit.lastSafety.contraindications} issues`
+                label: 'Action + Context',
+                status: verification ? 'complete' : 'pending',
+                info: verification 
+                    ? `Action verified with ${this.selectedComorbidities.size} comorbidities`
                     : null,
+                count: verification ? 'Complete' : null,
             },
             {
                 icon: '④',
-                label: 'Protocols Matched',
-                status: this.audit.lastRoute ? 'complete' : 'pending',
-                info: protocols.length > 0
-                    ? protocols.map(p => ({
-                        id: p.id,
-                        name: p.name || p.guideline,
-                        type: p.proof_type || 'independent',
-                        conditions: p.conditions || [],
-                    }))
-                    : null,
-                count: protocols.length > 0 ? `${protocols.length} matched` : null,
-                timestamp: this.audit.lastRouteAt,
-                metrics: protocols.length > 0 ? metrics : null,
+                label: 'Verification Result',
+                status: verification ? 'complete' : 'pending',
+                info: verification,
+                count: verification ? verification.verification_status : null,
+                timestamp: this.audit.lastVerifyAt,
             },
         ];
 
@@ -572,60 +595,57 @@ class UIControls {
                 // Graph info
                 detailContent = `<div class="audit-info-text">${s.info}</div>`;
             } else if (idx === 1) {
-                // Selected conditions
+                // Conformal set
                 detailContent = `<div class="audit-info-text">${s.info}</div>`;
             } else if (idx === 2) {
-                // Safety assessment
-                const metrics = [
-                    { label: 'Violations', value: s.info.violations, warning: s.info.violations > 0 },
-                    { label: 'Contraindications', value: s.info.contraindications, warning: s.info.contraindications > 0 },
-                    { label: 'Safe Treatments', value: s.info.safeTreatments }
-                ];
-                detailContent = `
-                    <div class="audit-metrics">
-                        ${metrics.map(m => `
-                            <div class="audit-metric-item ${m.warning ? 'metric-warning' : ''}">
-                                <span class="metric-label">${m.label}:</span>
-                                <span class="metric-value">${m.value}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
+                // Action + context
+                detailContent = `<div class="audit-info-text">${s.info}</div>`;
             } else if (idx === 3) {
-                // Matched protocols with metrics
-                const breakdown = [];
-                if (s.metrics.byType.independent > 0) breakdown.push(`${s.metrics.byType.independent} independent`);
-                if (s.metrics.byType.compositional > 0) breakdown.push(`${s.metrics.byType.compositional} compositional`);
-                if (s.metrics.byType.interaction > 0) breakdown.push(`${s.metrics.byType.interaction} interaction`);
-                const constrainedDisplay = `${s.metrics.totalAxioms} (${breakdown.join(', ')})`;
-                
-                // Axioms grounded = total ontology relations evaluated (violations + contraindications + safe treatments)
-                const axiomsGrounded = s.metrics.violations + s.metrics.contraindications + s.metrics.safeTreatments;
-                
-                const metrics = [
-                    { label: 'Axioms Grounded', value: axiomsGrounded },
-                    { label: 'Protocols Constrained', value: constrainedDisplay },
-                    { label: 'Largest Composition', value: s.metrics.maxDepth }
-                ];
-                detailContent = `
-                    <div class="audit-metrics">
-                        ${metrics.map(m => `
+                // Verification result with process trace
+                if (verification.error) {
+                    detailContent = `<div class="audit-info-text error">${verification.error}</div>`;
+                } else {
+                    const contraCount = verification.contraindications?.length || 0;
+                    const altCount = verification.alternatives?.length || 0;
+                    detailContent = `
+                        <div class="audit-metrics">
+                            <div class="audit-metric-item ${contraCount > 0 ? 'metric-warning' : ''}">
+                                <span class="metric-label">Contraindications:</span>
+                                <span class="metric-value">${contraCount}</span>
+                            </div>
                             <div class="audit-metric-item">
-                                <span class="metric-label">${m.label}:</span>
-                                <span class="metric-value">${m.value}</span>
+                                <span class="metric-label">Alternatives:</span>
+                                <span class="metric-value">${altCount}</span>
                             </div>
-                        `).join('')}
-                    </div>
-                    <div class="audit-protocols">
-                        ${s.info.map(p => `
-                            <div class="audit-protocol-item">
-                                <span class="audit-protocol-id">${p.id}</span>
-                                <span class="audit-protocol-type">${p.type.toLowerCase()}</span>
-                                <span class="audit-protocol-name">${p.name}</span>
+                            <div class="audit-metric-item">
+                                <span class="metric-label">Status:</span>
+                                <span class="metric-value">${verification.verification_status}</span>
                             </div>
-                        `).join('')}
-                    </div>
-                `;
+                        </div>
+                    `;
+                    
+                    // Add process trace if available
+                    if (verification.process_trace && verification.process_trace.length > 0) {
+                        detailContent += `
+                            <div class="audit-process-trace" style="margin-top: 1rem;">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">Process Trace:</div>
+                                <ol class="process-trace-list" style="padding-left: 1.5rem; margin: 0;">
+                                    ${verification.process_trace.map(step => `<li style="padding: 0.25rem 0; color: var(--text-secondary);">${step}</li>`).join('')}
+                                </ol>
+                            </div>
+                        `;
+                    }
+                    
+                    // Add Lean proof ID if available
+                    if (verification.lean_proof_id) {
+                        detailContent += `
+                            <div class="audit-lean-proof" style="margin-top: 1rem;">
+                                <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">Lean 4 Proof:</div>
+                                <code style="background: #f3f4f6; padding: 0.5rem; border-radius: 4px; display: block; font-size: 0.875rem;">${verification.lean_proof_id}</code>
+                            </div>
+                        `;
+                    }
+                }
             }
             
             return `
@@ -638,81 +658,6 @@ class UIControls {
                 </div>
             `;
         }).filter(Boolean).join('');
-    }
-
-    _computeMetrics(protocols) {
-        if (!protocols || protocols.length === 0) {
-            return {
-                totalAxioms: 0,
-                totalLemmas: 0,
-                maxDepth: 0,
-                avgConditions: 0,
-                hyperedges: 0,
-                subsets: 0,
-                contraindications: 0,
-                violations: 0,
-                safeTreatments: 0,
-                byType: { independent: 0, compositional: 0, interaction: 0 }
-            };
-        }
-
-        // Count axioms (each protocol is a verified axiom)
-        const totalAxioms = protocols.length;
-
-        // Count lemmas (coordination points in compositional protocols)
-        const totalLemmas = protocols.reduce((sum, p) => {
-            return sum + (p.composition_coordination?.length || 0);
-        }, 0);
-
-        // Calculate compositional depth (max number of protocols drawn from)
-        const maxDepth = Math.max(
-            1,
-            ...protocols.map(p => (p.composition_draws_from?.length || 0))
-        );
-
-        // Average conditions per protocol (hyperedge size)
-        const totalConditions = protocols.reduce((sum, p) => {
-            return sum + (p.conditions?.length || 0);
-        }, 0);
-        const avgConditions = totalConditions / protocols.length;
-
-        // Count hyperedges (protocols) and subsets (unique condition combinations)
-        const hyperedges = protocols.length;
-        const uniqueSubsets = new Set(
-            protocols.map(p => (p.conditions || []).sort().join(','))
-        ).size;
-
-        // Safety metrics
-        const contraindications = this.audit.lastSafety?.contraindications || 0;
-        const violations = this.audit.lastSafety?.violations || 0;
-        const safeTreatments = this.audit.lastSafety?.safeTreatments || 0;
-
-        // Breakdown by proof type
-        const byType = {
-            independent: 0,
-            compositional: 0,
-            interaction: 0
-        };
-
-        protocols.forEach(p => {
-            const type = (p.proof_type || 'independent').toLowerCase();
-            if (byType.hasOwnProperty(type)) {
-                byType[type]++;
-            }
-        });
-
-        return { 
-            totalAxioms, 
-            totalLemmas, 
-            maxDepth, 
-            avgConditions,
-            hyperedges,
-            subsets: uniqueSubsets,
-            contraindications,
-            violations,
-            safeTreatments,
-            byType 
-        };
     }
 
 }

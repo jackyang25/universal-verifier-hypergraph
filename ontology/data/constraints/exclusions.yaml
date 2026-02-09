@@ -1,67 +1,26 @@
-# Mutual exclusion relations (generates MUTUAL_EXCLUSION axioms)
-# Express logical incompatibilities between entities
-# These enforce constraints that two things cannot coexist in formal verification
+# Mutually exclusive conditions
 
 relation_type: excludes
 
 relations:
-  # Physiologic state exclusions
-  - source_id: pregnant
-    target_id: pediatric
-    evidence: "Pediatric patients (under 18) cannot be pregnant in standard clinical definitions"
+  # Gestational HTN vs preeclampsia (different diagnoses)
+  - source_id: gestational_htn
+    target_id: preeclampsia
+    bidirectional: true
+    evidence: "Gestational HTN (without proteinuria/end-organ dysfunction) and preeclampsia are mutually exclusive diagnoses"
 
-  - source_id: pregnant
-    target_id: elderly
-    evidence: "Post-menopausal patients cannot be pregnant"
+  # Gestational age categories are mutually exclusive
+  - source_id: ga_less_34
+    target_id: ga_34_to_37
+    bidirectional: true
+    evidence: "Gestational age categories are mutually exclusive"
 
-  - source_id: first_trimester
-    target_id: second_trimester
-    evidence: "Pregnancy trimesters are mutually exclusive"
+  - source_id: ga_less_34
+    target_id: ga_37_plus
+    bidirectional: true
+    evidence: "Gestational age categories are mutually exclusive"
 
-  - source_id: first_trimester
-    target_id: third_trimester
-    evidence: "Pregnancy trimesters are mutually exclusive"
-
-  - source_id: second_trimester
-    target_id: third_trimester
-    evidence: "Pregnancy trimesters are mutually exclusive"
-
-  # Finding exclusions
-  - source_id: detectable_viral_load
-    target_id: undetectable_viral_load
-    evidence: "Viral load is either detectable or undetectable"
-
-  - source_id: hyperglycemia
-    target_id: hypoglycemia
-    evidence: "Blood glucose cannot be simultaneously high and low"
-
-  # Age group exclusions
-  - source_id: pediatric_infant
-    target_id: pediatric_adolescent
-    evidence: "Age groups are mutually exclusive"
-
-  - source_id: pediatric_infant
-    target_id: age_over_65
-    evidence: "Age groups are mutually exclusive"
-
-  - source_id: pediatric_adolescent
-    target_id: age_over_65
-    evidence: "Age groups are mutually exclusive"
-
-  # Physiologic state incompatibilities
-  - source_id: pregnant
-    target_id: breastfeeding
-    evidence: "Cannot be simultaneously pregnant and breastfeeding for drug safety assessment"
-
-  # Disorder type exclusions (T1DM vs T2DM)
-  - source_id: diabetes_mellitus_type_1
-    target_id: diabetes_mellitus_type_2
-    evidence: "Diabetes type 1 and type 2 are distinct conditions"
-
-  - source_id: diabetes_mellitus_type_1
-    target_id: gestational_diabetes
-    evidence: "T1DM and gestational diabetes are distinct conditions"
-
-  - source_id: diabetes_mellitus_type_2
-    target_id: gestational_diabetes
-    evidence: "T2DM and gestational diabetes are distinct conditions"
+  - source_id: ga_34_to_37
+    target_id: ga_37_plus
+    bidirectional: true
+    evidence: "Gestational age categories are mutually exclusive"

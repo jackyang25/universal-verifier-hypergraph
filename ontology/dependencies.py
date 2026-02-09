@@ -1,9 +1,11 @@
 """Ontology bridge factory and dependencies."""
 
+import traceback
 from functools import lru_cache
 from typing import Optional
 
 from ontology.bridge import OntologyBridge
+from ontology.loader import create_bridge
 
 
 @lru_cache()
@@ -15,7 +17,6 @@ def get_bridge() -> Optional[OntologyBridge]:
     Caches the instance for performance.
     """
     try:
-        from ontology.loader import create_bridge
         bridge = create_bridge()
         bridge.generate_axioms_from_relations()
         return bridge
@@ -24,7 +25,6 @@ def get_bridge() -> Optional[OntologyBridge]:
         return None
     except Exception as e:
         print(f"Ontology initialization error: {e}")
-        import traceback
         traceback.print_exc()
         return None
 

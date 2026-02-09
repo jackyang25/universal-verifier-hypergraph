@@ -130,20 +130,50 @@ class HealthResponse(BaseModel):
     version: str
 
 
+class ProposedAction(BaseModel):
+    """Proposed clinical action to verify."""
+    type: str = Field(..., description="Action type: 'substance' or 'action'")
+    id: str = Field(..., description="Entity ID (e.g., 'labetalol', 'immediate_delivery')")
+    dose: Optional[str] = Field(None, description="Dosing information (for substances)")
+
+
+class PatientContext(BaseModel):
+    """Known patient conditions and context (NOT uncertain)."""
+    comorbidities: Optional[List[str]] = Field(default_factory=list, description="Known comorbidities (e.g., ['asthma', 'diabetes'])")
+    ga_weeks: Optional[int] = Field(None, description="Gestational age in weeks")
+    physiologic_states: Optional[List[str]] = Field(default_factory=list, description="Pregnancy states (e.g., 'postpartum', 'breastfeeding')")
+
+
 class SafetyCheckRequest(BaseModel):
-    """Request model for safety checks."""
-    conditions: List[str]
+    """
+    Request model for safety checks.
+    
+    Accepts conformal prediction sets and verifies proposed actions.
+    """
+    conformal_set: List[str] = Field(..., description="Uncertain diagnoses from conformal prediction (e.g., ['hellp_syndrome', 'aflp'])")
+    proposed_action: ProposedAction = Field(..., description="Action to verify (substance or clinical action)")
+    patient_context: Optional[PatientContext] = Field(default_factory=PatientContext, description="Known patient conditions")
 
 
 class SafetyCheckResponse(BaseModel):
-    """Response model for safety checks."""
+    """
+    Verification certificate response.
+    
+    Contains 7 components as documented in AGENTS.md.
+    """
     available: bool
-    contraindicated_substances: List[dict]
-    safe_treatments: List[dict]
-    dose_limits: List[dict]
-    drug_interactions: List[dict]
-    consistency_violations: List[str]
-    conditions_checked: List[str]
+    verification_status: Optional[str] = Field(None, description="VERIFIED | BLOCKED | REPAIR_NEEDED")
+    contraindications: List[dict] = Field(default_factory=list, description="Violated contraindications with rationale")
+    alternatives: List[dict] = Field(default_factory=list, description="Safe alternatives with dosing")
+    dose_limits: List[dict] = Field(default_factory=list, description="Dose warnings (informational)")
+    consistency_violations: List[dict] = Field(default_factory=list, description="Mutual exclusions and requirement violations")
+    required_actions: List[dict] = Field(default_factory=list, description="Required actions and satisfaction status")
+    process_trace: List[str] = Field(default_factory=list, description="Audit trail of verification steps")
+    lean_proof_id: Optional[str] = Field(None, description="Lean 4 proof identifier")
+    
+    # Legacy fields for backward compatibility
+    conformal_set: Optional[List[str]] = Field(None, description="Diagnoses checked")
+    proposed_action: Optional[dict] = Field(None, description="Action that was verified")
 
 
 class OntologyStatusResponse(BaseModel):

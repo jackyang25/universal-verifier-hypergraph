@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set
 import yaml
 
-from ontology.types import Entity, Relation, EntityType, RelationType
+from ontology.types import Entity, Relation, EntityType, RelationType, DoseCategory
 from ontology.registry import OntologyRegistry
 
 
@@ -183,7 +183,6 @@ class OntologySchema:
         Raises:
             ValueError: If invalid enum values are found
         """
-        from ontology.types import DoseCategory
         
         valid_categories = {c.value for c in DoseCategory}
         # strength is Optional[str] with expected values per Relation comment
@@ -218,7 +217,6 @@ class OntologySchema:
         Raises:
             ValueError: If contradictory constraints are found
         """
-        from ontology.types import RelationType
         
         # Get all contraindication pairs
         contraindication_pairs = set()
