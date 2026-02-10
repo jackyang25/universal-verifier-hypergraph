@@ -1,0 +1,33 @@
+import { Pill } from "@/components/selection/Pill";
+
+type ProposedActionSectionProps = {
+  actions: string[];
+  selectedAction: string | null;
+  onSelectAction: (value: string | null) => void;
+};
+
+export function ProposedActionSection({
+  actions,
+  selectedAction,
+  onSelectAction
+}: ProposedActionSectionProps) {
+  return (
+    <div className="border-t border-slate-200 pt-4">
+      <h3 className="mb-1 text-sm font-semibold text-slate-700">
+        Proposed Action
+      </h3>
+      <div className="flex flex-wrap gap-2.5">
+        {actions.map((action) => (
+          <Pill
+            key={action}
+            label={action}
+            isActive={selectedAction === action}
+            onToggle={() =>
+              onSelectAction(selectedAction === action ? null : action)
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

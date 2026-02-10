@@ -34,3 +34,17 @@ Thumbs.db
 # Logs
 *.log
 
+# Node / frontend
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Monorepo tooling / deploy
+.turbo/
+.vercel/
