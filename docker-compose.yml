@@ -6,7 +6,6 @@ services:
     volumes:
       - ./protocols:/app/protocols
       - ./api:/app/api
-      - ./tests:/app/tests
       - ./ontology:/app/ontology
     environment:
       - ENV=development
