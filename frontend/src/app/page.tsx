@@ -8,9 +8,11 @@ import { ProposedActionSection } from "@/components/selection/ProposedActionSect
 import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import {
   clinicalActions,
+  bmiMarks,
   comorbidities,
   diagnoses,
   gestationalAgeMarks,
+  maternalAgeMarks,
   physiologicStates
 } from "@/lib/clinical-options";
 
@@ -18,15 +20,21 @@ export default function HomePage() {
   const {
     state: {
       selectedDiagnoses,
+      selectedDiagnosisAttributes,
       selectedComorbidities,
       selectedPhysiologicStates,
       gestationalWeeks,
+      maternalAgeYears,
+      bmi,
       selectedAction
     },
     toggleDiagnosis,
+    toggleDiagnosisAttribute,
     toggleComorbidity,
     togglePhysiologicState,
     setGestationalWeeks,
+    setMaternalAgeYears,
+    setBmi,
     setSelectedAction
   } = useSimulationState();
   const hasRequiredSimulatedInference =
@@ -50,6 +58,16 @@ export default function HomePage() {
             options={diagnoses}
             selected={selectedDiagnoses}
             onToggle={toggleDiagnosis}
+            attributeOptionsByOptionId={Object.fromEntries(
+              diagnoses
+                .filter((diagnosis) => diagnosis.availableAttributes?.length)
+                .map((diagnosis) => [
+                  diagnosis.id,
+                  diagnosis.availableAttributes ?? []
+                ])
+            )}
+            selectedAttributesByOptionId={selectedDiagnosisAttributes}
+            onToggleAttribute={toggleDiagnosisAttribute}
           >
             <>
               <ProposedActionSection
@@ -82,6 +100,12 @@ export default function HomePage() {
             gestationalWeeks={gestationalWeeks}
             gestationalAgeMarks={gestationalAgeMarks}
             onChangeGestationalWeeks={setGestationalWeeks}
+            maternalAgeYears={maternalAgeYears}
+            maternalAgeMarks={maternalAgeMarks}
+            onChangeMaternalAgeYears={setMaternalAgeYears}
+            bmi={bmi}
+            bmiMarks={bmiMarks}
+            onChangeBmi={setBmi}
           />
         </div>
       </div>

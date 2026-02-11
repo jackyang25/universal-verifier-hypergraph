@@ -6,6 +6,7 @@ import { HeroHeader } from "@/components/selection/HeroHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import { Badge } from "@/components/ui/badge";
+import { clinicalActions, diagnoses } from "@/lib/clinical-options";
 
 type OntologyMapping = {
   sourceGroup: string;
@@ -17,6 +18,7 @@ type OntologyMapping = {
 type OntologyNormalizeResponse = {
   facts: string[];
   diagnosisFacts: string[];
+  diagnosisAttributeFacts: string[];
   contextFacts: string[];
   actionToken: string | null;
   mappings: OntologyMapping[];
@@ -76,6 +78,11 @@ function normalizeOntologyPayload(
 ): OntologyNormalizeResponse {
   return {
     ...payload,
+    diagnosisAttributeFacts: Array.isArray(payload.diagnosisAttributeFacts)
+      ? payload.diagnosisAttributeFacts
+      : Array.isArray((payload as { acuityFacts?: unknown[] }).acuityFacts)
+        ? ((payload as { acuityFacts?: unknown[] }).acuityFacts as string[])
+        : [],
     mappings: payload.mappings.map((mapping) => ({
       ...mapping,
       ruleExplanations: (mapping.ruleExplanations ?? []).map(
@@ -89,9 +96,12 @@ export default function Step2Page() {
   const {
     state: {
       selectedDiagnoses,
+      selectedDiagnosisAttributes,
       selectedComorbidities,
       selectedPhysiologicStates,
       gestationalWeeks,
+      maternalAgeYears,
+      bmi,
       selectedAction,
       normalizedOntology
     },
@@ -107,6 +117,20 @@ export default function Step2Page() {
   );
   const hasRequiredSimulatedInference =
     selectedDiagnoses.length > 0 && Boolean(selectedAction);
+  const selectedActionLabel =
+    clinicalActions.find((action) => action.id === selectedAction)?.label ?? "None";
+  const selectedDiagnosisAttributeLabels = selectedDiagnoses
+    .flatMap((diagnosisId) => {
+      const diagnosis = diagnoses.find((item) => item.id === diagnosisId);
+      const attributes = selectedDiagnosisAttributes[diagnosisId] ?? [];
+      return attributes.map((attributeId) => {
+        const attributeLabel =
+          diagnosis?.availableAttributes?.find((item) => item.id === attributeId)
+            ?.label ?? attributeId;
+        return diagnosis ? `${diagnosis.label}, ${attributeLabel}` : attributeLabel;
+      });
+    })
+    .filter((value) => Boolean(value));
 
   function sourceGroupLabel(group: string) {
     switch (group) {
@@ -118,6 +142,8 @@ export default function Step2Page() {
         return "Physiologic";
       case "gestational_age":
         return "Gestational Age";
+      case "quantitative":
+        return "Quantitative";
       case "action":
         return "Action";
       default:
@@ -151,9 +177,12 @@ export default function Step2Page() {
         },
         body: JSON.stringify({
           selectedDiagnoses,
+          diagnosisAttributesByDiagnosis: selectedDiagnosisAttributes,
           selectedComorbidities,
           selectedPhysiologicStates,
           gestationalWeeks,
+          maternalAgeYears,
+          bmi,
           selectedAction
         })
       });
@@ -211,9 +240,22 @@ export default function Step2Page() {
                 <span className="text-right font-medium">
                   {selectedDiagnoses.length}
                 </span>
+                <span className="text-slate-600">Diagnosis Attributes</span>
+                <span className="text-right font-medium text-slate-700">
+                  {selectedDiagnosisAttributeLabels.length > 0
+                    ? selectedDiagnosisAttributeLabels.join(" | ")
+                    : "None"}
+                </span>
                 <span>Comorbidities</span>
                 <span className="text-right font-medium">
                   {selectedComorbidities.length}
+                </span>
+                <span>Diagnosis Attributes</span>
+                <span className="text-right font-medium">
+                  {Object.values(selectedDiagnosisAttributes).reduce(
+                    (count, attributes) => count + attributes.length,
+                    0
+                  )}
                 </span>
                 <span>Physiologic States</span>
                 <span className="text-right font-medium">
@@ -221,9 +263,13 @@ export default function Step2Page() {
                 </span>
                 <span>Gestational Age</span>
                 <span className="text-right font-medium">{gestationalWeeks}w</span>
+                <span>Maternal Age</span>
+                <span className="text-right font-medium">{maternalAgeYears}y</span>
+                <span>BMI</span>
+                <span className="text-right font-medium">{bmi}</span>
                 <span>Action</span>
                 <span className="text-right font-medium">
-                  {selectedAction ?? "None"}
+                  {selectedActionLabel}
                 </span>
               </div>
             </div>
@@ -257,7 +303,7 @@ export default function Step2Page() {
 
             {normalizedOntology ? (
               <div className="space-y-4">
-                <div className="grid gap-3 md:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-5">
                   <div className="rounded-lg border border-slate-200 bg-white p-3">
                     <div className="text-xs text-slate-500">All Facts</div>
                     <div className="mt-1 text-2xl font-semibold text-slate-900">
@@ -274,6 +320,14 @@ export default function Step2Page() {
                     <div className="text-xs text-slate-500">Context Facts</div>
                     <div className="mt-1 text-2xl font-semibold text-slate-900">
                       {normalizedOntology.contextFacts.length}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-white p-3">
+                    <div className="text-xs text-slate-500">
+                      Diagnosis Attribute Facts
+                    </div>
+                    <div className="mt-1 text-2xl font-semibold text-slate-900">
+                      {normalizedOntology.diagnosisAttributeFacts.length}
                     </div>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-white p-3">
@@ -294,7 +348,7 @@ export default function Step2Page() {
                         key={mappingKey(mapping, index)}
                         className="relative rounded-md border border-slate-200 bg-slate-50 p-2"
                       >
-                        <div className="grid gap-2 md:grid-cols-[1fr_auto_1.4fr_auto]">
+                        <div className="grid gap-2 md:grid-cols-[1fr_2fr_auto]">
                           <div>
                             <div className="text-[11px] uppercase tracking-wide text-slate-500">
                               {sourceGroupLabel(mapping.sourceGroup)}
@@ -303,10 +357,8 @@ export default function Step2Page() {
                               {mapping.sourceValue}
                             </div>
                           </div>
-                          <div className="self-center text-center text-slate-400">
-                            -&gt;
-                          </div>
                           <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-slate-400">-&gt;</span>
                             {mapping.normalizedTokens.map((token) => (
                               <Badge key={`${mapping.sourceValue}-${token}`} className="font-mono">
                                 {token}

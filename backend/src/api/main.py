@@ -49,9 +49,12 @@ def normalize_ontology(payload: OntologyNormalizeRequest) -> OntologyNormalizeRe
         normalized = normalize_ontology_input(
             OntologyInput(
                 selected_diagnoses=payload.selectedDiagnoses,
+                diagnosis_attributes_by_diagnosis=payload.diagnosisAttributesByDiagnosis,
                 selected_comorbidities=payload.selectedComorbidities,
                 selected_physiologic_states=payload.selectedPhysiologicStates,
                 gestational_weeks=payload.gestationalWeeks,
+                maternal_age_years=payload.maternalAgeYears,
+                bmi=payload.bmi,
                 selected_action=payload.selectedAction,
             )
         )
@@ -61,6 +64,7 @@ def normalize_ontology(payload: OntologyNormalizeRequest) -> OntologyNormalizeRe
     return OntologyNormalizeResponse(
         facts=normalized.facts,
         diagnosisFacts=normalized.diagnosis_facts,
+        diagnosisAttributeFacts=normalized.diagnosis_attribute_facts,
         contextFacts=normalized.context_facts,
         actionToken=normalized.action_token,
         mappings=[

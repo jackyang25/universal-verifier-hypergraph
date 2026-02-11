@@ -1,7 +1,8 @@
 import { Pill } from "@/components/selection/Pill";
+import type { ClinicalOption } from "@/lib/clinical-options";
 
 type ProposedActionSectionProps = {
-  actions: string[];
+  actions: ClinicalOption[];
   selectedAction: string | null;
   onSelectAction: (value: string | null) => void;
 };
@@ -19,11 +20,11 @@ export function ProposedActionSection({
       <div className="flex flex-wrap gap-2.5">
         {actions.map((action) => (
           <Pill
-            key={action}
-            label={action}
-            isActive={selectedAction === action}
+            key={action.id}
+            label={action.label}
+            isActive={selectedAction === action.id}
             onToggle={() =>
-              onSelectAction(selectedAction === action ? null : action)
+              onSelectAction(selectedAction === action.id ? null : action.id)
             }
           />
         ))}
