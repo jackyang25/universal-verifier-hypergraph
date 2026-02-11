@@ -64,7 +64,8 @@ export default function Step2Page() {
       selectedAction,
       normalizedOntology
     },
-    setNormalizedOntology
+    setNormalizedOntology,
+    setHypergraphRetrieval
   } = useSimulationState();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +126,7 @@ export default function Step2Page() {
   async function handleNormalize() {
     setIsLoading(true);
     setErrorMessage(null);
+    setHypergraphRetrieval(null);
 
     try {
       const response = await fetch(`${apiBaseUrl}/api/ontology/normalize`, {
@@ -165,6 +167,7 @@ export default function Step2Page() {
         error instanceof Error ? error.message : "Failed to normalize inputs.";
       setErrorMessage(message);
       setNormalizedOntology(null);
+      setHypergraphRetrieval(null);
     } finally {
       setIsLoading(false);
     }

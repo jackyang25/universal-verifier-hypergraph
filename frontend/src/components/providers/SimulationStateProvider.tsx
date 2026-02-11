@@ -31,6 +31,31 @@ type OntologyNormalizeResponse = {
   mappings: OntologyMapping[];
 };
 
+type HypergraphCandidateEdge = {
+  edgeId: string;
+  premises: string[];
+  expectedOutcome: string;
+  note: string;
+  isMatched: boolean;
+  matchingPremises: string[];
+  missingPremises: string[];
+};
+
+type HypergraphVerificationSummary = {
+  proposedActionToken: string;
+  isSupported: boolean;
+  supportLevel: "obligated" | "allowed" | "unsupported";
+  supportingEdgeIds: string[];
+};
+
+type HypergraphRetrieveResponse = {
+  candidateEdgeCount: number;
+  matchedEdgeCount: number;
+  derivedOutcomes: string[];
+  candidateEdges: HypergraphCandidateEdge[];
+  verification: HypergraphVerificationSummary | null;
+};
+
 function normalizeOntologyPayload(
   payload: OntologyNormalizeResponse | null | undefined
 ): OntologyNormalizeResponse | null {
@@ -48,6 +73,38 @@ function normalizeOntologyPayload(
           ruleExplanations: mapping.ruleExplanations ?? []
         }))
       : []
+  };
+}
+
+function normalizeHypergraphRetrievalPayload(
+  payload: HypergraphRetrieveResponse | null | undefined
+): HypergraphRetrieveResponse | null {
+  if (!payload) return null;
+  return {
+    ...payload,
+    derivedOutcomes: Array.isArray(payload.derivedOutcomes)
+      ? payload.derivedOutcomes
+      : [],
+    candidateEdges: Array.isArray(payload.candidateEdges)
+      ? payload.candidateEdges.map((edge) => ({
+          ...edge,
+          premises: Array.isArray(edge.premises) ? edge.premises : [],
+          matchingPremises: Array.isArray(edge.matchingPremises)
+            ? edge.matchingPremises
+            : [],
+          missingPremises: Array.isArray(edge.missingPremises)
+            ? edge.missingPremises
+            : []
+        }))
+      : [],
+    verification: payload.verification
+      ? {
+          ...payload.verification,
+          supportingEdgeIds: Array.isArray(payload.verification.supportingEdgeIds)
+            ? payload.verification.supportingEdgeIds
+            : []
+        }
+      : null
   };
 }
 
@@ -88,6 +145,7 @@ type SimulationState = {
   bmi: number;
   selectedAction: string | null;
   normalizedOntology: OntologyNormalizeResponse | null;
+  hypergraphRetrieval: HypergraphRetrieveResponse | null;
 };
 
 type SimulationStateContextValue = {
@@ -101,6 +159,7 @@ type SimulationStateContextValue = {
   setBmi: (value: number) => void;
   setSelectedAction: (value: string | null) => void;
   setNormalizedOntology: (value: OntologyNormalizeResponse | null) => void;
+  setHypergraphRetrieval: (value: HypergraphRetrieveResponse | null) => void;
   clearState: () => void;
 };
 
@@ -115,7 +174,8 @@ const DEFAULT_STATE: SimulationState = {
   maternalAgeYears: 29,
   bmi: 30,
   selectedAction: null,
-  normalizedOntology: null
+  normalizedOntology: null,
+  hypergraphRetrieval: null
 };
 
 const SimulationStateContext = createContext<
@@ -195,6 +255,9 @@ export function SimulationStateProvider({
         selectedAction: normalizeSelectedAction(parsed.selectedAction),
         normalizedOntology: normalizeOntologyPayload(
           parsed.normalizedOntology as OntologyNormalizeResponse | null
+        ),
+        hypergraphRetrieval: normalizeHypergraphRetrievalPayload(
+          parsed.hypergraphRetrieval as HypergraphRetrieveResponse | null
         )
       });
     } catch {
@@ -272,6 +335,11 @@ export function SimulationStateProvider({
         setState((current) => ({
           ...current,
           normalizedOntology: normalizeOntologyPayload(value)
+        })),
+      setHypergraphRetrieval: (value) =>
+        setState((current) => ({
+          ...current,
+          hypergraphRetrieval: normalizeHypergraphRetrievalPayload(value)
         })),
       clearState: () => setState(DEFAULT_STATE)
     }),

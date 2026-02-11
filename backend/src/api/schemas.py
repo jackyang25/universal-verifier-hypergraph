@@ -63,3 +63,45 @@ class OntologyNormalizeResponse(BaseModel):
     contextFacts: list[str]
     actionToken: str | None
     mappings: list[OntologyMappingResponse]
+
+
+class HypergraphRetrieveRequest(BaseModel):
+    facts: list[str] = Field(default_factory=list)
+    proposedActionToken: str | None = None
+
+    @field_validator("facts", mode="before")
+    @classmethod
+    def validate_facts(cls, value: object) -> object:
+        if value is None:
+            return []
+        if not isinstance(value, list):
+            raise TypeError("Expected facts to be an array of strings.")
+        for item in value:
+            if not isinstance(item, str):
+                raise TypeError("All facts must be strings.")
+        return value
+
+
+class HypergraphCandidateEdgeResponse(BaseModel):
+    edgeId: str
+    premises: list[str]
+    expectedOutcome: str
+    note: str
+    isMatched: bool
+    matchingPremises: list[str]
+    missingPremises: list[str]
+
+
+class HypergraphVerificationSummaryResponse(BaseModel):
+    proposedActionToken: str
+    isSupported: bool
+    supportLevel: str
+    supportingEdgeIds: list[str]
+
+
+class HypergraphRetrieveResponse(BaseModel):
+    candidateEdgeCount: int
+    matchedEdgeCount: int
+    derivedOutcomes: list[str]
+    candidateEdges: list[HypergraphCandidateEdgeResponse]
+    verification: HypergraphVerificationSummaryResponse | None

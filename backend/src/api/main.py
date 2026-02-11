@@ -6,10 +6,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import (
+    HypergraphCandidateEdgeResponse,
+    HypergraphRetrieveRequest,
+    HypergraphRetrieveResponse,
+    HypergraphVerificationSummaryResponse,
     OntologyMappingResponse,
     OntologyNormalizeRequest,
     OntologyNormalizeResponse,
 )
+from src.hypergraph.hyperedges import HYPEREDGES
 from src.ontology.normalize import OntologyInput, normalize_ontology_input
 
 
@@ -17,7 +22,7 @@ app = FastAPI(
     title="Verified Protocol Hypergraph API",
     description=(
         "Build-time verified clinical decision protocol service. "
-        "This API currently provides ontology normalization for Step 2."
+        "This API currently provides ontology normalization and hypergraph retrieval."
     ),
     version="0.1.0",
     docs_url="/api/docs",
@@ -76,4 +81,66 @@ def normalize_ontology(payload: OntologyNormalizeRequest) -> OntologyNormalizeRe
             )
             for mapping in normalized.mappings
         ],
+    )
+
+
+@app.post("/api/hypergraph/retrieve", response_model=HypergraphRetrieveResponse)
+def retrieve_hypergraph(payload: HypergraphRetrieveRequest) -> HypergraphRetrieveResponse:
+    facts = set(payload.facts)
+    candidate_edges: list[HypergraphCandidateEdgeResponse] = []
+
+    for edge in HYPEREDGES:
+        matching_premises = sorted(edge.premises.intersection(facts))
+        missing_premises = sorted(edge.premises.difference(facts))
+        candidate_edges.append(
+            HypergraphCandidateEdgeResponse(
+                edgeId=edge.edge_id,
+                premises=sorted(edge.premises),
+                expectedOutcome=edge.expected_outcome,
+                note=edge.note,
+                isMatched=len(missing_premises) == 0,
+                matchingPremises=matching_premises,
+                missingPremises=missing_premises,
+            )
+        )
+
+    matched_edges = [edge for edge in candidate_edges if edge.isMatched]
+    derived_outcomes = sorted({edge.expectedOutcome for edge in matched_edges})
+
+    verification: HypergraphVerificationSummaryResponse | None = None
+    if payload.proposedActionToken:
+        obligated_target = f"Obligated({payload.proposedActionToken})"
+        allowed_target = f"Allowed({payload.proposedActionToken})"
+
+        obligated_support = [edge.edgeId for edge in matched_edges if edge.expectedOutcome == obligated_target]
+        allowed_support = [edge.edgeId for edge in matched_edges if edge.expectedOutcome == allowed_target]
+
+        if obligated_support:
+            verification = HypergraphVerificationSummaryResponse(
+                proposedActionToken=payload.proposedActionToken,
+                isSupported=True,
+                supportLevel="obligated",
+                supportingEdgeIds=sorted(obligated_support),
+            )
+        elif allowed_support:
+            verification = HypergraphVerificationSummaryResponse(
+                proposedActionToken=payload.proposedActionToken,
+                isSupported=True,
+                supportLevel="allowed",
+                supportingEdgeIds=sorted(allowed_support),
+            )
+        else:
+            verification = HypergraphVerificationSummaryResponse(
+                proposedActionToken=payload.proposedActionToken,
+                isSupported=False,
+                supportLevel="unsupported",
+                supportingEdgeIds=[],
+            )
+
+    return HypergraphRetrieveResponse(
+        candidateEdgeCount=len(candidate_edges),
+        matchedEdgeCount=len(matched_edges),
+        derivedOutcomes=derived_outcomes,
+        candidateEdges=candidate_edges,
+        verification=verification,
     )
