@@ -6,6 +6,7 @@ import { HeroHeader } from "@/components/selection/HeroHeader";
 import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { VerifyIcon } from "@/components/ui/icons";
 
 type VerificationStatus = "valid" | "rejected" | "incomplete";
 
@@ -121,7 +122,7 @@ export default function Step4Page() {
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:px-6 md:py-10">
       <HeroHeader
-        eyebrow="Clinical Selection Interface - Proof of Concept"
+        eyebrow="Hypergraph API - Proof of Concept v1.1"
         title="Maternal Health Decision Support Verification"
         subtitle=""
       />
@@ -129,16 +130,30 @@ export default function Step4Page() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Step 4: Verification</CardTitle>
+          <CardTitle className="inline-flex items-center gap-2">
+            <VerifyIcon className="size-4 text-indigo-600" />
+            <span>Step 4: Verification</span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-slate-600">
             Verify whether the proposed action token is supported by retrieved
             hyperedges and surface a deterministic verification certificate.
           </p>
-          <section className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs text-violet-900">
-            <p className="font-semibold">Formal guarantee scope (build-time verified)</p>
-            <p className="mt-1">
+          <details
+            className="group rounded-lg border border-indigo-200 bg-indigo-50/40 p-3 text-xs text-slate-700"
+            open
+          >
+            <summary className="cursor-pointer list-none text-sm font-semibold text-indigo-900">
+              Formal guarantee scope (build-time verified)
+              <span className="ml-2 text-xs font-medium text-indigo-700 group-open:hidden">
+                show details
+              </span>
+              <span className="ml-2 hidden text-xs font-medium text-indigo-700 group-open:inline">
+                hide details
+              </span>
+            </summary>
+            <p className="mt-2">
               Assuming the current ruleset version passes build-time proof checks,
               runtime verification enforces these invariants over normalized facts
               and retrieved hyperedges:
@@ -163,9 +178,9 @@ export default function Step4Page() {
               <li>Does not correct missing/incorrect inputs or ontology mapping errors upstream.</li>
               <li>Does not perform probabilistic diagnosis, calibration, or risk prediction.</li>
             </ul>
-          </section>
+          </details>
 
-          <section className="flex min-h-[26rem] flex-col rounded-lg border border-violet-200 bg-violet-50/40 p-3">
+          <section className="flex min-h-[26rem] flex-col rounded-lg border border-slate-200 bg-slate-50/70 p-3">
             {verificationResult.status === "incomplete" ? (
               <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center">
                 <div>
@@ -180,7 +195,7 @@ export default function Step4Page() {
             ) : (
               <div className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-4">
-                  <div className="rounded-lg border border-violet-200 bg-white p-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-100/80 p-3">
                     <div className="text-xs text-slate-500">Verification Status</div>
                     <div className="mt-1">
                       <Badge
@@ -194,19 +209,19 @@ export default function Step4Page() {
                       </Badge>
                     </div>
                   </div>
-                  <div className="rounded-lg border border-violet-200 bg-white p-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-100/80 p-3">
                     <div className="text-xs text-slate-500">Support Level</div>
                     <div className="mt-1 text-sm font-medium text-slate-900">
                       {verificationResult.supportLevel}
                     </div>
                   </div>
-                  <div className="rounded-lg border border-violet-200 bg-white p-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-100/80 p-3">
                     <div className="text-xs text-slate-500">Matched Hyperedges</div>
                     <div className="mt-1 text-2xl font-semibold text-slate-900">
                       {verificationResult.matchedEdgeCount}
                     </div>
                   </div>
-                  <div className="rounded-lg border border-violet-200 bg-white p-3">
+                  <div className="rounded-lg border border-slate-200 bg-slate-100/80 p-3">
                     <div className="text-xs text-slate-500">Derived Outcomes</div>
                     <div className="mt-1 text-2xl font-semibold text-slate-900">
                       {verificationResult.derivedOutcomeCount}
@@ -214,7 +229,7 @@ export default function Step4Page() {
                   </div>
                 </div>
 
-                <section className="space-y-2 rounded-lg border border-violet-200 bg-white p-3">
+                <section className="space-y-2 rounded-lg border border-slate-200 bg-slate-100/70 p-3">
                   <h3 className="text-sm font-medium text-slate-800">
                     Verification Certificate
                   </h3>
@@ -227,7 +242,9 @@ export default function Step4Page() {
                     </p>
                     <p>
                       <span className="font-medium">Proposed Action:</span>{" "}
-                      <span className="font-mono">
+                      <span
+                        className="inline-block max-w-full truncate align-bottom font-mono"
+                      >
                         {verificationResult.proposedActionToken ?? "n/a"}
                       </span>
                     </p>
@@ -238,7 +255,7 @@ export default function Step4Page() {
                   </div>
                 </section>
 
-                <section className="space-y-2 rounded-lg border border-violet-200 bg-white p-3">
+                <section className="space-y-2 rounded-lg border border-slate-200 bg-slate-100/70 p-3">
                   <h3 className="text-sm font-medium text-slate-800">
                     Supporting Hyperedges
                   </h3>
@@ -247,7 +264,7 @@ export default function Step4Page() {
                       {verificationResult.supportingEdgeIds.map((edgeId) => (
                         <Badge
                           key={edgeId}
-                          className="border border-violet-700 bg-violet-700 text-white"
+                          className="border border-emerald-700 bg-emerald-700 text-white"
                         >
                           <span className="font-mono">{edgeId}</span>
                         </Badge>
@@ -260,7 +277,7 @@ export default function Step4Page() {
                   )}
                 </section>
 
-                <section className="space-y-2 rounded-lg border border-violet-200 bg-white p-3">
+                <section className="space-y-2 rounded-lg border border-slate-200 bg-slate-100/70 p-3">
                   <h3 className="text-sm font-medium text-slate-800">
                     Blocking Outcomes
                   </h3>

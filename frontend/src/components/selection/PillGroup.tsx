@@ -39,7 +39,7 @@ export function PillGroup({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="inline-flex items-center gap-2">
-          <SparkIcon className="size-4 text-blue-600" />
+          <SparkIcon className="size-4 text-indigo-600" />
           <span>{title}</span>
         </CardTitle>
         {description ? (
@@ -97,7 +97,6 @@ export function PillGroup({
                       className="rounded px-1 text-sm leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                       onClick={() => setActiveOptionForAttributes(null)}
                       aria-label="Close attributes"
-                      title="Close"
                     >
                       ×
                     </button>

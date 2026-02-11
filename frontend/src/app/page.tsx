@@ -43,7 +43,7 @@ export default function HomePage() {
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:gap-6 md:px-6 md:py-10">
       <HeroHeader
-        eyebrow="Clinical Selection Interface - Proof of Concept"
+        eyebrow="Hypergraph API - Proof of Concept v1.1"
         title="Maternal Health Decision Support Verification"
         subtitle=""
       />

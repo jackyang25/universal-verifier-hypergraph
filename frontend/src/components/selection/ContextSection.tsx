@@ -90,7 +90,7 @@ export function ContextSection({
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="inline-flex items-center gap-2">
-          <ContextIcon className="size-4 text-blue-600" />
+          <ContextIcon className="size-4 text-indigo-600" />
           <span>Additional Patient Context</span>
         </CardTitle>
         <p className="mt-1 text-sm text-slate-500">

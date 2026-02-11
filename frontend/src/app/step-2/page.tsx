@@ -6,6 +6,7 @@ import { HeroHeader } from "@/components/selection/HeroHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import { Badge } from "@/components/ui/badge";
+import { ArrowRightIcon } from "@/components/ui/icons";
 import { clinicalActions, diagnoses } from "@/lib/clinical-options";
 
 type OntologyMapping = {
@@ -176,7 +177,7 @@ export default function Step2Page() {
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:px-6 md:py-10">
       <HeroHeader
-        eyebrow="Clinical Selection Interface - Proof of Concept"
+        eyebrow="Hypergraph API - Proof of Concept v1.1"
         title="Maternal Health Decision Support Verification"
         subtitle=""
       />
@@ -227,17 +228,17 @@ export default function Step2Page() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-              <div className="text-sm font-medium text-blue-900">
+            <div className="rounded-lg border border-indigo-200 bg-indigo-50/70 p-3">
+              <div className="text-sm font-medium text-indigo-900">
                 Ontology Encoder
               </div>
-              <p className="mt-1 text-xs text-blue-800">
+              <p className="mt-1 text-xs text-indigo-800">
                 Convert the Step 1 snapshot into canonical `Dx.*` and `Ctx.*`
                 tokens using backend ontology rules.
               </p>
               <div className="mt-3 flex items-center gap-3">
                 <button
-                  className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  className="inline-flex min-w-28 items-center justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-600 disabled:text-white disabled:opacity-90"
                   onClick={handleNormalize}
                   disabled={isLoading || !hasRequiredSimulatedInference}
                   type="button"
@@ -285,7 +286,9 @@ export default function Step2Page() {
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-white p-3">
                     <div className="text-xs text-slate-500">Action Token</div>
-                    <div className="mt-1 text-sm font-medium text-slate-900">
+                    <div
+                      className="mt-1 max-w-full truncate font-mono text-xs font-medium text-slate-900"
+                    >
                       {normalizedOntology.actionToken ?? "None"}
                     </div>
                   </div>
@@ -293,7 +296,7 @@ export default function Step2Page() {
 
                 <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-3">
                   <h3 className="text-sm font-medium text-slate-800">
-                    Mapping Visualization (Raw Input -&gt; Normalized Output)
+                    Mapping Visualization (Raw Input to Normalized Output)
                   </h3>
                   <div className="space-y-2">
                     {normalizedOntology.mappings.map((mapping, index) => (
@@ -301,22 +304,27 @@ export default function Step2Page() {
                         key={mappingKey(mapping, index)}
                         className="relative rounded-md border border-slate-200 bg-slate-50 p-2"
                       >
-                        <div className="grid gap-2 md:grid-cols-[1fr_2fr_auto]">
-                          <div>
+                        <div className="grid items-center gap-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.4fr)_auto]">
+                          <div className="min-w-0">
                             <div className="text-[11px] uppercase tracking-wide text-slate-500">
                               {sourceGroupLabel(mapping.sourceGroup)}
                             </div>
-                            <div className="text-sm text-slate-800">
+                            <div className="truncate text-sm text-slate-800">
                               {mapping.sourceValue}
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-slate-400">-&gt;</span>
+                          <div className="inline-flex items-center gap-1 self-center text-[11px] uppercase tracking-wide text-slate-500">
+                            <span>to</span>
+                            <ArrowRightIcon className="size-3" />
+                          </div>
+                          <div className="min-w-0 self-center flex items-center">
+                            <div className="flex flex-wrap items-center gap-2">
                             {mapping.normalizedTokens.map((token) => (
                               <Badge key={`${mapping.sourceValue}-${token}`} className="font-mono">
                                 {token}
                               </Badge>
                             ))}
+                            </div>
                           </div>
                           <button
                             type="button"
@@ -325,7 +333,6 @@ export default function Step2Page() {
                               toggleMappingDetails(mappingKey(mapping, index))
                             }
                             aria-label="Show applied ontology rules"
-                            title="Show applied ontology rules"
                           >
                             ?
                           </button>
@@ -341,7 +348,6 @@ export default function Step2Page() {
                                 className="rounded px-1 text-sm leading-none text-slate-500 hover:bg-slate-100 hover:text-slate-800"
                                 onClick={() => setActiveRuleKey(null)}
                                 aria-label="Close rule details"
-                                title="Close"
                               >
                                 ×
                               </button>

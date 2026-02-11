@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Public_Sans } from "next/font/google";
+import { RouteTransition } from "@/components/providers/RouteTransition";
 import { SimulationStateProvider } from "@/components/providers/SimulationStateProvider";
 import "./globals.css";
 
@@ -21,7 +22,9 @@ export default function RootLayout({
       <body
         className={`${bodyFont.className} min-h-screen bg-gradient-to-b from-stone-50 via-amber-50/40 to-zinc-100 text-slate-900 antialiased`}
       >
-        <SimulationStateProvider>{children}</SimulationStateProvider>
+        <SimulationStateProvider>
+          <RouteTransition>{children}</RouteTransition>
+        </SimulationStateProvider>
       </body>
     </html>
   );

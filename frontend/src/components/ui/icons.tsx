@@ -6,7 +6,9 @@ export function InputIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M7 9H17M7 13H12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="7.2" cy="9.2" r="0.9" fill="currentColor" />
+      <circle cx="7.2" cy="13.2" r="0.9" fill="currentColor" />
+      <path d="M9.2 9.2H16.8M9.2 13.2H14.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -14,9 +16,15 @@ export function InputIcon({ className }: IconProps) {
 export function NormalizeIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M4 7H14M4 12H10M4 17H14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M16 8L19 11L22 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M19 11V16.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M4 8.5H9.5M4 15.5H9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M11 12H19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path
+        d="M16.2 9.2L19 12L16.2 14.8"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -60,6 +68,34 @@ export function ActionIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M13 2L5 13H11L10 22L19 10H13L13 2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ArrowRightIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M5 12H19M19 12L13.8 6.8M19 12L13.8 17.2"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function CaretRightIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M9 6L16 12L9 18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
