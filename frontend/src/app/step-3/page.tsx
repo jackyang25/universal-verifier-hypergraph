@@ -21,11 +21,20 @@ export default function Step3Page() {
             Retrieval stage placeholder for pulling relevant hyperedges and
             policy constraints using normalized fact tokens.
           </p>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-            Example retrieval query:{" "}
-            <span className="font-mono">
-              facts=[Dx.SeverePreeclampsia, Ctx.GA_&gt;=34w]
-            </span>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex min-h-[11rem] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center">
+              <div>
+                <p className="text-sm font-medium text-slate-700">
+                  Retrieval results will appear here.
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Example query:
+                  <span className="ml-1 font-mono">
+                    facts=[Dx.SeverePreeclampsia, Ctx.GA_&gt;=34w]
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -9,12 +9,43 @@ import {
 } from "react";
 import { toggleSelection } from "@/lib/selection";
 
+type OntologyMapping = {
+  sourceGroup: string;
+  sourceValue: string;
+  normalizedTokens: string[];
+  ruleExplanations: string[];
+};
+
+type OntologyNormalizeResponse = {
+  facts: string[];
+  diagnosisFacts: string[];
+  contextFacts: string[];
+  actionToken: string | null;
+  mappings: OntologyMapping[];
+};
+
+function normalizeOntologyPayload(
+  payload: OntologyNormalizeResponse | null | undefined
+): OntologyNormalizeResponse | null {
+  if (!payload) return null;
+  return {
+    ...payload,
+    mappings: Array.isArray(payload.mappings)
+      ? payload.mappings.map((mapping) => ({
+          ...mapping,
+          ruleExplanations: mapping.ruleExplanations ?? []
+        }))
+      : []
+  };
+}
+
 type SimulationState = {
   selectedDiagnoses: string[];
   selectedComorbidities: string[];
   selectedPhysiologicStates: string[];
   gestationalWeeks: number;
   selectedAction: string | null;
+  normalizedOntology: OntologyNormalizeResponse | null;
 };
 
 type SimulationStateContextValue = {
@@ -24,6 +55,7 @@ type SimulationStateContextValue = {
   togglePhysiologicState: (value: string) => void;
   setGestationalWeeks: (value: number) => void;
   setSelectedAction: (value: string | null) => void;
+  setNormalizedOntology: (value: OntologyNormalizeResponse | null) => void;
   clearState: () => void;
 };
 
@@ -34,7 +66,8 @@ const DEFAULT_STATE: SimulationState = {
   selectedComorbidities: [],
   selectedPhysiologicStates: [],
   gestationalWeeks: 31,
-  selectedAction: null
+  selectedAction: null,
+  normalizedOntology: null
 };
 
 const SimulationStateContext = createContext<
@@ -61,7 +94,10 @@ export function SimulationStateProvider({
           typeof parsed.gestationalWeeks === "number"
             ? parsed.gestationalWeeks
             : DEFAULT_STATE.gestationalWeeks,
-        selectedAction: parsed.selectedAction ?? null
+        selectedAction: parsed.selectedAction ?? null,
+        normalizedOntology: normalizeOntologyPayload(
+          parsed.normalizedOntology as OntologyNormalizeResponse | null
+        )
       });
     } catch {
       setState(DEFAULT_STATE);
@@ -103,6 +139,11 @@ export function SimulationStateProvider({
         })),
       setSelectedAction: (value) =>
         setState((current) => ({ ...current, selectedAction: value })),
+      setNormalizedOntology: (value) =>
+        setState((current) => ({
+          ...current,
+          normalizedOntology: normalizeOntologyPayload(value)
+        })),
       clearState: () => setState(DEFAULT_STATE)
     }),
     [state]

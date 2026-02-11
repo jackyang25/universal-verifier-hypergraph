@@ -1,7 +1,7 @@
 .PHONY: help \
 	docker-build docker-up docker-down docker-logs docker-clean \
 	frontend-install frontend-dev frontend-build frontend-lint \
-	backend-dev
+	backend-dev start
 
 COMPOSE_FILE := infra/docker/docker-compose.yml
 DOCKER_COMPOSE := docker compose -f $(COMPOSE_FILE)
@@ -34,6 +34,14 @@ frontend-build:  ## Build frontend from repo root
 
 frontend-lint:  ## Lint frontend from repo root
 	cd frontend && npm run lint
+
+backend-dev:  ## Run FastAPI dev server from repo root
+	cd backend && uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+start:  ## Run backend container + frontend dev server together
+	@trap '$(MAKE) docker-down' INT TERM EXIT; \
+	$(MAKE) docker-up && \
+	$(MAKE) frontend-dev
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'

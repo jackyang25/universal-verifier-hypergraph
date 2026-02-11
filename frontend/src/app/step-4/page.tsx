@@ -21,9 +21,20 @@ export default function Step4Page() {
             Verification stage placeholder for evaluating retrieved edges against
             constraints and producing pass/fail outcomes.
           </p>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-            Example output:{" "}
-            <span className="font-mono">status=valid, violated_rules=[]</span>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex min-h-[11rem] items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center">
+              <div>
+                <p className="text-sm font-medium text-slate-700">
+                  Verification output will appear here.
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Example output:
+                  <span className="ml-1 font-mono">
+                    status=valid, violated_rules=[]
+                  </span>
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

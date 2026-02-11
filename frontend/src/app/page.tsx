@@ -29,6 +29,8 @@ export default function HomePage() {
     setGestationalWeeks,
     setSelectedAction
   } = useSimulationState();
+  const hasRequiredSimulatedInference =
+    selectedDiagnoses.length > 0 && selectedAction !== null;
 
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:gap-6 md:px-6 md:py-10">
@@ -43,17 +45,29 @@ export default function HomePage() {
         <div className="h-full lg:col-span-5">
           <PillGroup
             title="Simulated AI Inference"
-            description="Includes conformal prediction and proposed action."
+            description="Includes conformal prediction and proposed action. Required: select at least one diagnosis and one proposed action."
             optionsLabel="Conformal Prediction"
             options={diagnoses}
             selected={selectedDiagnoses}
             onToggle={toggleDiagnosis}
           >
-            <ProposedActionSection
-              actions={clinicalActions}
-              selectedAction={selectedAction}
-              onSelectAction={setSelectedAction}
-            />
+            <>
+              <ProposedActionSection
+                actions={clinicalActions}
+                selectedAction={selectedAction}
+                onSelectAction={setSelectedAction}
+              />
+              {!hasRequiredSimulatedInference ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Required to proceed: choose at least one diagnosis and one
+                  proposed action.
+                </div>
+              ) : (
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                  Required simulated AI inference complete.
+                </div>
+              )}
+            </>
           </PillGroup>
         </div>
 
