@@ -1,5 +1,6 @@
 import { Pill } from "@/components/selection/Pill";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SparkIcon } from "@/components/ui/icons";
 
 type PillGroupProps = {
   title: string;
@@ -25,7 +26,10 @@ export function PillGroup({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>{title}</CardTitle>
+        <CardTitle className="inline-flex items-center gap-2">
+          <SparkIcon className="size-4 text-blue-600" />
+          <span>{title}</span>
+        </CardTitle>
         {description ? (
           <p className="mt-1 text-sm text-slate-500">{description}</p>
         ) : null}

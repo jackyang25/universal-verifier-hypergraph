@@ -1,5 +1,6 @@
 import { Pill } from "@/components/selection/Pill";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ContextIcon } from "@/components/ui/icons";
 
 type ContextSectionProps = {
   comorbidities: string[];
@@ -27,7 +28,10 @@ export function ContextSection({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle>Additional Patient Context</CardTitle>
+        <CardTitle className="inline-flex items-center gap-2">
+          <ContextIcon className="size-4 text-blue-600" />
+          <span>Additional Patient Context</span>
+        </CardTitle>
         <p className="mt-1 text-sm text-slate-500">
           Inputs not gathered by conformal prediction or the decision support
           module.

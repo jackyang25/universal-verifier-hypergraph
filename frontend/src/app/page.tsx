@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useSimulationState } from "@/components/providers/SimulationStateProvider";
 import { ContextSection } from "@/components/selection/ContextSection";
 import { HeroHeader } from "@/components/selection/HeroHeader";
 import { PillGroup } from "@/components/selection/PillGroup";
 import { ProposedActionSection } from "@/components/selection/ProposedActionSection";
-import { SelectionSummary } from "@/components/selection/SelectionSummary";
+import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import {
   clinicalActions,
   comorbidities,
@@ -13,26 +13,22 @@ import {
   gestationalAgeMarks,
   physiologicStates
 } from "@/lib/clinical-options";
-import { toggleSelection } from "@/lib/selection";
 
 export default function HomePage() {
-  const [selectedDiagnoses, setSelectedDiagnoses] = useState<string[]>([]);
-  const [selectedComorbidities, setSelectedComorbidities] = useState<string[]>(
-    []
-  );
-  const [selectedPhysiologicStates, setSelectedPhysiologicStates] = useState<
-    string[]
-  >([]);
-  const [gestationalWeeks, setGestationalWeeks] = useState(31);
-  const [selectedAction, setSelectedAction] = useState<string | null>(null);
-
-  const totalSelected = useMemo(
-    () =>
-      selectedDiagnoses.length +
-      selectedComorbidities.length +
-      selectedPhysiologicStates.length,
-    [selectedDiagnoses, selectedComorbidities, selectedPhysiologicStates]
-  );
+  const {
+    state: {
+      selectedDiagnoses,
+      selectedComorbidities,
+      selectedPhysiologicStates,
+      gestationalWeeks,
+      selectedAction
+    },
+    toggleDiagnosis,
+    toggleComorbidity,
+    togglePhysiologicState,
+    setGestationalWeeks,
+    setSelectedAction
+  } = useSimulationState();
 
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:gap-6 md:px-6 md:py-10">
@@ -41,6 +37,7 @@ export default function HomePage() {
         title="Maternal Health Decision Support Verification"
         subtitle=""
       />
+      <StepFlowBar currentStep={1} />
 
       <div className="grid items-stretch gap-6 lg:grid-cols-12">
         <div className="h-full lg:col-span-5">
@@ -50,9 +47,7 @@ export default function HomePage() {
             optionsLabel="Conformal Prediction"
             options={diagnoses}
             selected={selectedDiagnoses}
-            onToggle={(value) =>
-              setSelectedDiagnoses((current) => toggleSelection(current, value))
-            }
+            onToggle={toggleDiagnosis}
           >
             <ProposedActionSection
               actions={clinicalActions}
@@ -66,16 +61,10 @@ export default function HomePage() {
           <ContextSection
             comorbidities={comorbidities}
             selectedComorbidities={selectedComorbidities}
-            onToggleComorbidity={(value) =>
-              setSelectedComorbidities((current) => toggleSelection(current, value))
-            }
+            onToggleComorbidity={toggleComorbidity}
             physiologicStates={physiologicStates}
             selectedPhysiologicStates={selectedPhysiologicStates}
-            onTogglePhysiologicState={(value) =>
-              setSelectedPhysiologicStates((current) =>
-                toggleSelection(current, value)
-              )
-            }
+            onTogglePhysiologicState={togglePhysiologicState}
             gestationalWeeks={gestationalWeeks}
             gestationalAgeMarks={gestationalAgeMarks}
             onChangeGestationalWeeks={setGestationalWeeks}
@@ -83,11 +72,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      <SelectionSummary
-        totalSelected={totalSelected}
-        gestationalWeeks={gestationalWeeks}
-        selectedAction={selectedAction}
-      />
     </main>
   );
 }
