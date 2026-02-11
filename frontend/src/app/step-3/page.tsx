@@ -103,14 +103,14 @@ export default function Step3Page() {
             premise sets, then visualize matched edges and expected outcomes.
           </p>
 
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-            <div className="text-sm font-medium text-blue-900">Hypergraph Query</div>
-            <p className="mt-1 text-xs text-blue-800">
+          <div className="rounded-lg border border-slate-300 bg-white p-3">
+            <div className="text-sm font-medium text-slate-900">Hypergraph Query</div>
+            <p className="mt-1 text-xs text-slate-600">
               Uses Step 2 canonical facts as the retrieval input set.
             </p>
             <div className="mt-3 flex items-center gap-3">
               <button
-                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                className="inline-flex items-center rounded-md bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:bg-slate-300"
                 onClick={handleRetrieve}
                 disabled={isLoading || !normalizedOntology}
                 type="button"
@@ -118,7 +118,7 @@ export default function Step3Page() {
                 {isLoading ? "Retrieving..." : "Retrieve Hyperedges"}
               </button>
               {!normalizedOntology ? (
-                <span className="text-xs text-blue-700">
+                <span className="text-xs text-slate-600">
                   Normalize Step 2 first.
                 </span>
               ) : null}
@@ -187,7 +187,7 @@ export default function Step3Page() {
                       {hypergraphRetrieval.derivedOutcomes.map((outcome) => (
                         <Badge
                           key={outcome}
-                          className="border border-blue-700 bg-blue-700 font-mono text-white"
+                          className="border border-slate-800 bg-slate-800 font-mono text-white"
                         >
                           {outcome}
                         </Badge>
@@ -210,7 +210,7 @@ export default function Step3Page() {
                         key={edge.edgeId}
                         className={`rounded-md border p-2 ${
                           edge.isMatched
-                            ? "border-blue-300 bg-blue-50"
+                            ? "border-slate-400 bg-slate-100"
                             : "border-slate-200 bg-slate-50"
                         }`}
                       >
@@ -221,7 +221,7 @@ export default function Step3Page() {
                           <Badge
                             className={
                               edge.isMatched
-                                ? "border border-blue-700 bg-blue-700 text-white"
+                                ? "border border-slate-800 bg-slate-800 text-white"
                                 : "border border-slate-300 bg-slate-200 text-slate-800"
                             }
                           >
@@ -239,7 +239,7 @@ export default function Step3Page() {
                               key={`${edge.edgeId}-${premise}`}
                               className={
                                 edge.matchingPremises.includes(premise)
-                                  ? "border border-blue-700 bg-blue-700 text-white"
+                                  ? "border border-slate-800 bg-slate-800 text-white"
                                   : "border border-slate-300 bg-slate-200 text-slate-800"
                               }
                             >
