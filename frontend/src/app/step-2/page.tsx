@@ -28,47 +28,6 @@ function formatRuleExplanation(rule: string): string {
   const trimmed = rule.trim();
   if (!trimmed) return "";
 
-  const canonicalDiagnosis = trimmed.match(
-    /^canonical mapping:\s*raw diagnosis\s*->\s*(.+)$/i
-  );
-  if (canonicalDiagnosis) {
-    return `The selected diagnosis maps to canonical token ${canonicalDiagnosis[1]}.`;
-  }
-
-  const directMapping = trimmed.match(
-    /^direct mapping:\s*raw\s+(.+?)\s*->\s*(.+)$/i
-  );
-  if (directMapping) {
-    const group = directMapping[1].toLowerCase();
-    const token = directMapping[2];
-    return `The selected ${group} maps to canonical token ${token}.`;
-  }
-
-  const relationIsA = trimmed.match(/^relation used:\s*(\S+)\s+is-a\s+(\S+)$/i);
-  if (relationIsA) {
-    const subtype = relationIsA[1];
-    const supertype = relationIsA[2];
-    return `${supertype} is a supertype of ${subtype}, so include ${supertype}.`;
-  }
-
-  const relationSubset = trimmed.match(/^hierarchy expansion:\s*(\S+)\s*⊂\s*(\S+)$/i);
-  if (relationSubset) {
-    const subtype = relationSubset[1];
-    const supertype = relationSubset[2];
-    return `${supertype} is a supertype of ${subtype}, so include ${supertype}.`;
-  }
-
-  const thresholdRule = trimmed.match(
-    /^threshold rule:\s*if ga >=\s*(\d+)w\s*then emit\s*(\S+)$/i
-  );
-  if (thresholdRule) {
-    return `Because gestational age is at least ${thresholdRule[1]} weeks, include ${thresholdRule[2]}.`;
-  }
-
-  if (/^range validation:/i.test(trimmed)) {
-    return "Gestational age is validated to be within 20 to 42 weeks.";
-  }
-
   const sentence = trimmed.replace(/^\w/, (char) => char.toUpperCase());
   return sentence.endsWith(".") ? sentence : `${sentence}.`;
 }
@@ -140,8 +99,6 @@ export default function Step2Page() {
         return "Comorbidity";
       case "physiologic":
         return "Physiologic";
-      case "gestational_age":
-        return "Gestational Age";
       case "quantitative":
         return "Quantitative";
       case "action":
@@ -153,7 +110,7 @@ export default function Step2Page() {
 
   function rulePanelTitle(group: string) {
     if (group === "diagnosis") return "Diagnosis Derivation";
-    if (group === "gestational_age") return "Gestational Age Derivation";
+    if (group === "quantitative") return "Quantitative Derivation";
     return "Normalization Derivation";
   }
 
@@ -249,13 +206,6 @@ export default function Step2Page() {
                 <span>Comorbidities</span>
                 <span className="text-right font-medium">
                   {selectedComorbidities.length}
-                </span>
-                <span>Diagnosis Attributes</span>
-                <span className="text-right font-medium">
-                  {Object.values(selectedDiagnosisAttributes).reduce(
-                    (count, attributes) => count + attributes.length,
-                    0
-                  )}
                 </span>
                 <span>Physiologic States</span>
                 <span className="text-right font-medium">
