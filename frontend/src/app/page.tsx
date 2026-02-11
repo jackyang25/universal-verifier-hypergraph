@@ -43,7 +43,7 @@ export default function HomePage() {
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:gap-6 md:px-6 md:py-10">
       <HeroHeader
-        eyebrow="Clinical Selection Interface"
+        eyebrow="Clinical Selection Interface - Proof of Concept"
         title="Maternal Health Decision Support Verification"
         subtitle=""
       />
@@ -53,7 +53,7 @@ export default function HomePage() {
         <div className="h-full lg:col-span-5">
           <PillGroup
             title="Simulated AI Inference"
-            description="Includes conformal prediction and proposed action. Required: select at least one diagnosis and one proposed action."
+            description="Includes conformal prediction and proposed action."
             optionsLabel="Conformal Prediction"
             options={diagnoses}
             selected={selectedDiagnoses}
