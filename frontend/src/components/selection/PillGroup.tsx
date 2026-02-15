@@ -36,7 +36,7 @@ export function PillGroup({
   >(null);
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-3">
         <CardTitle className="inline-flex items-center gap-2">
           <SparkIcon className="size-4 text-indigo-600" />

@@ -50,7 +50,7 @@ export default function HomePage() {
       <StepFlowBar currentStep={1} />
 
       <div className="grid items-stretch gap-6 lg:grid-cols-12">
-        <div className="h-full lg:col-span-5">
+        <div className="h-full lg:col-span-6">
           <PillGroup
             title="Simulated AI Inference"
             description="Includes conformal prediction and proposed action."
@@ -89,7 +89,7 @@ export default function HomePage() {
           </PillGroup>
         </div>
 
-        <div className="h-full lg:col-span-7">
+        <div className="h-full lg:col-span-6">
           <ContextSection
             comorbidities={comorbidities}
             selectedComorbidities={selectedComorbidities}
