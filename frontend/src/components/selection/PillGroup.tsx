@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pill } from "@/components/selection/Pill";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SparkIcon } from "@/components/ui/icons";
-import type { ClinicalOption } from "@/lib/clinical-options";
+import type { ClinicalOption } from "@/components/build/useTokenRegistry";
 
 type PillGroupProps = {
   title: string;

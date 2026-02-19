@@ -1,36 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { useSimulationState } from "@/components/providers/SimulationStateProvider";
-import { HeroHeader } from "@/components/selection/HeroHeader";
-import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-type HypergraphCandidateEdge = {
-  edgeId: string;
-  premises: string[];
-  expectedOutcome: string;
-  note: string;
-  isMatched: boolean;
-  matchingPremises: string[];
-  missingPremises: string[];
-};
-
-type HypergraphVerificationSummary = {
-  proposedActionToken: string;
-  isSupported: boolean;
-  supportLevel: "obligated" | "allowed" | "unsupported";
-  supportingEdgeIds: string[];
-};
-
-type HypergraphRetrieveResponse = {
-  candidateEdgeCount: number;
-  matchedEdgeCount: number;
-  derivedOutcomes: string[];
-  candidateEdges: HypergraphCandidateEdge[];
-  verification: HypergraphVerificationSummary | null;
-};
+import {
+  type HypergraphRetrieveResponse,
+  type KernelRuntimeArtifactsResponse,
+  getApiBaseUrl,
+} from "@/components/build/kernel-types";
 
 export default function Step3Page() {
   const {
@@ -39,10 +18,12 @@ export default function Step3Page() {
   } = useSimulationState();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const apiBaseUrl = useMemo(
-    () => process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000",
-    []
+  const [runtimeArtifacts, setRuntimeArtifacts] =
+    useState<KernelRuntimeArtifactsResponse | null>(null);
+  const [runtimeArtifactsError, setRuntimeArtifactsError] = useState<string | null>(
+    null
   );
+  const apiBaseUrl = useMemo(getApiBaseUrl, []);
   const matchedOutcomeSet = useMemo(
     () =>
       new Set(
@@ -52,9 +33,54 @@ export default function Step3Page() {
       ),
     [hypergraphRetrieval]
   );
+  const runtimeIsVerified = runtimeArtifacts?.verification.status === "verified";
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadRuntimeArtifacts() {
+      setRuntimeArtifactsError(null);
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/kernel/runtime`, {
+          method: "GET"
+        });
+        if (!response.ok) {
+          let detail = "Failed to load runtime ruleset status.";
+          try {
+            const payload = (await response.json()) as { detail?: string };
+            if (payload.detail) detail = payload.detail;
+          } catch {
+            // keep default
+          }
+          throw new Error(detail);
+        }
+        const payload = (await response.json()) as KernelRuntimeArtifactsResponse;
+        if (!isMounted) return;
+        setRuntimeArtifacts(payload);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Failed to load runtime ruleset status.";
+        if (!isMounted) return;
+        setRuntimeArtifacts(null);
+        setRuntimeArtifactsError(message);
+      }
+    }
+
+    void loadRuntimeArtifacts();
+    return () => {
+      isMounted = false;
+    };
+  }, [apiBaseUrl]);
 
   async function handleRetrieve() {
     if (!normalizedOntology) return;
+    if (!runtimeIsVerified) {
+      setErrorMessage(
+        "Runtime ruleset is not verified. Publish a snapshot with verification enabled in Build."
+      );
+      return;
+    }
     setIsLoading(true);
     setErrorMessage(null);
 
@@ -94,14 +120,7 @@ export default function Step3Page() {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:px-6 md:py-10">
-      <HeroHeader
-        eyebrow="Hypergraph API - Proof of Concept v1.1"
-        title="Maternal Health Decision Support Verification"
-        subtitle=""
-      />
-      <StepFlowBar currentStep={3} />
-
+    <div className="grid w-full gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Step 3: Hypergraph Retrieval</CardTitle>
@@ -112,6 +131,62 @@ export default function Step3Page() {
             premise sets, then visualize matched edges and expected outcomes.
           </p>
 
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Runtime ruleset status
+                </div>
+                <div className="mt-1 text-sm font-medium text-slate-900">
+                  Retrieval uses the currently active runtime ruleset. Build-time Lean
+                  verification is performed when you publish and verify.
+                </div>
+              </div>
+              {runtimeArtifacts?.verification.status === "verified" ? (
+                <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">
+                  Verified
+                </Badge>
+              ) : (
+                <Badge className="border border-amber-200 bg-amber-50 text-amber-800">
+                  Not verified
+                </Badge>
+              )}
+            </div>
+
+            {runtimeArtifactsError ? (
+              <div className="mt-2 text-xs text-red-700">{runtimeArtifactsError}</div>
+            ) : null}
+
+            {runtimeArtifacts ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-700">
+                <Badge className="border border-slate-200 bg-white text-slate-700">
+                  Rules: {runtimeArtifacts.rulesetRuleCount}
+                </Badge>
+                {runtimeArtifacts.manifest ? (
+                  <>
+                    <Badge className="border border-slate-200 bg-white text-slate-700">
+                      Version: {runtimeArtifacts.manifest.rulesetVersion}
+                    </Badge>
+                    <Badge className="border border-slate-200 bg-white text-slate-700">
+                      Rev: {runtimeArtifacts.manifest.revision}
+                    </Badge>
+                  </>
+                ) : null}
+                <Link
+                  href="/build"
+                  className="font-medium text-indigo-700 underline-offset-2 hover:underline"
+                >
+                  Verify/publish rules in Build
+                </Link>
+              </div>
+            ) : (
+              <div className="mt-2 text-xs text-slate-600">
+                Visit <Link href="/build" className="font-medium text-indigo-700 underline-offset-2 hover:underline">Build</Link>{" "}
+                to publish and verify the current ruleset snapshot.
+              </div>
+            )}
+          </div>
+
           <div className="rounded-lg border border-slate-200 bg-white p-3">
             <div className="text-sm font-medium text-blue-900">Hypergraph Query</div>
             <p className="mt-1 text-xs text-slate-600">
@@ -121,7 +196,7 @@ export default function Step3Page() {
               <button
                 className="inline-flex min-w-40 items-center justify-center gap-2 rounded-md border border-indigo-700/80 bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-600 disabled:text-white"
                 onClick={handleRetrieve}
-                disabled={isLoading || !normalizedOntology}
+                disabled={isLoading || !normalizedOntology || !runtimeIsVerified}
                 type="button"
               >
                 {isLoading ? "Retrieving..." : "Retrieve Hyperedges"}
@@ -130,11 +205,15 @@ export default function Step3Page() {
                 <span className="text-xs text-slate-600">
                   Normalize Step 2 first.
                 </span>
+              ) : !runtimeIsVerified ? (
+                <span className="text-xs text-slate-600">
+                  Verify/publish rules in Build first.
+                </span>
               ) : null}
             </div>
           </div>
 
-          <section className="flex min-h-[30rem] flex-col rounded-lg border border-slate-200 bg-white p-3">
+          <section className="flex min-h-[28rem] flex-col rounded-lg border border-slate-200 bg-white p-3">
             {errorMessage ? (
               <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {errorMessage}
@@ -163,13 +242,18 @@ export default function Step3Page() {
                     </div>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-white p-3">
-                    <div className="text-xs text-slate-500">Action Support</div>
+                    <div className="text-xs text-slate-500">
+                      Proposed action support (runtime)
+                    </div>
                     <div className="mt-1 text-sm font-medium text-slate-900">
                       {hypergraphRetrieval.verification
                         ? hypergraphRetrieval.verification.isSupported
                           ? `${hypergraphRetrieval.verification.supportLevel} support`
                           : "not supported"
                         : "n/a"}
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      runtime derivation only (not build-time Lean verification)
                     </div>
                   </div>
                 </div>
@@ -241,7 +325,7 @@ export default function Step3Page() {
                                 : "border border-slate-300 bg-slate-200 text-slate-800"
                             }
                           >
-                            {edge.isMatched ? "matched" : "not matched"}
+                            {edge.isMatched ? "Matched" : "Not matched"}
                           </Badge>
                         </div>
                         <p className="mt-1 text-xs text-slate-600">{edge.note}</p>
@@ -300,6 +384,6 @@ export default function Step3Page() {
           </section>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

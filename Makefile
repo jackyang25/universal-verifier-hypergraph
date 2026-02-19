@@ -1,7 +1,7 @@
 .PHONY: help \
 	docker-build docker-up docker-down docker-logs docker-clean \
 	frontend-install frontend-dev frontend-build frontend-lint \
-	backend-dev start
+	backend-dev start build
 
 COMPOSE_FILE := infra/docker/docker-compose.yml
 DOCKER_COMPOSE := docker compose -f $(COMPOSE_FILE)
@@ -37,6 +37,10 @@ frontend-lint:  ## Lint frontend from repo root
 
 backend-dev:  ## Run FastAPI dev server from repo root
 	cd backend && uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+build:  ## Rebuild backend (no cache) + install frontend deps
+	$(MAKE) docker-build
+	$(MAKE) frontend-install
 
 start:  ## Run backend container + frontend dev server together
 	@trap '$(MAKE) docker-down' INT TERM EXIT; \

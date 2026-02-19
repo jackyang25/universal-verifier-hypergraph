@@ -1,5 +1,5 @@
 import { Pill } from "@/components/selection/Pill";
-import type { ClinicalOption } from "@/lib/clinical-options";
+import type { ClinicalOption } from "@/components/build/useTokenRegistry";
 
 type ProposedActionSectionProps = {
   actions: ClinicalOption[];

@@ -2,8 +2,6 @@
 
 import { useMemo } from "react";
 import { useSimulationState } from "@/components/providers/SimulationStateProvider";
-import { HeroHeader } from "@/components/selection/HeroHeader";
-import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VerifyIcon } from "@/components/ui/icons";
@@ -120,14 +118,7 @@ export default function Step4Page() {
   }, [hypergraphRetrieval, normalizedOntology]);
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:px-6 md:py-10">
-      <HeroHeader
-        eyebrow="Hypergraph API - Proof of Concept v1.1"
-        title="Maternal Health Decision Support Verification"
-        subtitle=""
-      />
-      <StepFlowBar currentStep={4} />
-
+    <div className="grid w-full gap-6">
       <Card>
         <CardHeader>
           <CardTitle className="inline-flex items-center gap-2">
@@ -145,42 +136,57 @@ export default function Step4Page() {
             open
           >
             <summary className="cursor-pointer list-none text-sm font-semibold text-indigo-900">
-              Formal guarantee scope (build-time verified)
+              Formal guarantee scope
               <span className="ml-2 text-xs font-medium text-indigo-700 group-open:hidden">
-                show details
+                Show details
               </span>
               <span className="ml-2 hidden text-xs font-medium text-indigo-700 group-open:inline">
-                hide details
+                Hide details
               </span>
             </summary>
-            <p className="mt-2">
-              Assuming the current ruleset version passes build-time proof checks,
-              runtime verification enforces these invariants over normalized facts
-              and retrieved hyperedges:
+
+            <p className="mt-3 font-medium text-indigo-900">
+              Kernel invariants (build-time verified by cohere-verify)
             </p>
-            <ul className="mt-2 list-disc space-y-1 pl-4">
-              <li>Determinism: same facts and ruleset always yield the same verdict.</li>
-              <li>No Contradictory Verdicts: same facts cannot produce opposing verdict classes.</li>
-              <li>Single Obligation: at most one obligated action per fact set.</li>
+            <ul className="mt-1 list-disc space-y-1 pl-4">
               <li>
-                Obligation Dominates Permission: an obligated action takes precedence
-                over merely allowed alternatives.
+                <span className="font-medium">No contradictory verdicts</span> —
+                same facts cannot produce Obligated(a) + Rejected(a), or Allowed(a) + Rejected(a).
               </li>
-              <li>Monotonicity: adding facts cannot remove an already-derived verdict.</li>
               <li>
-                Sound Firing: any reported verdict must be supported by at least one
-                matched hyperedge.
+                <span className="font-medium">No incompatible obligations</span> —
+                no two obligated actions can be marked incompatible by the action algebra.
+              </li>
+              <li>
+                <span className="font-medium">Ought implies can</span> —
+                no obligation may trigger an infeasibility entry in the action algebra.
               </li>
             </ul>
-            <p className="mt-2 font-medium">Limits</p>
+
+            <p className="mt-3 font-medium text-indigo-900">
+              Structural properties (hold by construction of Derive)
+            </p>
+            <ul className="mt-1 list-disc space-y-1 pl-4">
+              <li>
+                <span className="font-medium">Determinism</span> —
+                same facts and ruleset always yield the same verdict set (pure function).
+              </li>
+              <li>
+                <span className="font-medium">Sound firing</span> —
+                every reported verdict traces to at least one matched, unshadowed rule.
+              </li>
+            </ul>
+
+            <p className="mt-3 font-medium text-indigo-900">Limits</p>
             <ul className="mt-1 list-disc space-y-1 pl-4">
               <li>Does not prove clinical truth of encoded rules; it proves rule consistency.</li>
               <li>Does not correct missing/incorrect inputs or ontology mapping errors upstream.</li>
               <li>Does not perform probabilistic diagnosis, calibration, or risk prediction.</li>
+              <li>Does not prove monotonicity or obligation-dominates-permission.</li>
             </ul>
           </details>
 
-          <section className="flex min-h-[26rem] flex-col rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+          <section className="flex min-h-[28rem] flex-col rounded-lg border border-slate-200 bg-slate-50/70 p-3">
             {verificationResult.status === "incomplete" ? (
               <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center">
                 <div>
@@ -205,7 +211,8 @@ export default function Step4Page() {
                             : "border border-red-300 bg-red-100 text-red-800"
                         }
                       >
-                        {verificationResult.status}
+                        {verificationResult.status.charAt(0).toUpperCase() +
+                          verificationResult.status.slice(1)}
                       </Badge>
                     </div>
                   </div>
@@ -303,6 +310,6 @@ export default function Step4Page() {
           </section>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

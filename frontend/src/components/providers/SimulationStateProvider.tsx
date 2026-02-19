@@ -8,110 +8,20 @@ import {
   useState
 } from "react";
 import {
-  clinicalActions,
-  comorbidities,
-  diagnoses,
-  physiologicStates
-} from "@/lib/clinical-options";
+  type HypergraphRetrieveResponse,
+  type OntologyNormalizeResponse,
+  normalizeHypergraphPayload,
+  normalizeOntologyPayload,
+} from "@/components/build/kernel-types";
+import {
+  type InputOptions,
+  useTokenRegistry,
+} from "@/components/build/useTokenRegistry";
 import { toggleSelection } from "@/lib/selection";
-
-type OntologyMapping = {
-  sourceGroup: string;
-  sourceValue: string;
-  normalizedTokens: string[];
-  ruleExplanations: string[];
-};
-
-type OntologyNormalizeResponse = {
-  facts: string[];
-  diagnosisFacts: string[];
-  diagnosisAttributeFacts: string[];
-  contextFacts: string[];
-  actionToken: string | null;
-  mappings: OntologyMapping[];
-};
-
-type HypergraphCandidateEdge = {
-  edgeId: string;
-  premises: string[];
-  expectedOutcome: string;
-  note: string;
-  isMatched: boolean;
-  matchingPremises: string[];
-  missingPremises: string[];
-};
-
-type HypergraphVerificationSummary = {
-  proposedActionToken: string;
-  isSupported: boolean;
-  supportLevel: "obligated" | "allowed" | "unsupported";
-  supportingEdgeIds: string[];
-};
-
-type HypergraphRetrieveResponse = {
-  candidateEdgeCount: number;
-  matchedEdgeCount: number;
-  derivedOutcomes: string[];
-  candidateEdges: HypergraphCandidateEdge[];
-  verification: HypergraphVerificationSummary | null;
-};
-
-function normalizeOntologyPayload(
-  payload: OntologyNormalizeResponse | null | undefined
-): OntologyNormalizeResponse | null {
-  if (!payload) return null;
-  return {
-    ...payload,
-    diagnosisAttributeFacts: Array.isArray(payload.diagnosisAttributeFacts)
-      ? payload.diagnosisAttributeFacts
-      : Array.isArray((payload as { acuityFacts?: unknown[] }).acuityFacts)
-        ? ((payload as { acuityFacts?: unknown[] }).acuityFacts as string[])
-        : [],
-    mappings: Array.isArray(payload.mappings)
-      ? payload.mappings.map((mapping) => ({
-          ...mapping,
-          ruleExplanations: mapping.ruleExplanations ?? []
-        }))
-      : []
-  };
-}
-
-function normalizeHypergraphRetrievalPayload(
-  payload: HypergraphRetrieveResponse | null | undefined
-): HypergraphRetrieveResponse | null {
-  if (!payload) return null;
-  return {
-    ...payload,
-    derivedOutcomes: Array.isArray(payload.derivedOutcomes)
-      ? payload.derivedOutcomes
-      : [],
-    candidateEdges: Array.isArray(payload.candidateEdges)
-      ? payload.candidateEdges.map((edge) => ({
-          ...edge,
-          premises: Array.isArray(edge.premises) ? edge.premises : [],
-          matchingPremises: Array.isArray(edge.matchingPremises)
-            ? edge.matchingPremises
-            : [],
-          missingPremises: Array.isArray(edge.missingPremises)
-            ? edge.missingPremises
-            : []
-        }))
-      : [],
-    verification: payload.verification
-      ? {
-          ...payload.verification,
-          supportingEdgeIds: Array.isArray(payload.verification.supportingEdgeIds)
-            ? payload.verification.supportingEdgeIds
-            : []
-        }
-      : null
-  };
-}
 
 function normalizeSelectedValues(
   values: unknown,
-  options: { id: string; label: string }[],
-  legacyValueToId: Record<string, string> = {}
+  options: { id: string; label: string }[]
 ): string[] {
   if (!Array.isArray(values)) return [];
   const labelToId = new Map(options.map((option) => [option.label, option.id]));
@@ -119,18 +29,17 @@ function normalizeSelectedValues(
 
   return values
     .filter((value): value is string => typeof value === "string")
-    .map((value) =>
-      validIds.has(value)
-        ? value
-        : labelToId.get(value) ?? legacyValueToId[value]
-    )
+    .map((value) => (validIds.has(value) ? value : labelToId.get(value)))
     .filter((value): value is string => Boolean(value));
 }
 
-function normalizeSelectedAction(value: unknown): string | null {
+function normalizeSelectedAction(
+  value: unknown,
+  actions: { id: string; label: string }[]
+): string | null {
   if (typeof value !== "string") return null;
-  const labelToId = new Map(clinicalActions.map((action) => [action.label, action.id]));
-  const validIds = new Set(clinicalActions.map((action) => action.id));
+  const labelToId = new Map(actions.map((a) => [a.label, a.id]));
+  const validIds = new Set(actions.map((a) => a.id));
   if (validIds.has(value)) return value;
   return labelToId.get(value) ?? null;
 }
@@ -182,92 +91,88 @@ const SimulationStateContext = createContext<
   SimulationStateContextValue | undefined
 >(undefined);
 
+function migrateLocalStorage(opts: InputOptions): SimulationState {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULT_STATE;
+    const parsed = JSON.parse(raw) as Partial<SimulationState>;
+    const parsedDiagnosisAttributes =
+      parsed.selectedDiagnosisAttributes &&
+      typeof parsed.selectedDiagnosisAttributes === "object"
+        ? (parsed.selectedDiagnosisAttributes as Record<string, unknown>)
+        : {};
+
+    const normalizedDiagnoses = normalizeSelectedValues(
+      parsed.selectedDiagnoses,
+      opts.diagnoses
+    );
+    const migratedDiagnosisAttributes: Record<string, string[]> = {};
+    for (const diagnosisId of normalizedDiagnoses) {
+      const rawAttributes = parsedDiagnosisAttributes[diagnosisId];
+      if (Array.isArray(rawAttributes)) {
+        migratedDiagnosisAttributes[diagnosisId] = rawAttributes.filter(
+          (value): value is string => typeof value === "string"
+        );
+      }
+    }
+    return {
+      selectedDiagnoses: normalizedDiagnoses,
+      selectedDiagnosisAttributes: migratedDiagnosisAttributes,
+      selectedComorbidities: normalizeSelectedValues(
+        parsed.selectedComorbidities,
+        opts.comorbidities
+      ),
+      selectedPhysiologicStates: normalizeSelectedValues(
+        parsed.selectedPhysiologicStates,
+        opts.physiologicStates
+      ),
+      gestationalWeeks:
+        typeof parsed.gestationalWeeks === "number"
+          ? parsed.gestationalWeeks
+          : DEFAULT_STATE.gestationalWeeks,
+      maternalAgeYears:
+        typeof parsed.maternalAgeYears === "number"
+          ? parsed.maternalAgeYears
+          : DEFAULT_STATE.maternalAgeYears,
+      bmi:
+        typeof parsed.bmi === "number"
+          ? parsed.bmi
+          : DEFAULT_STATE.bmi,
+      selectedAction: normalizeSelectedAction(parsed.selectedAction, opts.clinicalActions),
+      normalizedOntology: normalizeOntologyPayload(
+        parsed.normalizedOntology as OntologyNormalizeResponse | null
+      ),
+      hypergraphRetrieval: normalizeHypergraphPayload(
+        parsed.hypergraphRetrieval as HypergraphRetrieveResponse | null
+      )
+    };
+  } catch {
+    return DEFAULT_STATE;
+  }
+}
+
 export function SimulationStateProvider({
   children
 }: {
   children: React.ReactNode;
 }) {
+  const registry = useTokenRegistry();
+  const opts = registry.inputOptions;
+  const registryReady = opts.diagnoses.length > 0;
+
   const [state, setState] = useState<SimulationState>(DEFAULT_STATE);
+  const [migrated, setMigrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Partial<SimulationState>;
-      const parsedDiagnosisAttributes =
-        parsed.selectedDiagnosisAttributes &&
-        typeof parsed.selectedDiagnosisAttributes === "object"
-          ? (parsed.selectedDiagnosisAttributes as Record<string, unknown>)
-          : {};
-
-      const normalizedDiagnoses = normalizeSelectedValues(
-        parsed.selectedDiagnoses,
-        diagnoses
-      );
-      const migratedDiagnosisAttributes: Record<string, string[]> = {};
-      for (const diagnosisId of normalizedDiagnoses) {
-        const rawAttributes = parsedDiagnosisAttributes[diagnosisId];
-        if (Array.isArray(rawAttributes)) {
-          migratedDiagnosisAttributes[diagnosisId] = rawAttributes.filter(
-            (value): value is string => typeof value === "string"
-          );
-        }
-      }
-      const rawSelectedDiagnoses = Array.isArray(parsed.selectedDiagnoses)
-        ? parsed.selectedDiagnoses
-        : [];
-      if (rawSelectedDiagnoses.includes("dx_preeclampsia_severe_features")) {
-        if (!normalizedDiagnoses.includes("dx_preeclampsia")) {
-          normalizedDiagnoses.push("dx_preeclampsia");
-        }
-        migratedDiagnosisAttributes.dx_preeclampsia = Array.from(
-          new Set([...(migratedDiagnosisAttributes.dx_preeclampsia ?? []), "severe_features"])
-        );
-      }
-
-      setState({
-        selectedDiagnoses: normalizedDiagnoses,
-        selectedDiagnosisAttributes: migratedDiagnosisAttributes,
-        selectedComorbidities: normalizeSelectedValues(
-          parsed.selectedComorbidities,
-          comorbidities
-        ),
-        selectedPhysiologicStates: normalizeSelectedValues(
-          parsed.selectedPhysiologicStates,
-          physiologicStates,
-          {
-            ctx_severe_headache: "ctx_headache",
-            "Severe Headache": "ctx_headache"
-          }
-        ),
-        gestationalWeeks:
-          typeof parsed.gestationalWeeks === "number"
-            ? parsed.gestationalWeeks
-            : DEFAULT_STATE.gestationalWeeks,
-        maternalAgeYears:
-          typeof parsed.maternalAgeYears === "number"
-            ? parsed.maternalAgeYears
-            : DEFAULT_STATE.maternalAgeYears,
-        bmi:
-          typeof parsed.bmi === "number"
-            ? parsed.bmi
-            : DEFAULT_STATE.bmi,
-        selectedAction: normalizeSelectedAction(parsed.selectedAction),
-        normalizedOntology: normalizeOntologyPayload(
-          parsed.normalizedOntology as OntologyNormalizeResponse | null
-        ),
-        hypergraphRetrieval: normalizeHypergraphRetrievalPayload(
-          parsed.hypergraphRetrieval as HypergraphRetrieveResponse | null
-        )
-      });
-    } catch {
-      setState(DEFAULT_STATE);
-    }
-  }, []);
+    if (!registryReady || migrated) return;
+    setState(migrateLocalStorage(opts));
+    setMigrated(true);
+  }, [registryReady, opts, migrated]);
 
   useEffect(() => {
+    if (!migrated) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+  }, [state, migrated]);
 
   const value = useMemo<SimulationStateContextValue>(
     () => ({
@@ -339,7 +244,7 @@ export function SimulationStateProvider({
       setHypergraphRetrieval: (value) =>
         setState((current) => ({
           ...current,
-          hypergraphRetrieval: normalizeHypergraphRetrievalPayload(value)
+          hypergraphRetrieval: normalizeHypergraphPayload(value)
         })),
       clearState: () => setState(DEFAULT_STATE)
     }),

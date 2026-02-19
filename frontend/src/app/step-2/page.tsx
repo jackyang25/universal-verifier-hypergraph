@@ -2,28 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { useSimulationState } from "@/components/providers/SimulationStateProvider";
-import { HeroHeader } from "@/components/selection/HeroHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StepFlowBar } from "@/components/selection/StepFlowBar";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRightIcon } from "@/components/ui/icons";
-import { clinicalActions, diagnoses } from "@/lib/clinical-options";
-
-type OntologyMapping = {
-  sourceGroup: string;
-  sourceValue: string;
-  normalizedTokens: string[];
-  ruleExplanations: string[];
-};
-
-type OntologyNormalizeResponse = {
-  facts: string[];
-  diagnosisFacts: string[];
-  diagnosisAttributeFacts: string[];
-  contextFacts: string[];
-  actionToken: string | null;
-  mappings: OntologyMapping[];
-};
+import {
+  type OntologyMapping,
+  type OntologyNormalizeResponse,
+  getApiBaseUrl,
+  normalizeOntologyPayload,
+} from "@/components/build/kernel-types";
+import { useTokenRegistry } from "@/components/build/useTokenRegistry";
 
 function formatRuleExplanation(rule: string): string {
   const trimmed = rule.trim();
@@ -33,26 +21,10 @@ function formatRuleExplanation(rule: string): string {
   return sentence.endsWith(".") ? sentence : `${sentence}.`;
 }
 
-function normalizeOntologyPayload(
-  payload: OntologyNormalizeResponse
-): OntologyNormalizeResponse {
-  return {
-    ...payload,
-    diagnosisAttributeFacts: Array.isArray(payload.diagnosisAttributeFacts)
-      ? payload.diagnosisAttributeFacts
-      : Array.isArray((payload as { acuityFacts?: unknown[] }).acuityFacts)
-        ? ((payload as { acuityFacts?: unknown[] }).acuityFacts as string[])
-        : [],
-    mappings: payload.mappings.map((mapping) => ({
-      ...mapping,
-      ruleExplanations: (mapping.ruleExplanations ?? []).map(
-        formatRuleExplanation
-      )
-    }))
-  };
-}
-
 export default function Step2Page() {
+  const registry = useTokenRegistry();
+  const opts = registry.inputOptions;
+
   const {
     state: {
       selectedDiagnoses,
@@ -72,17 +44,14 @@ export default function Step2Page() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeRuleKey, setActiveRuleKey] = useState<string | null>(null);
-  const apiBaseUrl = useMemo(
-    () => process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000",
-    []
-  );
+  const apiBaseUrl = useMemo(getApiBaseUrl, []);
   const hasRequiredSimulatedInference =
     selectedDiagnoses.length > 0 && Boolean(selectedAction);
   const selectedActionLabel =
-    clinicalActions.find((action) => action.id === selectedAction)?.label ?? "None";
+    opts.clinicalActions.find((action) => action.id === selectedAction)?.label ?? "None";
   const selectedDiagnosisAttributeLabels = selectedDiagnoses
     .flatMap((diagnosisId) => {
-      const diagnosis = diagnoses.find((item) => item.id === diagnosisId);
+      const diagnosis = opts.diagnoses.find((item) => item.id === diagnosisId);
       const attributes = selectedDiagnosisAttributes[diagnosisId] ?? [];
       return attributes.map((attributeId) => {
         const attributeLabel =
@@ -158,11 +127,10 @@ export default function Step2Page() {
         throw new Error(detail);
       }
 
-      const payload = normalizeOntologyPayload(
-        (await response.json()) as OntologyNormalizeResponse
-      );
+      const raw = (await response.json()) as OntologyNormalizeResponse;
+      const payload = normalizeOntologyPayload(raw);
       setActiveRuleKey(null);
-      setNormalizedOntology(payload);
+      setNormalizedOntology(payload ?? null);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to normalize inputs.";
@@ -175,14 +143,7 @@ export default function Step2Page() {
   }
 
   return (
-    <main className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-8 md:px-6 md:py-10">
-      <HeroHeader
-        eyebrow="Hypergraph API - Proof of Concept v1.1"
-        title="Maternal Health Decision Support Verification"
-        subtitle=""
-      />
-      <StepFlowBar currentStep={2} />
-
+    <div className="grid w-full gap-6">
       <Card>
         <CardHeader>
           <CardTitle>Step 2: Ontology Normalization</CardTitle>
@@ -394,6 +355,6 @@ export default function Step2Page() {
           </section>
         </CardContent>
       </Card>
-    </main>
+    </div>
   );
 }

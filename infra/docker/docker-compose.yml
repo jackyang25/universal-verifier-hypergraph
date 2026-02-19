@@ -3,6 +3,9 @@ services:
     build:
       context: ../../
       dockerfile: infra/docker/Dockerfile
+      args:
+        COHERE_REPO_URL: "https://github.com/jackyang25/cohere.git"
+        COHERE_REF: "main"
     ports:
       - "8000:8000"
     volumes:
@@ -10,4 +13,5 @@ services:
     environment:
       - ENV=development
       - CORS_ORIGINS=*
+      - COHERE_VERIFY_CMD=cohere-verify
     command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload

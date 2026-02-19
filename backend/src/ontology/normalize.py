@@ -104,10 +104,6 @@ FRONTEND_PHYSIOLOGIC_STATES = {
     "ctx_creatinine_elevated": InputDefinition(label="Elevated Creatinine", token="Ctx.Creatinine_Elevated"),
     "ctx_postpartum": InputDefinition(label="Postpartum", token="Ctx.Postpartum"),
     "ctx_headache": InputDefinition(label="Headache", token="Ctx.Headache"),
-    "ctx_severe_headache": InputDefinition(
-        label="Headache",
-        token="Ctx.Headache",
-    ),
     "ctx_visual_disturbance": InputDefinition(label="Visual Disturbance", token="Ctx.VisualDisturbance"),
     "ctx_ruq_pain": InputDefinition(label="RUQ Pain", token="Ctx.RUQPain"),
 }

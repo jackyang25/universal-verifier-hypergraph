@@ -1,7 +1,7 @@
 import { Pill } from "@/components/selection/Pill";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContextIcon } from "@/components/ui/icons";
-import type { ClinicalOption } from "@/lib/clinical-options";
+import type { ClinicalOption } from "@/components/build/useTokenRegistry";
 
 type SliderMarksProps = {
   marks: number[];
@@ -51,51 +51,32 @@ function SliderMarks({
   );
 }
 
-type ContextSectionProps = {
+type ContextFactorsCardProps = {
   comorbidities: ClinicalOption[];
   selectedComorbidities: string[];
   onToggleComorbidity: (value: string) => void;
   physiologicStates: ClinicalOption[];
   selectedPhysiologicStates: string[];
   onTogglePhysiologicState: (value: string) => void;
-  gestationalWeeks: number;
-  gestationalAgeMarks: number[];
-  onChangeGestationalWeeks: (value: number) => void;
-  maternalAgeYears: number;
-  maternalAgeMarks: number[];
-  onChangeMaternalAgeYears: (value: number) => void;
-  bmi: number;
-  bmiMarks: number[];
-  onChangeBmi: (value: number) => void;
 };
 
-export function ContextSection({
+export function ContextFactorsCard({
   comorbidities,
   selectedComorbidities,
   onToggleComorbidity,
   physiologicStates,
   selectedPhysiologicStates,
-  onTogglePhysiologicState,
-  gestationalWeeks,
-  gestationalAgeMarks,
-  onChangeGestationalWeeks,
-  maternalAgeYears,
-  maternalAgeMarks,
-  onChangeMaternalAgeYears,
-  bmi,
-  bmiMarks,
-  onChangeBmi
-}: ContextSectionProps) {
+  onTogglePhysiologicState
+}: ContextFactorsCardProps) {
   return (
     <Card className="h-full">
       <CardHeader className="pb-3">
         <CardTitle className="inline-flex items-center gap-2">
           <ContextIcon className="size-4 text-indigo-600" />
-          <span>Additional Patient Context</span>
+          <span>Patient Context</span>
         </CardTitle>
         <p className="mt-1 text-sm text-slate-500">
-          Inputs not gathered by conformal prediction or the decision support
-          module.
+          Background factors and clinical findings.
         </p>
       </CardHeader>
 
@@ -131,77 +112,108 @@ export function ContextSection({
             ))}
           </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium text-slate-600">
-            Quantitative Profile
-          </h3>
+type QuantitativeProfileCardProps = {
+  gestationalWeeks: number;
+  gestationalAgeMarks: number[];
+  onChangeGestationalWeeks: (value: number) => void;
+  maternalAgeYears: number;
+  maternalAgeMarks: number[];
+  onChangeMaternalAgeYears: (value: number) => void;
+  bmi: number;
+  bmiMarks: number[];
+  onChangeBmi: (value: number) => void;
+};
 
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm text-slate-600">Gestational Age</span>
-              <span className="text-sm text-slate-500">{gestationalWeeks} weeks</span>
-            </div>
-            <input
-              className="semantic-slider w-full"
-              type="range"
-              min={20}
-              max={42}
-              value={gestationalWeeks}
-              onChange={(event) =>
-                onChangeGestationalWeeks(Number(event.target.value))
-              }
-            />
-            <SliderMarks
-              marks={gestationalAgeMarks}
-              min={20}
-              max={42}
-              formatMark={(value) => `${value}w`}
-            />
+export function QuantitativeProfileCard({
+  gestationalWeeks,
+  gestationalAgeMarks,
+  onChangeGestationalWeeks,
+  maternalAgeYears,
+  maternalAgeMarks,
+  onChangeMaternalAgeYears,
+  bmi,
+  bmiMarks,
+  onChangeBmi
+}: QuantitativeProfileCardProps) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="inline-flex items-center gap-2">
+          <ContextIcon className="size-4 text-indigo-600" />
+          <span>Quantitative Profile</span>
+        </CardTitle>
+        <p className="mt-1 text-sm text-slate-500">
+          Adjust gestational age, maternal age, and BMI for the current snapshot.
+        </p>
+      </CardHeader>
+
+      <CardContent className="grid gap-5 pt-0 lg:grid-cols-3">
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-sm text-slate-600">Gestational Age</span>
+            <span className="text-sm text-slate-500">{gestationalWeeks} weeks</span>
           </div>
+          <input
+            className="semantic-slider w-full"
+            type="range"
+            min={20}
+            max={42}
+            value={gestationalWeeks}
+            onChange={(event) => onChangeGestationalWeeks(Number(event.target.value))}
+          />
+          <SliderMarks
+            marks={gestationalAgeMarks}
+            min={20}
+            max={42}
+            formatMark={(value) => `${value}w`}
+          />
+        </div>
 
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm text-slate-600">Maternal Age</span>
-              <span className="text-sm text-slate-500">{maternalAgeYears} years</span>
-            </div>
-            <input
-              className="semantic-slider w-full"
-              type="range"
-              min={15}
-              max={55}
-              value={maternalAgeYears}
-              onChange={(event) =>
-                onChangeMaternalAgeYears(Number(event.target.value))
-              }
-            />
-            <SliderMarks
-              marks={maternalAgeMarks}
-              min={15}
-              max={55}
-              formatMark={(value) => `${value}y`}
-              minLabel="15y"
-              maxLabel="55y"
-            />
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-sm text-slate-600">Maternal Age</span>
+            <span className="text-sm text-slate-500">{maternalAgeYears} years</span>
           </div>
+          <input
+            className="semantic-slider w-full"
+            type="range"
+            min={15}
+            max={55}
+            value={maternalAgeYears}
+            onChange={(event) => onChangeMaternalAgeYears(Number(event.target.value))}
+          />
+          <SliderMarks
+            marks={maternalAgeMarks}
+            min={15}
+            max={55}
+            formatMark={(value) => `${value}y`}
+            minLabel="15y"
+            maxLabel="55y"
+          />
+        </div>
 
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-sm text-slate-600">BMI</span>
-              <span className="text-sm text-slate-500">{bmi}</span>
-            </div>
-            <input
-              className="semantic-slider w-full"
-              type="range"
-              min={15}
-              max={60}
-              value={bmi}
-              onChange={(event) => onChangeBmi(Number(event.target.value))}
-            />
-            <SliderMarks marks={bmiMarks} min={15} max={60} minLabel="15" maxLabel="60" />
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-sm text-slate-600">BMI</span>
+            <span className="text-sm text-slate-500">{bmi}</span>
           </div>
+          <input
+            className="semantic-slider w-full"
+            type="range"
+            min={15}
+            max={60}
+            value={bmi}
+            onChange={(event) => onChangeBmi(Number(event.target.value))}
+          />
+          <SliderMarks marks={bmiMarks} min={15} max={60} minLabel="15" maxLabel="60" />
         </div>
       </CardContent>
     </Card>
   );
 }
+
