@@ -330,7 +330,7 @@ function InvariantSuiteCard({ stdout }: { stdout: string | undefined }) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Invariant suite</CardTitle>
+        <CardTitle className="text-base">Invariant checks</CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="grid gap-2 sm:grid-cols-3">
