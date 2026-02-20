@@ -159,10 +159,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return buildSteps.find((step) => step.href === normalizedPath) ?? null;
   }, [normalizedPath]);
 
+  const isAboutRoute = normalizedPath === "/about";
+
   const shellTitle = useMemo(() => {
+    if (isAboutRoute) return "How it works";
     if (isBuildRoute) return activeBuildStep?.label ?? "Build";
     return activeStep?.label ?? "Dashboard";
-  }, [activeBuildStep, activeStep, isBuildRoute]);
+  }, [activeBuildStep, activeStep, isAboutRoute, isBuildRoute]);
 
   const snapshot = useMemo(() => {
     const hasRequiredInputs =
@@ -348,7 +351,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* footer */}
             <div className="mt-auto px-4 text-right">
-              <span className="text-[11px] text-slate-400">Version 1.1</span>
+              <span className="text-[11px] text-slate-400">Version 1.1 &middot; Prototype</span>
             </div>
           </div>
         </aside>
@@ -360,7 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {isBuildRoute ? "Build" : "Runtime"}
+                    {isAboutRoute ? "Reference" : isBuildRoute ? "Build" : "Runtime"}
                   </div>
                   <div className="truncate text-base font-semibold text-slate-900">
                     {shellTitle}
@@ -417,6 +420,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   })}
                 </nav>
                 <div className="hidden items-center gap-2 md:flex">
+                  <Link
+                    href="/about"
+                    className={cn(
+                      "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                      normalizedPath === "/about"
+                        ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    How it works
+                  </Link>
                   <a
                     href={DOCS_URL}
                     target="_blank"
