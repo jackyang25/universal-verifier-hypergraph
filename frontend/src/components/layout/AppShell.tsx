@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   CubeIcon,
   DocumentIcon,
+  GitHubIcon,
   GridIcon,
   InputIcon,
   LinkChainIcon,
@@ -25,6 +26,8 @@ const APP_EYEBROW = "Lean-verified protocol engine";
 const DOCS_URL = "https://www.overleaf.com/read/cpkdxmxtkpfs#ef562e";
 const DOCS_LABEL = "Cohere Docs";
 const DOCS_TOOLTIP = "Overleaf: Lean verification spec";
+const GITHUB_DASHBOARD_URL = "https://github.com/jackyang25/verified-protocol-hypergraph";
+const GITHUB_KERNEL_URL = "https://github.com/jackyang25/cohere";
 
 type WorkflowStep = {
   href: "/" | "/step-2" | "/step-3" | "/step-4";
@@ -422,6 +425,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
                   >
                     {DOCS_LABEL}
+                  </a>
+                  <a
+                    href={GITHUB_DASHBOARD_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="GitHub: Dashboard repo"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <GitHubIcon className="size-3.5" />
+                    Dashboard
+                  </a>
+                  <a
+                    href={GITHUB_KERNEL_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="GitHub: Cohere kernel repo"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <GitHubIcon className="size-3.5" />
+                    Kernel
                   </a>
                 </div>
               </div>
