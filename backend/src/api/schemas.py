@@ -223,7 +223,7 @@ class KernelReplaceRulesetRequest(BaseModel):
 
 
 class KernelPublishSnapshotRequest(BaseModel):
-    verify: bool = False
+    verify: bool = True
     timeoutSeconds: float = Field(default=10.0, ge=0.1, le=120.0)
 
 

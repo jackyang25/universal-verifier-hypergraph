@@ -295,6 +295,7 @@ class InMemoryKernelArtifactStore:
             for existing in self._draft.proposals:
                 if existing.edge_id == edge.edge_id:
                     raise ValueError(f"Rule with id '{edge.edge_id}' already exists in draft.")
+
             now = datetime.now(timezone.utc)
             provenance = dict(self._draft.rule_provenance)
             provenance[edge.edge_id] = RuleProvenance(created_by=created_by, created_at=now)
