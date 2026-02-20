@@ -7,6 +7,7 @@ import { TokenCombobox } from "./TokenCombobox";
 import { invalidTokens } from "./useTokenRegistry";
 
 export type EditingRule = {
+  originalRuleId: string;
   ruleId: string;
   premises: string;
   outcome: string;
@@ -39,7 +40,7 @@ function RuleCard({
   outcomeOptions = [],
   factOptions = [],
 }: RuleCardProps) {
-  const isEditing = editing?.ruleId === rule.ruleId;
+  const isEditing = editing?.originalRuleId === rule.ruleId;
   const mutable = !!(onEdit || onRemove);
 
   if (isEditing && editing && onSave && onCancel && onEditingChange) {

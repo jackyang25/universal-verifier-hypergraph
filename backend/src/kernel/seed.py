@@ -94,6 +94,14 @@ SEED_INFEASIBILITY: tuple[dict[str, object], ...] = (
     },
 )
 
+SEED_FACT_EXCLUSIONS: tuple[dict[str, object], ...] = (
+    {
+        "facts": ["Ctx.GA_<34w", "Ctx.GA_>=34w"],
+        "created_by": "system",
+        "created_at": "seed",
+    },
+)
+
 SEED_MANIFEST_DEFAULTS = {
     "artifact_source": "in_memory",
     "ruleset_version": "local-session",

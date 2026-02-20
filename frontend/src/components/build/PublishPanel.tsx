@@ -1,19 +1,64 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  type CertificateVerifyResult,
+  type CohereVerifyResponse,
   type KernelActiveArtifactsResponse,
   type KernelPublishSnapshotResponse,
   type KernelRuntimeArtifactsResponse,
   displayActor,
   formatTimestamp,
   getApiBaseUrl,
+  sessionHeaders,
 } from "./kernel-types";
 
-type InvariantResult = { name: string; label: string; status: "pass" | "fail" | "pending" };
+type InvariantResult = {
+  name: string;
+  label: string;
+  status: "pass" | "fail" | "pending";
+  method?: "runtime" | "certificate";
+};
 type SnapshotEntry = { directory: string; name: string; createdAt: string };
+
+function InfoTip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const toggle = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpen((v) => !v);
+  }, []);
+  const handleKey = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        e.stopPropagation();
+        setOpen((v) => !v);
+      }
+    },
+    [],
+  );
+
+  return (
+    <span className="relative inline-block">
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={toggle}
+        onKeyDown={handleKey}
+        className="ml-1 inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded-full border border-slate-300 bg-white text-[10px] font-semibold leading-none text-slate-500 transition hover:border-slate-400 hover:text-slate-700"
+      >
+        ?
+      </span>
+      {open ? (
+        <span className="absolute left-1/2 top-full z-10 mt-1.5 w-64 -translate-x-1/2 rounded-lg border border-slate-200 bg-white p-2.5 text-[11px] leading-relaxed text-slate-600 shadow-lg">
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
 
 const INVARIANT_KEYS: { key: string; label: string }[] = [
   { key: "no_contradictory_verdicts", label: "No contradictory verdicts" },
@@ -21,7 +66,33 @@ const INVARIANT_KEYS: { key: string; label: string }[] = [
   { key: "ought_implies_can", label: "Ought implies can" },
 ];
 
-function parseInvariantResults(stdout: string | undefined): InvariantResult[] {
+function parseInvariantResults(
+  stdout: string | undefined,
+  certificateResult: CertificateVerifyResult | null | undefined,
+  verifyMode: "quick" | "certificate",
+): InvariantResult[] {
+  if (verifyMode === "certificate" && certificateResult != null) {
+    // exitCode -1 means Lean toolchain wasn't available -- verification was skipped
+    if (certificateResult.exitCode === -1) {
+      return INVARIANT_KEYS.map((inv) => ({ name: inv.key, label: inv.label, status: "pending" }));
+    }
+    if (certificateResult.ok) {
+      return INVARIANT_KEYS.map((inv) => ({
+        name: inv.key,
+        label: inv.label,
+        status: "pass" as const,
+        method: "certificate" as const,
+      }));
+    }
+    // lean compilation is all-or-nothing; if it failed, all invariants are unproven
+    return INVARIANT_KEYS.map((inv) => ({
+      name: inv.key,
+      label: inv.label,
+      status: "fail" as const,
+      method: "certificate" as const,
+    }));
+  }
+
   if (!stdout) {
     return INVARIANT_KEYS.map((inv) => ({ name: inv.key, label: inv.label, status: "pending" }));
   }
@@ -29,7 +100,12 @@ function parseInvariantResults(stdout: string | undefined): InvariantResult[] {
     const re = new RegExp(`^(PASS|FAIL)\\s+${inv.key}`, "m");
     const match = stdout.match(re);
     if (!match) return { name: inv.key, label: inv.label, status: "pending" as const };
-    return { name: inv.key, label: inv.label, status: match[1] === "PASS" ? "pass" as const : "fail" as const };
+    return {
+      name: inv.key,
+      label: inv.label,
+      status: match[1] === "PASS" ? ("pass" as const) : ("fail" as const),
+      method: "runtime" as const,
+    };
   });
 }
 
@@ -39,13 +115,16 @@ export function PublishPanel() {
   const [draft, setDraft] = useState<KernelActiveArtifactsResponse | null>(null);
   const [runtime, setRuntime] = useState<KernelRuntimeArtifactsResponse | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [verifyMode, setVerifyMode] = useState<"quick" | "certificate">("quick");
   const [publishResult, setPublishResult] = useState<KernelPublishSnapshotResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<SnapshotEntry[]>([]);
 
   async function refreshDraft() {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/kernel/active`);
+      const res = await fetch(`${apiBaseUrl}/api/kernel/active`, {
+        headers: sessionHeaders(),
+      });
       if (!res.ok) throw new Error("Failed to load draft.");
       setDraft((await res.json()) as KernelActiveArtifactsResponse);
     } catch {
@@ -55,7 +134,9 @@ export function PublishPanel() {
 
   async function refreshRuntime() {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/kernel/runtime`);
+      const res = await fetch(`${apiBaseUrl}/api/kernel/runtime`, {
+        headers: sessionHeaders(),
+      });
       if (!res.ok) throw new Error("Failed to load runtime.");
       setRuntime((await res.json()) as KernelRuntimeArtifactsResponse);
     } catch {
@@ -65,7 +146,9 @@ export function PublishPanel() {
 
   async function refreshSnapshots() {
     try {
-      const res = await fetch(`${apiBaseUrl}/api/kernel/snapshots`);
+      const res = await fetch(`${apiBaseUrl}/api/kernel/snapshots`, {
+        headers: sessionHeaders(),
+      });
       if (!res.ok) return;
       setSnapshots((await res.json()) as SnapshotEntry[]);
     } catch {
@@ -81,13 +164,24 @@ export function PublishPanel() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/publish`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verify: true, timeoutSeconds: 20 }),
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          verify: true,
+          verifyMode,
+          timeoutSeconds: verifyMode === "certificate" ? 180 : 20,
+        }),
       });
 
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { detail?: string };
-        throw new Error(body.detail ?? "Publish failed.");
+        const body = (await res.json().catch(() => ({}))) as { detail?: unknown };
+        const detail = body.detail;
+        const msg =
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d: { msg?: string }) => d.msg ?? "").join("; ")
+              : "Publish failed.";
+        throw new Error(msg);
       }
 
       const payload = (await res.json()) as KernelPublishSnapshotResponse;
@@ -111,6 +205,10 @@ export function PublishPanel() {
 
   const isRuntimeVerified = runtime?.verification.status === "verified";
   const hasDraftRules = (draft?.rulesetRuleCount ?? 0) > 0;
+  const unresolvableConflicts = (draft?.conflictWarnings ?? []).filter(
+    (w) => !w.resolvable
+  );
+  const hasUnresolvableConflicts = unresolvableConflicts.length > 0;
 
   return (
     <div className="space-y-6">
@@ -189,25 +287,81 @@ export function PublishPanel() {
           ) : null}
 
           <p className="text-sm text-slate-600">
-            Publishes the current Draft as a frozen JSON snapshot, runs the Lean
-            verifier, and promotes to Runtime if all invariants pass.
+            Publishes the current Draft as a frozen JSON snapshot and verifies
+            invariants. Only a successful proof certificate promotes to Runtime.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={publish}
-              disabled={isPublishing || !hasDraftRules}
-              className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isPublishing ? "Verifying\u2026" : "Publish and verify"}
-            </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setVerifyMode("quick")}
+                disabled={isPublishing}
+                className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
+                  verifyMode === "quick"
+                    ? "border-indigo-300 bg-indigo-50 text-indigo-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <div className="font-semibold">
+                  Lean runtime check
+                  <InfoTip text="Runs the compiled Lean verifier binary. Checks all three invariants using fact sets extracted from each rule's premises. Fast advisory check for authoring -- does not promote to runtime." />
+                </div>
+                <div className="mt-0.5 text-[11px] opacity-75">
+                  Advisory only &middot; rule-premise fact sets (~2-5s)
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setVerifyMode("certificate")}
+                disabled={isPublishing}
+                className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
+                  verifyMode === "certificate"
+                    ? "border-violet-300 bg-violet-50 text-violet-800"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                <div className="font-semibold">
+                  Lean proof certificate
+                  <InfoTip text="Generates a Lean proof script with your exact ruleset data and compiles it with Lean's kernel. Proves all three invariants hold for every possible combination of facts (2^N subsets). Produces a machine-checkable proof certificate. Only path that promotes to runtime." />
+                </div>
+                <div className="mt-0.5 text-[11px] opacity-75">
+                  Proves all 2<sup>N</sup> fact subsets &middot; promotes to runtime
+                </div>
+              </button>
+            </div>
 
-            {!hasDraftRules ? (
-              <span className="text-xs text-slate-400">
-                No draft rules to publish.
-              </span>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={publish}
+                disabled={isPublishing || !hasDraftRules || hasUnresolvableConflicts}
+                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70 ${
+                  verifyMode === "certificate"
+                    ? "bg-violet-600 hover:bg-violet-700"
+                    : "bg-indigo-600 hover:bg-indigo-700"
+                }`}
+              >
+                {isPublishing
+                  ? verifyMode === "certificate"
+                    ? "Proving\u2026"
+                    : "Checking\u2026"
+                  : verifyMode === "certificate"
+                    ? "Publish and prove"
+                    : "Publish and check"}
+              </button>
+
+              {!hasDraftRules ? (
+                <span className="text-xs text-slate-400">
+                  No draft rules to publish.
+                </span>
+              ) : hasUnresolvableConflicts ? (
+                <span className="text-xs text-red-600">
+                  {unresolvableConflicts.length} unresolvable conflict{unresolvableConflicts.length > 1 ? "s" : ""} must
+                  be resolved before publishing.
+                </span>
+              ) : null}
+            </div>
           </div>
 
           {snapshots.length > 0 ? (
@@ -241,24 +395,46 @@ export function PublishPanel() {
                   Snapshot output
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {publishResult.verifyResult ? (
-                    <Badge
-                      className={
-                        publishResult.verifyResult.ok
-                          ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                          : "border border-red-200 bg-red-50 text-red-700"
-                      }
-                    >
-                      {publishResult.verifyResult.ok ? "Verified" : "Verify failed"}
-                    </Badge>
-                  ) : (
-                    <Badge className="border border-slate-200 bg-white text-slate-700">
-                      Not verified
-                    </Badge>
-                  )}
+                  {(() => {
+                    const quickOk = publishResult.verifyResult?.ok === true;
+                    const certOk = publishResult.certificateVerifyResult?.ok === true;
+                    const certSkipped = publishResult.certificateVerifyResult?.exitCode === -1;
+                    const anyOk = quickOk || certOk;
+                    const anyAttempted =
+                      publishResult.verifyResult != null ||
+                      (publishResult.certificateVerifyResult != null && !certSkipped);
+
+                    if (anyOk) {
+                      return (
+                        <Badge className={certOk
+                          ? "border border-violet-200 bg-violet-50 text-violet-700"
+                          : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                        }>
+                          {certOk ? "Proven" : "Verified"}
+                        </Badge>
+                      );
+                    }
+                    if (anyAttempted) {
+                      return (
+                        <Badge className="border border-red-200 bg-red-50 text-red-700">
+                          Verify failed
+                        </Badge>
+                      );
+                    }
+                    return (
+                      <Badge className="border border-slate-200 bg-white text-slate-700">
+                        Not verified
+                      </Badge>
+                    );
+                  })()}
                   {publishResult.runtimePromoted ? (
                     <Badge className="border border-emerald-200 bg-emerald-50 text-emerald-700">
                       Promoted to runtime
+                    </Badge>
+                  ) : null}
+                  {publishResult.certificateGenerated ? (
+                    <Badge className="border border-violet-200 bg-violet-50 text-violet-700">
+                      Certificate generated
                     </Badge>
                   ) : null}
                 </div>
@@ -288,67 +464,190 @@ export function PublishPanel() {
                 ))}
               </div>
 
-              {publishResult.verifyResult ? (
-                <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                  <summary className="cursor-pointer text-xs font-semibold text-slate-700">
-                    Verifier output (exit {publishResult.verifyResult.exitCode},{" "}
-                    {publishResult.verifyResult.durationMs}ms)
-                  </summary>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        stderr
+              {(() => {
+                const output: { label: string; result: CohereVerifyResponse | CertificateVerifyResult } | null =
+                  publishResult.verifyResult
+                    ? { label: "Runtime verifier output", result: publishResult.verifyResult }
+                    : publishResult.certificateVerifyResult
+                      ? { label: "Certificate compilation output", result: publishResult.certificateVerifyResult }
+                      : null;
+                if (!output) return null;
+                return (
+                  <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <summary className="cursor-pointer text-xs font-semibold text-slate-700">
+                      {output.label} (exit {output.result.exitCode},{" "}
+                      {output.result.durationMs}ms)
+                    </summary>
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          stderr
+                        </div>
+                        <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-800">
+                          {output.result.stderr || "(empty)"}
+                        </pre>
                       </div>
-                      <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-800">
-                        {publishResult.verifyResult.stderr || "(empty)"}
-                      </pre>
-                    </div>
-                    <div>
-                      <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        stdout
+                      <div>
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                          stdout
+                        </div>
+                        <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-800">
+                          {output.result.stdout || "(empty)"}
+                        </pre>
                       </div>
-                      <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-800">
-                        {publishResult.verifyResult.stdout || "(empty)"}
-                      </pre>
                     </div>
-                  </div>
-                </details>
-              ) : null}
+                  </details>
+                );
+              })()}
             </div>
           ) : null}
         </CardContent>
       </Card>
 
-      <InvariantSuiteCard stdout={publishResult?.verifyResult?.stdout} />
+      <InvariantSuiteCard
+        stdout={publishResult?.verifyResult?.stdout}
+        certificateResult={publishResult?.certificateVerifyResult}
+        verifyMode={publishResult ? verifyMode : "quick"}
+      />
+
+      {publishResult?.certificateGenerated ? (
+        <CertificateCard
+          filePath={publishResult.files?.certificate}
+          verifyResult={publishResult.certificateVerifyResult}
+        />
+      ) : null}
     </div>
   );
 }
 
-function InvariantSuiteCard({ stdout }: { stdout: string | undefined }) {
-  const results = useMemo(() => parseInvariantResults(stdout), [stdout]);
+function CertificateCard({
+  filePath,
+  verifyResult,
+}: {
+  filePath?: string;
+  verifyResult?: CertificateVerifyResult | null;
+}) {
+  const verified = verifyResult?.ok === true;
+  const attempted = verifyResult != null && verifyResult.exitCode !== -1;
+  const skipped = verifyResult != null && verifyResult.exitCode === -1;
+
+  return (
+    <Card className={verified ? "border-violet-300" : "border-violet-200"}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Proof certificate</CardTitle>
+          {verified ? (
+            <Badge className="border border-violet-200 bg-violet-50 text-violet-700">
+              Kernel-verified
+            </Badge>
+          ) : attempted ? (
+            <Badge className="border border-red-200 bg-red-50 text-red-700">
+              Verification failed
+            </Badge>
+          ) : skipped ? (
+            <Badge className="border border-slate-200 bg-white text-slate-500">
+              Verification skipped
+            </Badge>
+          ) : (
+            <Badge className="border border-slate-200 bg-white text-slate-500">
+              Pending verification
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        <p className="text-sm text-slate-600">
+          A Lean 4 proof script was generated for this snapshot. It embeds the
+          concrete ruleset data and proves all three kernel invariants hold for
+          every subset of the fact universe using <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">native_decide</code>.
+        </p>
+        {verified ? (
+          <p className="text-sm font-medium text-violet-700">
+            Lean&apos;s kernel successfully compiled and verified all three
+            theorems ({verifyResult.durationMs}ms). The invariants are proven
+            to hold universally.
+          </p>
+        ) : skipped ? (
+          <p className="text-sm text-slate-500">
+            The Lean toolchain is not available in this environment.
+            Compile the certificate file independently to verify.
+          </p>
+        ) : attempted ? (
+          <p className="text-sm text-red-700">
+            Certificate compilation failed. See verifier output above for details.
+          </p>
+        ) : null}
+        {filePath ? (
+          <div className="rounded-lg border border-violet-100 bg-violet-50/50 px-3 py-2 text-xs">
+            <span className="font-semibold text-violet-700">File:</span>{" "}
+            <span className="font-mono text-slate-700">{filePath}</span>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function InvariantSuiteCard({
+  stdout,
+  certificateResult,
+  verifyMode,
+}: {
+  stdout: string | undefined;
+  certificateResult?: CertificateVerifyResult | null;
+  verifyMode: "quick" | "certificate";
+}) {
+  const results = useMemo(
+    () => parseInvariantResults(stdout, certificateResult, verifyMode),
+    [stdout, certificateResult, verifyMode],
+  );
+
+  const allResolved = results.every((r) => r.status !== "pending");
+  const methodLabel = allResolved
+    ? results[0]?.method === "certificate"
+      ? "Proven via Lean certificate"
+      : "Checked via runtime verifier"
+    : null;
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Invariant checks</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Invariant checks</CardTitle>
+          {methodLabel ? (
+            <span className="text-[11px] font-medium text-slate-500">
+              {methodLabel}
+            </span>
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="grid gap-2 sm:grid-cols-3">
           {results.map((inv) => {
             const borderColor =
               inv.status === "pass"
-                ? "border-emerald-200 bg-emerald-50/30"
+                ? inv.method === "certificate"
+                  ? "border-violet-200 bg-violet-50/30"
+                  : "border-emerald-200 bg-emerald-50/30"
                 : inv.status === "fail"
                   ? "border-red-200 bg-red-50/30"
                   : "border-slate-200 bg-slate-50";
             const badgeClass =
               inv.status === "pass"
-                ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                ? inv.method === "certificate"
+                  ? "border border-violet-200 bg-violet-50 text-violet-700"
+                  : "border border-emerald-200 bg-emerald-50 text-emerald-700"
                 : inv.status === "fail"
                   ? "border border-red-200 bg-red-50 text-red-700"
                   : "border border-slate-200 bg-white text-slate-500";
             const badgeLabel =
-              inv.status === "pass" ? "Pass" : inv.status === "fail" ? "Fail" : "Pending";
+              inv.status === "pass"
+                ? inv.method === "certificate"
+                  ? "Proven"
+                  : "Pass"
+                : inv.status === "fail"
+                  ? "Fail"
+                  : "Pending";
 
             return (
               <div

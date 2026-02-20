@@ -4,11 +4,12 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.schemas import (
@@ -33,14 +34,19 @@ from src.api.schemas import (
     KernelRuntimeVerificationResponse,
     OntologyMappingResponse,
     OntologyNormalizeRequest,
+    ConflictWarningResponse,
+    FactExclusionInput,
+    FactExclusionResponse,
     OntologyNormalizeResponse,
 )
 from src.hypergraph.hyperedges import Hyperedge
+from src.kernel.certgen import CertificateVerifyResult, verify_certificate, write_certificate
+from src.kernel.conflicts import ConflictWarning, detect_conflicts
 from src.kernel.store import (
-    KERNEL_ARTIFACTS,
+    SESSION_MANAGER,
+    InMemoryKernelArtifactStore,
     KernelArtifactBundle,
     KernelArtifactManifest,
-    KernelDraftProposals,
     RuleProvenance,
 )
 from src.ontology.normalize import OntologyInput, normalize_ontology_input
@@ -123,7 +129,28 @@ app.add_middleware(
 
 
 # ---------------------------------------------------------------------------
-# Shared helpers
+# Session helpers
+# ---------------------------------------------------------------------------
+
+_DEFAULT_SESSION_ID = "default"
+
+
+def _get_session_id(request: Request) -> str:
+    return request.headers.get("x-session-id", _DEFAULT_SESSION_ID)
+
+
+def _get_session_store(request: Request) -> InMemoryKernelArtifactStore:
+    return SESSION_MANAGER.get_or_create(_get_session_id(request))
+
+
+def _get_session_artifact_dir(request: Request) -> Path:
+    session_id = _get_session_id(request)
+    base = os.getenv("KERNEL_ARTIFACT_DIR", "/tmp/verified-protocol-hypergraph-artifacts")
+    return Path(base) / session_id
+
+
+# ---------------------------------------------------------------------------
+# Response helpers
 # ---------------------------------------------------------------------------
 
 
@@ -240,12 +267,39 @@ def _infeasibility_to_response(entries: tuple[dict[str, object], ...]) -> list[I
     return result
 
 
-def _draft_to_active_response(draft: KernelDraftProposals) -> KernelActiveArtifactsResponse:
+def _fact_exclusions_to_response(groups: tuple[dict[str, object], ...]) -> list[FactExclusionResponse]:
+    result: list[FactExclusionResponse] = []
+    for group in groups:
+        facts = group.get("facts")
+        if isinstance(facts, list):
+            result.append(FactExclusionResponse(
+                facts=[str(f) for f in facts],
+                createdBy=str(group.get("created_by", "")),
+                createdAt=str(group.get("created_at", "")),
+            ))
+    return result
+
+
+def _conflict_to_response(w: ConflictWarning) -> ConflictWarningResponse:
+    return ConflictWarningResponse(
+        ruleAId=w.rule_a_id,
+        ruleBId=w.rule_b_id,
+        action=w.action,
+        verdictA=w.verdict_a,
+        verdictB=w.verdict_b,
+        resolvable=w.resolvable,
+    )
+
+
+def _draft_to_active_response(store: InMemoryKernelArtifactStore) -> KernelActiveArtifactsResponse:
+    draft = store.get_draft()
     manifest = _manifest_to_response(draft.manifest)
     ruleset = [
         _rule_to_response(edge, draft.rule_provenance, draft.manifest.updated_by, draft.manifest.updated_at)
         for edge in draft.proposals
     ]
+    candidate = store.build_candidate_runtime_bundle()
+    warnings = detect_conflicts(candidate.ruleset)
     return KernelActiveArtifactsResponse(
         manifest=manifest,
         rulesetRuleCount=len(draft.proposals),
@@ -254,7 +308,10 @@ def _draft_to_active_response(draft: KernelDraftProposals) -> KernelActiveArtifa
         incompatibility=_incompat_to_response(draft.incompatibility),
         infeasibilityEntryCount=len(draft.infeasibility),
         infeasibility=_infeasibility_to_response(draft.infeasibility),
+        factExclusionCount=len(draft.fact_exclusions),
+        factExclusions=_fact_exclusions_to_response(draft.fact_exclusions),
         proofReport={"status": "draft", "notes": "Pending proposals only."},
+        conflictWarnings=[_conflict_to_response(w) for w in warnings],
     )
 
 
@@ -289,6 +346,8 @@ def _runtime_to_response(
         incompatibility=_incompat_to_response(bundle.incompatibility),
         infeasibilityEntryCount=len(bundle.infeasibility),
         infeasibility=_infeasibility_to_response(bundle.infeasibility),
+        factExclusionCount=len(bundle.fact_exclusions),
+        factExclusions=_fact_exclusions_to_response(bundle.fact_exclusions),
         proofReport=bundle.proof_report,
     )
 
@@ -345,8 +404,9 @@ def normalize_ontology(payload: OntologyNormalizeRequest) -> OntologyNormalizeRe
 
 
 @app.post("/api/hypergraph/retrieve", response_model=HypergraphRetrieveResponse)
-def retrieve_hypergraph(payload: HypergraphRetrieveRequest) -> HypergraphRetrieveResponse:
-    runtime_verification = KERNEL_ARTIFACTS.get_runtime_verification()
+def retrieve_hypergraph(payload: HypergraphRetrieveRequest, request: Request) -> HypergraphRetrieveResponse:
+    store = _get_session_store(request)
+    runtime_verification = store.get_runtime_verification()
     if runtime_verification.status != "verified":
         raise HTTPException(
             status_code=412,
@@ -359,7 +419,7 @@ def retrieve_hypergraph(payload: HypergraphRetrieveRequest) -> HypergraphRetriev
     facts = set(payload.facts)
     candidate_edges: list[HypergraphCandidateEdgeResponse] = []
 
-    for edge in KERNEL_ARTIFACTS.get_runtime_ruleset():
+    for edge in store.get_runtime_ruleset():
         matching_premises = sorted(edge.premises.intersection(facts))
         missing_premises = sorted(edge.premises.difference(facts))
         candidate_edges.append(
@@ -417,16 +477,18 @@ def retrieve_hypergraph(payload: HypergraphRetrieveRequest) -> HypergraphRetriev
 
 
 @app.get("/api/kernel/active", response_model=KernelActiveArtifactsResponse)
-def get_active_kernel_artifacts() -> KernelActiveArtifactsResponse:
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+def get_active_kernel_artifacts(request: Request) -> KernelActiveArtifactsResponse:
+    store = _get_session_store(request)
+    return _draft_to_active_response(store)
 
 
 @app.put("/api/kernel/active/ruleset", response_model=KernelActiveArtifactsResponse)
-def replace_active_ruleset(payload: KernelReplaceRulesetRequest) -> KernelActiveArtifactsResponse:
+def replace_active_ruleset(payload: KernelReplaceRulesetRequest, request: Request) -> KernelActiveArtifactsResponse:
     rule_ids = [rule.ruleId for rule in payload.ruleset]
     if len(set(rule_ids)) != len(rule_ids):
         raise HTTPException(status_code=400, detail="Ruleset contains duplicate ruleId values.")
 
+    store = _get_session_store(request)
     edges: list[Hyperedge] = []
     for rule in payload.ruleset:
         edges.append(
@@ -438,22 +500,23 @@ def replace_active_ruleset(payload: KernelReplaceRulesetRequest) -> KernelActive
             )
         )
 
-    KERNEL_ARTIFACTS.replace_draft_proposals(
+    store.replace_draft_proposals(
         ruleset_version=payload.rulesetVersion,
         updated_by=payload.updatedBy,
         change_summary=payload.changeSummary,
         rules=edges,
     )
-    return get_active_kernel_artifacts()
+    return _draft_to_active_response(store)
 
 
 # -- individual rule CRUD -----------------------------------------------------
 
 
 @app.post("/api/kernel/active/rules", response_model=KernelActiveArtifactsResponse)
-def add_rule(payload: KernelRuleInput) -> KernelActiveArtifactsResponse:
+def add_rule(payload: KernelRuleInput, request: Request) -> KernelActiveArtifactsResponse:
     _validate_outcome_token(payload.outcome)
     _validate_fact_tokens(payload.premises)
+    store = _get_session_store(request)
     edge = Hyperedge(
         edge_id=payload.ruleId,
         premises=frozenset(payload.premises),
@@ -461,16 +524,17 @@ def add_rule(payload: KernelRuleInput) -> KernelActiveArtifactsResponse:
         note=payload.note,
     )
     try:
-        KERNEL_ARTIFACTS.add_rule(edge=edge, created_by=payload.createdBy)
+        store.add_rule(edge=edge, created_by=payload.createdBy)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 @app.put("/api/kernel/active/rules/{rule_id}", response_model=KernelActiveArtifactsResponse)
-def update_rule(rule_id: str, payload: KernelRuleInput) -> KernelActiveArtifactsResponse:
+def update_rule(rule_id: str, payload: KernelRuleInput, request: Request) -> KernelActiveArtifactsResponse:
     _validate_outcome_token(payload.outcome)
     _validate_fact_tokens(payload.premises)
+    store = _get_session_store(request)
     edge = Hyperedge(
         edge_id=payload.ruleId,
         premises=frozenset(payload.premises),
@@ -478,97 +542,126 @@ def update_rule(rule_id: str, payload: KernelRuleInput) -> KernelActiveArtifacts
         note=payload.note,
     )
     try:
-        KERNEL_ARTIFACTS.update_rule(rule_id=rule_id, edge=edge, updated_by=payload.createdBy)
+        store.update_rule(rule_id=rule_id, edge=edge, updated_by=payload.createdBy)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 @app.delete("/api/kernel/active/rules/{rule_id}", response_model=KernelActiveArtifactsResponse)
-def delete_rule(rule_id: str) -> KernelActiveArtifactsResponse:
+def delete_rule(rule_id: str, request: Request) -> KernelActiveArtifactsResponse:
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.remove_rule(rule_id=rule_id, updated_by="anonymous")
+        store.remove_rule(rule_id=rule_id, updated_by="anonymous")
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 # -- incompatibility CRUD -----------------------------------------------------
 
 
 @app.post("/api/kernel/active/incompatibility", response_model=KernelActiveArtifactsResponse)
-def add_incompatibility_pair(payload: IncompatibilityPairInput) -> KernelActiveArtifactsResponse:
+def add_incompatibility_pair(payload: IncompatibilityPairInput, request: Request) -> KernelActiveArtifactsResponse:
     _validate_action_token(payload.a)
     _validate_action_token(payload.b)
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.add_incompatibility_pair(a=payload.a, b=payload.b, created_by=payload.createdBy)
+        store.add_incompatibility_pair(a=payload.a, b=payload.b, created_by=payload.createdBy)
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 @app.put("/api/kernel/active/incompatibility/{index}", response_model=KernelActiveArtifactsResponse)
-def update_incompatibility_pair(index: int, payload: IncompatibilityPairInput) -> KernelActiveArtifactsResponse:
+def update_incompatibility_pair(index: int, payload: IncompatibilityPairInput, request: Request) -> KernelActiveArtifactsResponse:
     _validate_action_token(payload.a)
     _validate_action_token(payload.b)
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.update_incompatibility_pair(index=index, a=payload.a, b=payload.b, updated_by=payload.createdBy)
+        store.update_incompatibility_pair(index=index, a=payload.a, b=payload.b, updated_by=payload.createdBy)
     except IndexError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 @app.delete("/api/kernel/active/incompatibility/{index}", response_model=KernelActiveArtifactsResponse)
-def delete_incompatibility_pair(index: int) -> KernelActiveArtifactsResponse:
+def delete_incompatibility_pair(index: int, request: Request) -> KernelActiveArtifactsResponse:
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.remove_incompatibility_pair(index=index, updated_by="anonymous")
+        store.remove_incompatibility_pair(index=index, updated_by="anonymous")
     except IndexError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 # -- infeasibility CRUD -------------------------------------------------------
 
 
 @app.post("/api/kernel/active/infeasibility", response_model=KernelActiveArtifactsResponse)
-def add_infeasibility_entry(payload: InfeasibilityEntryInput) -> KernelActiveArtifactsResponse:
+def add_infeasibility_entry(payload: InfeasibilityEntryInput, request: Request) -> KernelActiveArtifactsResponse:
     _validate_action_token(payload.action)
     _validate_fact_tokens(payload.premises)
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.add_infeasibility_entry(
+        store.add_infeasibility_entry(
             action=payload.action, premises=payload.premises, created_by=payload.createdBy
         )
     except ValueError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 @app.put("/api/kernel/active/infeasibility/{index}", response_model=KernelActiveArtifactsResponse)
-def update_infeasibility_entry(index: int, payload: InfeasibilityEntryInput) -> KernelActiveArtifactsResponse:
+def update_infeasibility_entry(index: int, payload: InfeasibilityEntryInput, request: Request) -> KernelActiveArtifactsResponse:
     _validate_action_token(payload.action)
     _validate_fact_tokens(payload.premises)
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.update_infeasibility_entry(
+        store.update_infeasibility_entry(
             index=index, action=payload.action, premises=payload.premises, updated_by=payload.createdBy
         )
     except IndexError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
 
 
 @app.delete("/api/kernel/active/infeasibility/{index}", response_model=KernelActiveArtifactsResponse)
-def delete_infeasibility_entry(index: int) -> KernelActiveArtifactsResponse:
+def delete_infeasibility_entry(index: int, request: Request) -> KernelActiveArtifactsResponse:
+    store = _get_session_store(request)
     try:
-        KERNEL_ARTIFACTS.remove_infeasibility_entry(index=index, updated_by="anonymous")
+        store.remove_infeasibility_entry(index=index, updated_by="anonymous")
     except IndexError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return _draft_to_active_response(KERNEL_ARTIFACTS.get_draft())
+    return _draft_to_active_response(store)
+
+
+@app.post("/api/kernel/active/fact-exclusions", response_model=KernelActiveArtifactsResponse)
+def add_fact_exclusion(payload: FactExclusionInput, request: Request) -> KernelActiveArtifactsResponse:
+    _validate_fact_tokens(payload.facts)
+    store = _get_session_store(request)
+    try:
+        store.add_fact_exclusion(facts=payload.facts, created_by=payload.createdBy)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return _draft_to_active_response(store)
+
+
+@app.delete("/api/kernel/active/fact-exclusions/{index}", response_model=KernelActiveArtifactsResponse)
+def delete_fact_exclusion(index: int, request: Request) -> KernelActiveArtifactsResponse:
+    store = _get_session_store(request)
+    try:
+        store.remove_fact_exclusion(index=index, updated_by="anonymous")
+    except IndexError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return _draft_to_active_response(store)
 
 
 @app.get("/api/kernel/runtime", response_model=KernelRuntimeArtifactsResponse)
-def get_runtime_kernel_artifacts() -> KernelRuntimeArtifactsResponse:
-    runtime = KERNEL_ARTIFACTS.get_runtime_bundle()
-    verification = KERNEL_ARTIFACTS.get_runtime_verification()
+def get_runtime_kernel_artifacts(request: Request) -> KernelRuntimeArtifactsResponse:
+    store = _get_session_store(request)
+    runtime = store.get_runtime_bundle()
+    verification = store.get_runtime_verification()
     verification_payload = KernelRuntimeVerificationResponse(
         status=verification.status,
         verifiedAt=verification.verified_at.isoformat() if verification.verified_at else None,
@@ -579,10 +672,8 @@ def get_runtime_kernel_artifacts() -> KernelRuntimeArtifactsResponse:
 
 
 @app.get("/api/kernel/snapshots")
-def list_snapshots() -> list[dict[str, str]]:
-    base_dir = Path(
-        os.getenv("KERNEL_ARTIFACT_DIR", "/tmp/verified-protocol-hypergraph-artifacts")
-    )
+def list_snapshots(request: Request) -> list[dict[str, str]]:
+    base_dir = _get_session_artifact_dir(request)
     if not base_dir.is_dir():
         return []
     entries: list[dict[str, str]] = []
@@ -601,12 +692,21 @@ def list_snapshots() -> list[dict[str, str]]:
 @app.post("/api/kernel/publish", response_model=KernelPublishSnapshotResponse)
 def publish_active_kernel_snapshot(
     payload: KernelPublishSnapshotRequest,
+    request: Request,
 ) -> KernelPublishSnapshotResponse:
-    draft = KERNEL_ARTIFACTS.get_draft()
-    bundle = KERNEL_ARTIFACTS.build_candidate_runtime_bundle()
-    base_dir = Path(
-        os.getenv("KERNEL_ARTIFACT_DIR", "/tmp/verified-protocol-hypergraph-artifacts")
-    )
+    store = _get_session_store(request)
+    draft = store.get_draft()
+    bundle = store.build_candidate_runtime_bundle()
+
+    unresolvable = [w for w in detect_conflicts(bundle.ruleset) if not w.resolvable]
+    if unresolvable:
+        pairs = [f"({w.rule_a_id}, {w.rule_b_id}) on {w.action}" for w in unresolvable]
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot publish: {len(unresolvable)} unresolvable conflict(s): {'; '.join(pairs)}",
+        )
+
+    base_dir = _get_session_artifact_dir(request)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safe_version = _sanitize_dir_component(bundle.manifest.ruleset_version)
@@ -691,12 +791,22 @@ def publish_active_kernel_snapshot(
         "entries": infeasibility_entries,
         "notes": "Published from in-memory kernel artifact store.",
     }
+    fact_exclusions_payload = {
+        "version": draft.manifest.ruleset_version,
+        "groups": [
+            {"facts": [str(f) for f in g.get("facts", [])]}
+            for g in bundle.fact_exclusions
+            if isinstance(g.get("facts"), list)
+        ],
+        "notes": "Published from in-memory kernel artifact store.",
+    }
 
     files: dict[str, Path] = {
         "manifest": snapshot_dir / "manifest.json",
         "ruleset": snapshot_dir / "ruleset.json",
         "incompatibility": snapshot_dir / "incompatibility.json",
         "infeasibility": snapshot_dir / "infeasibility.json",
+        "factExclusions": snapshot_dir / "fact_exclusions.json",
         "proofReport": snapshot_dir / "proof_report.json",
     }
 
@@ -705,23 +815,55 @@ def publish_active_kernel_snapshot(
         files["ruleset"].write_text(json.dumps(ruleset_payload, indent=2, sort_keys=True), encoding="utf-8")
         files["incompatibility"].write_text(json.dumps(incompat_payload, indent=2, sort_keys=True), encoding="utf-8")
         files["infeasibility"].write_text(json.dumps(infeasibility_payload, indent=2, sort_keys=True), encoding="utf-8")
+        files["factExclusions"].write_text(json.dumps(fact_exclusions_payload, indent=2, sort_keys=True), encoding="utf-8")
         files["proofReport"].write_text(json.dumps(bundle.proof_report, indent=2, sort_keys=True), encoding="utf-8")
     except OSError as exc:
         raise HTTPException(status_code=500, detail=f"Failed to write snapshot files: {exc}") from exc
 
+    cert_generated = False
+    cert_verify: CertificateVerifyResult | None = None
+    cert_path: Path | None = None
+    use_certificate = payload.verifyMode == "certificate"
+
+    if use_certificate:
+        try:
+            cert_path = write_certificate(
+                snapshot_dir, files["ruleset"], files["incompatibility"], files["infeasibility"],
+                fact_exclusions_path=files["factExclusions"],
+            )
+            files["certificate"] = cert_path
+            cert_generated = True
+        except Exception:
+            cert_path = None
+
     verify_result = None
     runtime_promoted = False
-    if payload.verify:
+
+    if payload.verify and not use_certificate:
         verify_result = _run_verifier(
-            [str(files["ruleset"]), str(files["incompatibility"]), str(files["infeasibility"])],
+            [str(files["ruleset"]), str(files["incompatibility"]), str(files["infeasibility"]), str(files["factExclusions"])],
             payload.timeoutSeconds,
         )
-        if verify_result.ok:
-            KERNEL_ARTIFACTS.promote_candidate_to_runtime(
+
+    if payload.verify and use_certificate and cert_generated and cert_path is not None:
+        cert_timeout = max(int(payload.timeoutSeconds), 180)
+        cert_verify = verify_certificate(cert_path, timeout_seconds=cert_timeout)
+        if cert_verify.ok:
+            store.promote_candidate_to_runtime(
                 verified_by=draft.manifest.updated_by,
                 verified_snapshot_dir=str(snapshot_dir),
             )
             runtime_promoted = True
+
+    cert_verify_resp = None
+    if cert_verify is not None:
+        cert_verify_resp = {
+            "ok": cert_verify.ok,
+            "exitCode": cert_verify.exit_code,
+            "stdout": cert_verify.stdout,
+            "stderr": cert_verify.stderr,
+            "durationMs": cert_verify.duration_ms,
+        }
 
     return KernelPublishSnapshotResponse(
         directory=str(snapshot_dir),
@@ -729,28 +871,31 @@ def publish_active_kernel_snapshot(
         files={key: str(path) for key, path in files.items()},
         verifyResult=verify_result,
         runtimePromoted=runtime_promoted,
+        certificateGenerated=cert_generated,
+        certificateVerifyResult=cert_verify_resp,
     )
 
 
 @app.post("/api/cohere/verify", response_model=CohereVerifyResponse)
 def verify_cohere_artifacts(payload: CohereVerifyRequest) -> CohereVerifyResponse:
     """Verify Cohere JSON artifacts by invoking the cohere-verify CLI."""
-    import tempfile as _tempfile
-
-    with _tempfile.TemporaryDirectory(prefix="cohere-verify-") as tmpdir:
+    with tempfile.TemporaryDirectory(prefix="cohere-verify-") as tmpdir:
         tmp_path = Path(tmpdir)
         rules_path = tmp_path / "ruleset.json"
         incompat_path = tmp_path / "incompatibility.json"
         infeas_path = tmp_path / "infeasibility.json"
+        exclusions_path = tmp_path / "fact_exclusions.json"
 
         try:
             rules_path.write_text(json.dumps(payload.ruleset), encoding="utf-8")
             incompat_path.write_text(json.dumps(payload.incompatibility), encoding="utf-8")
             infeas_path.write_text(json.dumps(payload.infeasibility), encoding="utf-8")
+            fe_data = payload.factExclusions if payload.factExclusions is not None else {"groups": []}
+            exclusions_path.write_text(json.dumps(fe_data), encoding="utf-8")
         except OSError as exc:
             raise HTTPException(status_code=500, detail=f"Failed to write temp files: {exc}") from exc
 
         return _run_verifier(
-            [str(rules_path), str(incompat_path), str(infeas_path)],
+            [str(rules_path), str(incompat_path), str(infeas_path), str(exclusions_path)],
             payload.timeoutSeconds,
         )

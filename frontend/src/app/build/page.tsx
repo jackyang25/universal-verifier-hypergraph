@@ -10,6 +10,7 @@ import {
   displayActor,
   formatTimestamp,
   getApiBaseUrl,
+  sessionHeaders,
 } from "@/components/build/kernel-types";
 
 export default function BuildOverviewPage() {
@@ -19,11 +20,11 @@ export default function BuildOverviewPage() {
   const [runtime, setRuntime] = useState<KernelRuntimeArtifactsResponse | null>(null);
 
   useEffect(() => {
-    void fetch(`${apiBaseUrl}/api/kernel/active`)
+    void fetch(`${apiBaseUrl}/api/kernel/active`, { headers: sessionHeaders() })
       .then((r) => r.json())
       .then((d) => setDraft(d as KernelActiveArtifactsResponse))
       .catch(() => {});
-    void fetch(`${apiBaseUrl}/api/kernel/runtime`)
+    void fetch(`${apiBaseUrl}/api/kernel/runtime`, { headers: sessionHeaders() })
       .then((r) => r.json())
       .then((d) => setRuntime(d as KernelRuntimeArtifactsResponse))
       .catch(() => {});

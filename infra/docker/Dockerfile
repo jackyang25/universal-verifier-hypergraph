@@ -32,6 +32,15 @@ WORKDIR /app
 
 COPY --from=cohere-builder /cohere/src/.lake/build/bin/cohere-verify /usr/local/bin/cohere-verify
 
+# Lean toolchain + compiled Cohere library for certificate verification
+COPY --from=cohere-builder /root/.elan /root/.elan
+COPY --from=cohere-builder /cohere/src/.lake /app/cohere-lib/.lake
+COPY --from=cohere-builder /cohere/src/lakefile.toml /app/cohere-lib/lakefile.toml
+COPY --from=cohere-builder /cohere/src/lean-toolchain /app/cohere-lib/lean-toolchain
+COPY --from=cohere-builder /cohere/src/Cohere /app/cohere-lib/Cohere
+ENV PATH="/root/.elan/bin:${PATH}"
+ENV COHERE_LIB_DIR="/app/cohere-lib"
+
 COPY backend/pyproject.toml /app/backend/pyproject.toml
 COPY backend/src /app/backend/src
 RUN pip install --no-cache-dir /app/backend

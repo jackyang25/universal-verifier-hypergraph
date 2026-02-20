@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  type FactExclusion,
   type IncompatibilityPair,
   type InfeasibilityEntry,
   type KernelActiveArtifactsResponse,
   displayActor,
   formatTimestamp,
   getApiBaseUrl,
+  sessionHeaders,
 } from "./kernel-types";
 import { TokenCombobox } from "./TokenCombobox";
 import { useTokenRegistry, validateAction, validateFacts } from "./useTokenRegistry";
@@ -29,7 +31,9 @@ export function ConstraintsPanel() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiBaseUrl}/api/kernel/active`);
+      const res = await fetch(`${apiBaseUrl}/api/kernel/active`, {
+        headers: sessionHeaders(),
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(body.detail ?? "Failed to load draft.");
@@ -69,6 +73,14 @@ export function ConstraintsPanel() {
         isLoading={isLoading}
         onMutated={refresh}
         actionOptions={registry.actions}
+        factOptions={registry.facts}
+      />
+
+      <FactExclusionSection
+        groups={data?.factExclusions ?? []}
+        apiBaseUrl={apiBaseUrl}
+        isLoading={isLoading}
+        onMutated={refresh}
         factOptions={registry.facts}
       />
     </div>
@@ -122,19 +134,19 @@ function IncompatibilitySection({
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/incompatibility`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ a, b, createdBy: newCreatedBy.trim() || "anonymous" }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
-        throw new Error(body.detail ?? "Failed to add pair.");
+        throw new Error(body.detail ?? "Failed to add entry.");
       }
       setNewA("");
       setNewB("");
       setNewCreatedBy("");
       await onMutated();
     } catch (err) {
-      setSectionError(err instanceof Error ? err.message : "Failed to add pair.");
+      setSectionError(err instanceof Error ? err.message : "Failed to add entry.");
     } finally {
       setBusy(false);
     }
@@ -150,17 +162,17 @@ function IncompatibilitySection({
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/incompatibility/${editing.index}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ a, b }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
-        throw new Error(body.detail ?? "Failed to update pair.");
+        throw new Error(body.detail ?? "Failed to update entry.");
       }
       setEditing(null);
       await onMutated();
     } catch (err) {
-      setSectionError(err instanceof Error ? err.message : "Failed to update pair.");
+      setSectionError(err instanceof Error ? err.message : "Failed to update entry.");
     } finally {
       setBusy(false);
     }
@@ -172,15 +184,16 @@ function IncompatibilitySection({
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/incompatibility/${index}`, {
         method: "DELETE",
+        headers: sessionHeaders(),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
-        throw new Error(body.detail ?? "Failed to remove pair.");
+        throw new Error(body.detail ?? "Failed to remove entry.");
       }
       if (editing?.index === index) setEditing(null);
       await onMutated();
     } catch (err) {
-      setSectionError(err instanceof Error ? err.message : "Failed to remove pair.");
+      setSectionError(err instanceof Error ? err.message : "Failed to remove entry.");
     } finally {
       setBusy(false);
     }
@@ -191,20 +204,20 @@ function IncompatibilitySection({
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-base">
-            Incompatibility pairs
+            Incompatibility table
             <span className="ml-2 text-xs font-normal text-slate-500">
               Actions that cannot coexist
             </span>
           </CardTitle>
           <Badge className="border border-slate-200 bg-white text-slate-700">
-            {isLoading ? "Loading\u2026" : `${pairs.length} pairs`}
+            {isLoading ? "Loading\u2026" : `${pairs.length} entries`}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 pt-0">
         <p className="text-xs text-slate-500">
-          Two actions are incompatible when they must not both be obligated for the
-          same patient fact set.
+          Every action pair is compatible by default. An entry declares that two actions
+          must not both be obligated for the same patient fact set.
         </p>
 
         {sectionError ? (
@@ -290,13 +303,13 @@ function IncompatibilitySection({
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-            {isLoading ? "Loading\u2026" : "No incompatibility pairs defined."}
+            {isLoading ? "Loading\u2026" : "No incompatibility entries. All action pairs are compatible by default."}
           </div>
         )}
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Add pair
+            Add entry
           </div>
           <div className="mt-2 grid gap-3 sm:grid-cols-3">
             <div className="min-w-0">
@@ -380,7 +393,7 @@ function InfeasibilitySection({
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/infeasibility`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           action,
           premises: parseFacts(newFacts),
@@ -411,7 +424,7 @@ function InfeasibilitySection({
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/infeasibility/${editing.index}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ action, premises: parseFacts(editing.premises) }),
       });
       if (!res.ok) {
@@ -433,6 +446,7 @@ function InfeasibilitySection({
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/infeasibility/${index}`, {
         method: "DELETE",
+        headers: sessionHeaders(),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
@@ -580,6 +594,205 @@ function InfeasibilitySection({
           ) : null}
           <div className="mt-3">
             <button type="button" onClick={handleAdd} disabled={busy || !isAddValid} className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70">
+              {busy ? "Adding\u2026" : "Add"}
+            </button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Fact exclusion section                                                     */
+/* -------------------------------------------------------------------------- */
+
+function FactExclusionSection({
+  groups,
+  apiBaseUrl,
+  isLoading,
+  onMutated,
+  factOptions,
+}: {
+  groups: FactExclusion[];
+  apiBaseUrl: string;
+  isLoading: boolean;
+  onMutated: () => Promise<void>;
+  factOptions: string[];
+}) {
+  const [newFacts, setNewFacts] = useState("");
+  const [newCreatedBy, setNewCreatedBy] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sectionError, setSectionError] = useState<string | null>(null);
+
+  function parseFacts(raw: string): string[] {
+    return raw.split(",").map((s) => s.trim()).filter(Boolean);
+  }
+
+  const parsed = parseFacts(newFacts);
+  const isAddValid = parsed.length >= 2;
+
+  async function handleAdd() {
+    if (!isAddValid) return;
+    setBusy(true);
+    setSectionError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/kernel/active/fact-exclusions`, {
+        method: "POST",
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          facts: parsed,
+          createdBy: newCreatedBy.trim() || "anonymous",
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(body.detail ?? "Failed to add group.");
+      }
+      setNewFacts("");
+      setNewCreatedBy("");
+      await onMutated();
+    } catch (err) {
+      setSectionError(err instanceof Error ? err.message : "Failed to add group.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete(index: number) {
+    setBusy(true);
+    setSectionError(null);
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/kernel/active/fact-exclusions/${index}`, {
+        method: "DELETE",
+        headers: sessionHeaders(),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(body.detail ?? "Failed to remove group.");
+      }
+      await onMutated();
+    } catch (err) {
+      setSectionError(err instanceof Error ? err.message : "Failed to remove group.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="text-base">
+            Fact exclusion table
+            <span className="ml-2 text-xs font-normal text-slate-500">
+              Facts that cannot coexist
+            </span>
+          </CardTitle>
+          <Badge className="border border-slate-200 bg-white text-slate-700">
+            {isLoading ? "Loading\u2026" : `${groups.length} groups`}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-0">
+        <p className="text-xs text-slate-500">
+          Each group declares facts that are mutually exclusive -- at most one can be true
+          for any patient. Used by the proof certificate to skip impossible fact combinations.
+        </p>
+
+        {sectionError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {sectionError}
+          </div>
+        ) : null}
+
+        {groups.length > 0 ? (
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50">
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">#</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Mutually exclusive facts</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Added by</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {groups.map((group, idx) => (
+                  <tr key={idx} className="border-b border-slate-100 last:border-b-0">
+                    <td className="px-4 py-2 text-xs text-slate-400">{idx}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {group.facts.map((fact) => (
+                          <Badge key={fact} className="border border-slate-200 bg-white font-mono text-[11px] text-slate-700">
+                            {fact}
+                          </Badge>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      <span className="text-xs text-slate-500">{displayActor(group.createdBy)}</span>
+                      {group.createdAt && group.createdAt !== "seed" ? (
+                        <span className="ml-1 text-[10px] text-slate-400">{formatTimestamp(group.createdAt)}</span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(idx)}
+                        disabled={busy}
+                        className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
+            {isLoading ? "Loading\u2026" : "No fact exclusion groups. All fact combinations are considered valid."}
+          </div>
+        )}
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Add group
+          </div>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            <div className="min-w-0">
+              <label className="text-[11px] font-medium text-slate-500">
+                Mutually exclusive facts (comma-separated, min 2)
+              </label>
+              <TokenCombobox
+                value={newFacts}
+                onChange={setNewFacts}
+                options={factOptions}
+                placeholder="e.g. Ctx.GA_<34w, Ctx.GA_>=34w"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                multi
+              />
+            </div>
+            <div className="min-w-0">
+              <label className="text-[11px] font-medium text-slate-500">Created by</label>
+              <input
+                type="text"
+                value={newCreatedBy}
+                onChange={(e) => setNewCreatedBy(e.target.value)}
+                placeholder="anonymous"
+                className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm"
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={busy || !isAddValid}
+              className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+            >
               {busy ? "Adding\u2026" : "Add"}
             </button>
           </div>

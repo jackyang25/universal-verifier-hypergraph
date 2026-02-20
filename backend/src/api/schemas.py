@@ -176,6 +176,36 @@ class InfeasibilityEntryInput(BaseModel):
         return value
 
 
+class FactExclusionResponse(BaseModel):
+    facts: list[str]
+    createdBy: str = ""
+    createdAt: str = ""
+
+
+class FactExclusionInput(BaseModel):
+    facts: list[str] = Field(min_length=2)
+    createdBy: str = Field(default="anonymous", min_length=1)
+
+    @field_validator("facts", mode="before")
+    @classmethod
+    def validate_facts(cls, value: object) -> object:
+        if not isinstance(value, list) or len(value) < 2:
+            raise TypeError("A fact exclusion group must contain at least 2 facts.")
+        for item in value:
+            if not isinstance(item, str) or not item.strip():
+                raise TypeError("All facts must be non-empty strings.")
+        return value
+
+
+class ConflictWarningResponse(BaseModel):
+    ruleAId: str
+    ruleBId: str
+    action: str
+    verdictA: str
+    verdictB: str
+    resolvable: bool
+
+
 class KernelArtifactManifestResponse(BaseModel):
     artifactSource: str
     rulesetVersion: str
@@ -193,7 +223,10 @@ class KernelActiveArtifactsResponse(BaseModel):
     incompatibility: list[IncompatibilityPairResponse]
     infeasibilityEntryCount: int
     infeasibility: list[InfeasibilityEntryResponse]
+    factExclusionCount: int = 0
+    factExclusions: list[FactExclusionResponse] = Field(default_factory=list)
     proofReport: dict[str, Any]
+    conflictWarnings: list[ConflictWarningResponse] = Field(default_factory=list)
 
 
 class KernelRuntimeVerificationResponse(BaseModel):
@@ -212,6 +245,8 @@ class KernelRuntimeArtifactsResponse(BaseModel):
     incompatibility: list[IncompatibilityPairResponse]
     infeasibilityEntryCount: int
     infeasibility: list[InfeasibilityEntryResponse]
+    factExclusionCount: int = 0
+    factExclusions: list[FactExclusionResponse] = Field(default_factory=list)
     proofReport: dict[str, Any]
 
 
@@ -224,7 +259,8 @@ class KernelReplaceRulesetRequest(BaseModel):
 
 class KernelPublishSnapshotRequest(BaseModel):
     verify: bool = True
-    timeoutSeconds: float = Field(default=10.0, ge=0.1, le=120.0)
+    verifyMode: str = Field(default="quick", pattern=r"^(quick|certificate)$")
+    timeoutSeconds: float = Field(default=10.0, ge=0.1, le=300.0)
 
 
 class KernelPublishSnapshotResponse(BaseModel):
@@ -233,12 +269,15 @@ class KernelPublishSnapshotResponse(BaseModel):
     files: dict[str, str]
     verifyResult: CohereVerifyResponse | None = None
     runtimePromoted: bool = False
+    certificateGenerated: bool = False
+    certificateVerifyResult: dict | None = None
 
 
 class CohereVerifyRequest(BaseModel):
     ruleset: dict[str, Any]
     incompatibility: dict[str, Any]
     infeasibility: dict[str, Any]
+    factExclusions: dict[str, Any] | None = None
     timeoutSeconds: float = Field(default=10.0, ge=0.1, le=120.0)
 
 

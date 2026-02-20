@@ -5,11 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  type ConflictWarning,
   type KernelActiveArtifactsResponse,
   type KernelRule,
   displayActor,
   formatTimestamp,
   getApiBaseUrl,
+  sessionHeaders,
 } from "./kernel-types";
 import { type EditingRule, SearchableRuleList } from "./SearchableRuleList";
 import { TokenCombobox } from "./TokenCombobox";
@@ -47,7 +49,9 @@ export function DraftRulesPanel() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiBaseUrl}/api/kernel/active`);
+      const res = await fetch(`${apiBaseUrl}/api/kernel/active`, {
+        headers: sessionHeaders(),
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(body.detail ?? "Failed to load draft proposals.");
@@ -75,7 +79,7 @@ export function DraftRulesPanel() {
     try {
       const res = await fetch(`${apiBaseUrl}/api/kernel/active/rules`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           ruleId,
           premises: parsePremises(newPremises),
@@ -103,6 +107,7 @@ export function DraftRulesPanel() {
 
   function handleStartEdit(rule: KernelRule) {
     setEditing({
+      originalRuleId: rule.ruleId,
       ruleId: rule.ruleId,
       premises: rule.premises.join(", "),
       outcome: rule.outcome,
@@ -119,13 +124,13 @@ export function DraftRulesPanel() {
     setBusy(true);
     setMutationError(null);
 
-    const originalRuleId = editing?.ruleId ?? ruleId;
+    const originalRuleId = data.originalRuleId;
     try {
       const res = await fetch(
         `${apiBaseUrl}/api/kernel/active/rules/${encodeURIComponent(originalRuleId)}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: sessionHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             ruleId,
             premises: parsePremises(data.premises),
@@ -154,7 +159,7 @@ export function DraftRulesPanel() {
     try {
       const res = await fetch(
         `${apiBaseUrl}/api/kernel/active/rules/${encodeURIComponent(ruleId)}`,
-        { method: "DELETE" }
+        { method: "DELETE", headers: sessionHeaders() }
       );
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
@@ -183,6 +188,10 @@ export function DraftRulesPanel() {
   const isAddValid =
     !!newOutcome.trim() && addValidationErrors.length === 0;
 
+  const unresolvableCount = (data?.conflictWarnings ?? []).filter(
+    (w) => !w.resolvable
+  ).length;
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -192,6 +201,11 @@ export function DraftRulesPanel() {
             <span className="ml-2 text-xs font-normal text-slate-500">
               Editable working copy
             </span>
+            {unresolvableCount > 0 ? (
+              <span className="ml-2 inline-flex items-center rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                {unresolvableCount} conflict{unresolvableCount > 1 ? "s" : ""}
+              </span>
+            ) : null}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge className="border border-slate-200 bg-white text-slate-700">
@@ -220,6 +234,8 @@ export function DraftRulesPanel() {
             {mutationError}
           </div>
         ) : null}
+
+        <ConflictWarningsBanner warnings={data?.conflictWarnings ?? []} />
 
         {manifest ? (
           <>
@@ -263,7 +279,7 @@ export function DraftRulesPanel() {
               </div>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className="grid gap-3 lg:grid-cols-4">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Ruleset
@@ -295,6 +311,20 @@ export function DraftRulesPanel() {
                 </div>
                 <div className="mt-1 text-2xl font-semibold text-slate-900">
                   {data?.infeasibilityEntryCount ?? 0}
+                </div>
+                <div className="mt-1 text-[11px] text-indigo-600">
+                  View &amp; edit &rarr;
+                </div>
+              </Link>
+              <Link
+                href="/build/constraints"
+                className="rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-indigo-300 hover:bg-indigo-50/40"
+              >
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Exclusion groups
+                </div>
+                <div className="mt-1 text-2xl font-semibold text-slate-900">
+                  {data?.factExclusionCount ?? 0}
                 </div>
                 <div className="mt-1 text-[11px] text-indigo-600">
                   View &amp; edit &rarr;
@@ -401,5 +431,81 @@ export function DraftRulesPanel() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function ConflictWarningsBanner({ warnings }: { warnings: ConflictWarning[] }) {
+  if (warnings.length === 0) return null;
+
+  const unresolvable = warnings.filter((w) => !w.resolvable);
+  const resolvable = warnings.filter((w) => w.resolvable);
+
+  return (
+    <div className="space-y-2">
+      {unresolvable.length > 0 ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-red-700">
+            Unresolvable conflicts ({unresolvable.length})
+          </div>
+          <p className="mt-1 text-xs text-red-600">
+            These rule pairs produce conflicting verdicts on the same action
+            with independent premises. Specificity cannot resolve them -- add a
+            more specific override rule or revise one of the conflicting rules.
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {unresolvable.map((w) => (
+              <div
+                key={`${w.ruleAId}--${w.ruleBId}`}
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs"
+              >
+                <Badge className="border border-red-200 bg-red-50 text-red-700">
+                  {w.verdictA}
+                </Badge>
+                <span className="font-mono text-slate-700">{w.ruleAId}</span>
+                <span className="text-slate-400">vs</span>
+                <Badge className="border border-red-200 bg-red-50 text-red-700">
+                  {w.verdictB}
+                </Badge>
+                <span className="font-mono text-slate-700">{w.ruleBId}</span>
+                <span className="text-slate-500">on</span>
+                <span className="font-semibold text-slate-800">{w.action}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {resolvable.length > 0 ? (
+        <details className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-amber-700">
+            Specificity-resolved conflicts ({resolvable.length})
+          </summary>
+          <p className="mt-1 text-xs text-amber-600">
+            These rule pairs conflict on the same action but one has strictly
+            more specific premises, so the more specific rule shadows the other.
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {resolvable.map((w) => (
+              <div
+                key={`${w.ruleAId}--${w.ruleBId}`}
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs"
+              >
+                <Badge className="border border-amber-200 bg-amber-50 text-amber-700">
+                  {w.verdictA}
+                </Badge>
+                <span className="font-mono text-slate-700">{w.ruleAId}</span>
+                <span className="text-slate-400">vs</span>
+                <Badge className="border border-amber-200 bg-amber-50 text-amber-700">
+                  {w.verdictB}
+                </Badge>
+                <span className="font-mono text-slate-700">{w.ruleBId}</span>
+                <span className="text-slate-500">on</span>
+                <span className="font-semibold text-slate-800">{w.action}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </div>
   );
 }

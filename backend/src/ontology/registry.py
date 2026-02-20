@@ -20,7 +20,7 @@ from src.ontology.normalize import (
     MATERNAL_AGE_THRESHOLDS,
 )
 
-VERDICTS = ("Obligated", "Allowed")
+VERDICTS = ("Obligated", "Allowed", "Disallowed", "Rejected")
 
 
 # ---------------------------------------------------------------------------

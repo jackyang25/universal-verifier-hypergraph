@@ -30,6 +30,21 @@ export type InfeasibilityEntry = {
   createdAt: string;
 };
 
+export type FactExclusion = {
+  facts: string[];
+  createdBy: string;
+  createdAt: string;
+};
+
+export type ConflictWarning = {
+  ruleAId: string;
+  ruleBId: string;
+  action: string;
+  verdictA: string;
+  verdictB: string;
+  resolvable: boolean;
+};
+
 export type KernelActiveArtifactsResponse = {
   manifest: KernelArtifactManifest;
   rulesetRuleCount: number;
@@ -38,7 +53,10 @@ export type KernelActiveArtifactsResponse = {
   incompatibility: IncompatibilityPair[];
   infeasibilityEntryCount: number;
   infeasibility: InfeasibilityEntry[];
+  factExclusionCount: number;
+  factExclusions: FactExclusion[];
   proofReport: Record<string, unknown>;
+  conflictWarnings: ConflictWarning[];
 };
 
 export type KernelRuntimeVerification = {
@@ -57,6 +75,8 @@ export type KernelRuntimeArtifactsResponse = {
   incompatibility: IncompatibilityPair[];
   infeasibilityEntryCount: number;
   infeasibility: InfeasibilityEntry[];
+  factExclusionCount: number;
+  factExclusions: FactExclusion[];
   proofReport: Record<string, unknown>;
 };
 
@@ -68,12 +88,22 @@ export type CohereVerifyResponse = {
   stderr: string;
 };
 
+export type CertificateVerifyResult = {
+  ok: boolean;
+  exitCode: number;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+};
+
 export type KernelPublishSnapshotResponse = {
   directory: string;
   manifest: KernelArtifactManifest;
   files: Record<string, string>;
   verifyResult: CohereVerifyResponse | null;
   runtimePromoted?: boolean;
+  certificateGenerated?: boolean;
+  certificateVerifyResult?: CertificateVerifyResult | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -195,4 +225,28 @@ export function displayActor(value: string) {
 
 export function getApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+}
+
+// ---------------------------------------------------------------------------
+//  Per-tab session identity (each tab gets a fully isolated backend instance)
+// ---------------------------------------------------------------------------
+
+const SESSION_STORAGE_KEY = "vph_session_id";
+
+export function getSessionId(): string {
+  if (typeof globalThis.sessionStorage === "undefined") {
+    return "ssr-placeholder";
+  }
+  let id = globalThis.sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    globalThis.sessionStorage.setItem(SESSION_STORAGE_KEY, id);
+  }
+  return id;
+}
+
+export function sessionHeaders(
+  extra?: Record<string, string>
+): Record<string, string> {
+  return { "X-Session-Id": getSessionId(), ...extra };
 }

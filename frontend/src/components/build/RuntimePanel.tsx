@@ -8,6 +8,7 @@ import {
   displayActor,
   formatTimestamp,
   getApiBaseUrl,
+  sessionHeaders,
 } from "./kernel-types";
 import { SearchableRuleList } from "./SearchableRuleList";
 
@@ -22,7 +23,9 @@ export function RuntimePanel() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiBaseUrl}/api/kernel/runtime`);
+      const res = await fetch(`${apiBaseUrl}/api/kernel/runtime`, {
+        headers: sessionHeaders(),
+      });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { detail?: string };
         throw new Error(body.detail ?? "Failed to load runtime artifacts.");
@@ -94,6 +97,9 @@ export function RuntimePanel() {
               </Badge>
               <Badge className="border border-slate-200 bg-white text-slate-700">
                 {data.infeasibilityEntryCount} infeasibility entries
+              </Badge>
+              <Badge className="border border-slate-200 bg-white text-slate-700">
+                {data.factExclusionCount} exclusion groups
               </Badge>
             </div>
             {data.verification.verifiedAt ? (

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from threading import Lock
 
 from src.hypergraph.hyperedges import Hyperedge
 from src.kernel.seed import (
+    SEED_FACT_EXCLUSIONS,
     SEED_INCOMPATIBILITY,
     SEED_INFEASIBILITY,
     SEED_MANIFEST_DEFAULTS,
@@ -40,6 +42,7 @@ class KernelArtifactBundle:
     rule_provenance: dict[str, RuleProvenance]
     incompatibility: tuple[dict[str, object], ...]
     infeasibility: tuple[dict[str, object], ...]
+    fact_exclusions: tuple[dict[str, object], ...]
     proof_report: dict[str, object]
 
 
@@ -60,14 +63,21 @@ class KernelDraftProposals:
     rule_provenance: dict[str, RuleProvenance]
     incompatibility: tuple[dict[str, object], ...]
     infeasibility: tuple[dict[str, object], ...]
+    fact_exclusions: tuple[dict[str, object], ...]
 
 
 class InMemoryKernelArtifactStore:
-    """Process-local artifact store meant for demos and early prototypes."""
+    """Fully isolated per-session artifact store.
+
+    Each session gets its own draft, constraints, and runtime -- no shared
+    mutable state between sessions.  This avoids stale-override and conflict
+    problems while there is no database backing the system.
+    """
 
     def __init__(self) -> None:
         now = datetime.now(timezone.utc)
         self._lock = Lock()
+        self._last_accessed = time.monotonic()
 
         manifest = KernelArtifactManifest(
             artifact_source=SEED_MANIFEST_DEFAULTS["artifact_source"],
@@ -87,24 +97,36 @@ class InMemoryKernelArtifactStore:
             rule_provenance=provenance,
             incompatibility=SEED_INCOMPATIBILITY,
             infeasibility=SEED_INFEASIBILITY,
+            fact_exclusions=SEED_FACT_EXCLUSIONS,
         )
         self._runtime_bundle: KernelArtifactBundle | None = None
         self._runtime_verification = KernelVerificationStatus(status="unverified")
 
+    @property
+    def last_accessed(self) -> float:
+        return self._last_accessed
+
+    def touch(self) -> None:
+        self._last_accessed = time.monotonic()
+
     def get_draft(self) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             return self._draft
 
     def get_runtime_bundle(self) -> KernelArtifactBundle | None:
         with self._lock:
+            self.touch()
             return self._runtime_bundle
 
     def get_runtime_verification(self) -> KernelVerificationStatus:
         with self._lock:
+            self.touch()
             return self._runtime_verification
 
     def get_runtime_ruleset(self) -> tuple[Hyperedge, ...]:
         with self._lock:
+            self.touch()
             return self._runtime_bundle.ruleset if self._runtime_bundle is not None else tuple()
 
     def replace_draft_proposals(
@@ -116,6 +138,7 @@ class InMemoryKernelArtifactStore:
         rules: list[Hyperedge],
     ) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             now = datetime.now(timezone.utc)
             previous_provenance = dict(self._draft.rule_provenance)
             next_provenance: dict[str, RuleProvenance] = {}
@@ -141,11 +164,13 @@ class InMemoryKernelArtifactStore:
                 rule_provenance=next_provenance,
                 incompatibility=self._draft.incompatibility,
                 infeasibility=self._draft.infeasibility,
+                fact_exclusions=self._draft.fact_exclusions,
             )
             return self._draft
 
     def build_candidate_runtime_bundle(self) -> KernelArtifactBundle:
         with self._lock:
+            self.touch()
             return self._build_candidate_unlocked()
 
     def _build_candidate_unlocked(self) -> KernelArtifactBundle:
@@ -169,6 +194,9 @@ class InMemoryKernelArtifactStore:
         infeasibility = self._draft.infeasibility or (
             runtime.infeasibility if runtime is not None else ()
         )
+        fact_exclusions = self._draft.fact_exclusions or (
+            runtime.fact_exclusions if runtime is not None else ()
+        )
 
         return KernelArtifactBundle(
             manifest=self._draft.manifest,
@@ -176,6 +204,7 @@ class InMemoryKernelArtifactStore:
             rule_provenance=merged_prov,
             incompatibility=incompatibility,
             infeasibility=infeasibility,
+            fact_exclusions=fact_exclusions,
             proof_report={
                 "status": "preview",
                 "notes": "Candidate bundle built from runtime + draft proposals.",
@@ -186,6 +215,7 @@ class InMemoryKernelArtifactStore:
 
     def add_incompatibility_pair(self, *, a: str, b: str, created_by: str) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             for existing in self._draft.incompatibility:
                 ea, eb = existing["a"], existing["b"]
                 if (ea == a and eb == b) or (ea == b and eb == a):
@@ -206,6 +236,7 @@ class InMemoryKernelArtifactStore:
         self, *, index: int, a: str, b: str, updated_by: str
     ) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             pairs = list(self._draft.incompatibility)
             if index < 0 or index >= len(pairs):
                 raise IndexError(f"Incompatibility pair index {index} out of range (0..{len(pairs) - 1}).")
@@ -224,6 +255,7 @@ class InMemoryKernelArtifactStore:
 
     def remove_incompatibility_pair(self, *, index: int, updated_by: str) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             pairs = list(self._draft.incompatibility)
             if index < 0 or index >= len(pairs):
                 raise IndexError(f"Incompatibility pair index {index} out of range (0..{len(pairs) - 1}).")
@@ -241,6 +273,7 @@ class InMemoryKernelArtifactStore:
         self, *, action: str, premises: list[str], created_by: str
     ) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             now = datetime.now(timezone.utc)
             entry: dict[str, object] = {
                 "action": action, "premises": premises,
@@ -257,6 +290,7 @@ class InMemoryKernelArtifactStore:
         self, *, index: int, action: str, premises: list[str], updated_by: str
     ) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             entries = list(self._draft.infeasibility)
             if index < 0 or index >= len(entries):
                 raise IndexError(f"Infeasibility entry index {index} out of range (0..{len(entries) - 1}).")
@@ -275,6 +309,7 @@ class InMemoryKernelArtifactStore:
 
     def remove_infeasibility_entry(self, *, index: int, updated_by: str) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             entries = list(self._draft.infeasibility)
             if index < 0 or index >= len(entries):
                 raise IndexError(f"Infeasibility entry index {index} out of range (0..{len(entries) - 1}).")
@@ -286,12 +321,51 @@ class InMemoryKernelArtifactStore:
             )
             return self._draft
 
+    # -- fact exclusion mutations --------------------------------------------------
+
+    def add_fact_exclusion(
+        self, *, facts: list[str], created_by: str
+    ) -> KernelDraftProposals:
+        with self._lock:
+            self.touch()
+            fact_set = frozenset(facts)
+            for existing in self._draft.fact_exclusions:
+                if frozenset(existing.get("facts", [])) == fact_set:
+                    raise ValueError(f"Fact exclusion group already exists: {facts}")
+            now = datetime.now(timezone.utc)
+            entry: dict[str, object] = {
+                "facts": facts,
+                "created_by": created_by,
+                "created_at": now.isoformat(),
+            }
+            self._draft = self._mutated_draft(
+                updated_by=created_by,
+                change_summary=f"Added fact exclusion group: {facts}",
+                fact_exclusions=self._draft.fact_exclusions + (entry,),
+            )
+            return self._draft
+
+    def remove_fact_exclusion(self, *, index: int, updated_by: str) -> KernelDraftProposals:
+        with self._lock:
+            self.touch()
+            groups = list(self._draft.fact_exclusions)
+            if index < 0 or index >= len(groups):
+                raise IndexError(f"Fact exclusion index {index} out of range (0..{len(groups) - 1}).")
+            removed = groups.pop(index)
+            self._draft = self._mutated_draft(
+                updated_by=updated_by,
+                change_summary=f"Removed fact exclusion group: {removed.get('facts', '?')}",
+                fact_exclusions=tuple(groups),
+            )
+            return self._draft
+
     # -- rule mutations -----------------------------------------------------------
 
     def add_rule(
         self, *, edge: Hyperedge, created_by: str,
     ) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             for existing in self._draft.proposals:
                 if existing.edge_id == edge.edge_id:
                     raise ValueError(f"Rule with id '{edge.edge_id}' already exists in draft.")
@@ -311,6 +385,7 @@ class InMemoryKernelArtifactStore:
         self, *, rule_id: str, edge: Hyperedge, updated_by: str,
     ) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             proposals = list(self._draft.proposals)
             found = False
             for i, existing in enumerate(proposals):
@@ -335,6 +410,7 @@ class InMemoryKernelArtifactStore:
 
     def remove_rule(self, *, rule_id: str, updated_by: str) -> KernelDraftProposals:
         with self._lock:
+            self.touch()
             proposals = [e for e in self._draft.proposals if e.edge_id != rule_id]
             if len(proposals) == len(self._draft.proposals):
                 raise KeyError(f"Rule with id '{rule_id}' not found in draft.")
@@ -359,6 +435,7 @@ class InMemoryKernelArtifactStore:
         rule_provenance: dict[str, RuleProvenance] | None = None,
         incompatibility: tuple[dict[str, object], ...] | None = None,
         infeasibility: tuple[dict[str, object], ...] | None = None,
+        fact_exclusions: tuple[dict[str, object], ...] | None = None,
     ) -> KernelDraftProposals:
         """Return a new draft with bumped revision. Must be called under self._lock."""
         now = datetime.now(timezone.utc)
@@ -376,6 +453,7 @@ class InMemoryKernelArtifactStore:
             rule_provenance=rule_provenance if rule_provenance is not None else self._draft.rule_provenance,
             incompatibility=incompatibility if incompatibility is not None else self._draft.incompatibility,
             infeasibility=infeasibility if infeasibility is not None else self._draft.infeasibility,
+            fact_exclusions=fact_exclusions if fact_exclusions is not None else self._draft.fact_exclusions,
         )
 
     def promote_candidate_to_runtime(
@@ -386,6 +464,7 @@ class InMemoryKernelArtifactStore:
         verified_at: datetime | None = None,
     ) -> None:
         with self._lock:
+            self.touch()
             now = verified_at or datetime.now(timezone.utc)
             candidate = self._build_candidate_unlocked()
             self._runtime_bundle = candidate
@@ -408,7 +487,51 @@ class InMemoryKernelArtifactStore:
                 rule_provenance={},
                 incompatibility=self._draft.incompatibility,
                 infeasibility=self._draft.infeasibility,
+                fact_exclusions=self._draft.fact_exclusions,
             )
 
 
-KERNEL_ARTIFACTS = InMemoryKernelArtifactStore()
+# ---------------------------------------------------------------------------
+# Session manager (maps session IDs to fully isolated per-session stores)
+# ---------------------------------------------------------------------------
+
+
+class SessionManager:
+    """Maps session IDs to per-session stores with TTL-based cleanup.
+
+    Each session gets a fully isolated InMemoryKernelArtifactStore -- its own
+    draft, constraints, and verified runtime.  No shared mutable state.
+    """
+
+    DEFAULT_TTL_SECONDS = 7200.0  # 2 hours
+
+    def __init__(self, ttl_seconds: float = DEFAULT_TTL_SECONDS) -> None:
+        self._sessions: dict[str, InMemoryKernelArtifactStore] = {}
+        self._lock = Lock()
+        self._ttl = ttl_seconds
+
+    @property
+    def active_session_count(self) -> int:
+        with self._lock:
+            return len(self._sessions)
+
+    def get_or_create(self, session_id: str) -> InMemoryKernelArtifactStore:
+        with self._lock:
+            self._cleanup_expired()
+            if session_id in self._sessions:
+                self._sessions[session_id].touch()
+            else:
+                self._sessions[session_id] = InMemoryKernelArtifactStore()
+            return self._sessions[session_id]
+
+    def _cleanup_expired(self) -> None:
+        now = time.monotonic()
+        expired = [
+            sid for sid, store in self._sessions.items()
+            if now - store.last_accessed > self._ttl
+        ]
+        for sid in expired:
+            del self._sessions[sid]
+
+
+SESSION_MANAGER = SessionManager()

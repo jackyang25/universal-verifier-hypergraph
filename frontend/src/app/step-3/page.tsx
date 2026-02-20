@@ -9,6 +9,7 @@ import {
   type HypergraphRetrieveResponse,
   type KernelRuntimeArtifactsResponse,
   getApiBaseUrl,
+  sessionHeaders,
 } from "@/components/build/kernel-types";
 
 export default function Step3Page() {
@@ -41,7 +42,8 @@ export default function Step3Page() {
       setRuntimeArtifactsError(null);
       try {
         const response = await fetch(`${apiBaseUrl}/api/kernel/runtime`, {
-          method: "GET"
+          method: "GET",
+          headers: sessionHeaders(),
         });
         if (!response.ok) {
           let detail = "Failed to load runtime ruleset status.";
@@ -87,9 +89,7 @@ export default function Step3Page() {
     try {
       const response = await fetch(`${apiBaseUrl}/api/hypergraph/retrieve`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: sessionHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           facts: normalizedOntology.facts,
           proposedActionToken: normalizedOntology.actionToken
